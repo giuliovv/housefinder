@@ -5,7 +5,10 @@ long-term goal of filtering on visual/interior attributes (natural light,
 kitchen/bathroom size, etc.) and learning a user's style preference from a
 swipe-style like/dislike interface, then surfacing matching flats.
 
-Two parts today:
+**Live preview:** https://d1kri12g86gqhh.cloudfront.net (redeployed manually
+for now — see `infra/README.md`; nothing auto-deploys on push yet).
+
+Three parts today:
 
 - **`scraper/`** — Python parsers that pull listings, described in detail
   below.
@@ -14,6 +17,8 @@ Two parts today:
   as a browsable grid. No backend yet — it reads a static JSON file. No
   filtering/style-matching yet either; this is just the data pipeline made
   visible, end to end.
+- **`infra/`** — CDK app: S3 + CloudFront hosting for the built frontend,
+  deployed to Giulio's personal AWS account (not the ERP client account).
 
 ```bash
 # regenerate the demo dataset
