@@ -8,6 +8,8 @@ swipe-style like/dislike interface, then surfacing matching flats.
 **Live preview:** https://d1kri12g86gqhh.cloudfront.net (redeployed manually
 for now — see `infra/README.md`; nothing auto-deploys on push yet).
 
+See [`PLAN.md`](PLAN.md) for the phased roadmap and what's decided vs. open.
+
 Three parts today:
 
 - **`scraper/`** — Python parsers that pull listings, described in detail
