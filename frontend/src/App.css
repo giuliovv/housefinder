@@ -164,3 +164,125 @@
   color: #777;
   line-height: 1.4;
 }
+
+.listing-card__match {
+  position: absolute;
+  bottom: 8px;
+  left: 8px;
+  background: #15803d;
+  color: #fff;
+  font-size: 0.7rem;
+  font-weight: 600;
+  padding: 3px 8px;
+  border-radius: 4px;
+}
+
+/* ── Tabs ─────────────────────────────────────────────────────────────── */
+
+.app__tabs {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 20px;
+  border-bottom: 1px solid #e2e2e2;
+}
+
+.app__tab {
+  background: none;
+  border: none;
+  padding: 8px 4px;
+  font-size: 0.95rem;
+  color: #666;
+  cursor: pointer;
+  border-bottom: 2px solid transparent;
+}
+
+.app__tab--active {
+  color: #111;
+  font-weight: 600;
+  border-bottom-color: #15803d;
+}
+
+.app__sort-note {
+  font-size: 0.8rem;
+  color: #15803d;
+  margin: 0 0 12px;
+}
+
+/* ── Swipe deck ───────────────────────────────────────────────────────── */
+
+.swipe {
+  max-width: 420px;
+  margin: 0 auto;
+  text-align: center;
+}
+
+.swipe__progress {
+  font-size: 0.85rem;
+  color: #666;
+  margin-bottom: 16px;
+}
+
+.swipe__reset {
+  margin-left: 12px;
+  background: none;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  padding: 2px 8px;
+  font-size: 0.75rem;
+  cursor: pointer;
+  color: #666;
+}
+
+.swipe__card {
+  aspect-ratio: 4 / 3;
+  border-radius: 12px;
+  overflow: hidden;
+  background: #f0f0f0;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.12);
+  margin-bottom: 20px;
+}
+
+.swipe__card img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+.swipe__buttons {
+  display: flex;
+  gap: 16px;
+  justify-content: center;
+}
+
+.swipe__btn {
+  flex: 1;
+  padding: 14px 0;
+  font-size: 1rem;
+  font-weight: 600;
+  border-radius: 10px;
+  border: none;
+  cursor: pointer;
+}
+
+.swipe__btn--dislike {
+  background: #fee2e2;
+  color: #b91c1c;
+}
+
+.swipe__btn--like {
+  background: #dcfce7;
+  color: #15803d;
+}
+
+.swipe__hint {
+  margin-top: 12px;
+  font-size: 0.75rem;
+  color: #999;
+}
+
+.swipe__done {
+  padding: 40px 20px;
+  color: #444;
+  line-height: 1.6;
+}

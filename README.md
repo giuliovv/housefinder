@@ -1,9 +1,10 @@
 # House Finder
 
-Scrapes London rental listings from letting-agency websites, with the
-long-term goal of filtering on visual/interior attributes (natural light,
-kitchen/bathroom size, etc.) and learning a user's style preference from a
-swipe-style like/dislike interface, then surfacing matching flats.
+Scrapes London rental listings from letting-agency websites, learns a user's
+interior-design style preference from a swipe-style like/dislike interface
+over listing photos (CLIP embeddings, no training needed), and ranks
+listings by how well they match. Filtering on hard visual attributes (window
+size, kitchen/bathroom size) is a later phase — see `PLAN.md`.
 
 **Live preview:** https://d1kri12g86gqhh.cloudfront.net (redeployed manually
 for now — see `infra/README.md`; nothing auto-deploys on push yet).
@@ -12,21 +13,24 @@ See [`PLAN.md`](PLAN.md) for the phased roadmap and what's decided vs. open.
 
 Three parts today:
 
-- **`scraper/`** — Python parsers that pull listings, described in detail
-  below.
-- **`frontend/`** — a small Vite + React + TypeScript app that renders
-  whatever `scraper/export.py` produces (`frontend/public/data/listings.json`)
-  as a browsable grid. No backend yet — it reads a static JSON file. No
-  filtering/style-matching yet either; this is just the data pipeline made
-  visible, end to end.
+- **`scraper/`** — Python parsers that pull listings (described below), plus
+  `embeddings.py` which embeds listing photos + descriptions with CLIP
+  (`fastembed`'s ONNX export of OpenAI's ViT-B/32 — no PyTorch dependency,
+  which matters on a memory-constrained host).
+- **`frontend/`** — Vite + React + TypeScript. Two tabs: **Browse** (the
+  listing grid) and **Find your style** (swipe photos like/dislike). All
+  preference math (centroid-of-liked-minus-disliked, cosine similarity
+  ranking) runs client-side against the precomputed embeddings — no backend,
+  swipe choices persist in `localStorage` only.
 - **`infra/`** — CDK app: S3 + CloudFront hosting for the built frontend,
   deployed to Giulio's personal AWS account (not the ERP client account).
 
 ```bash
-# regenerate the demo dataset
+# regenerate the demo dataset + its embeddings
 pip install -r requirements.txt
 playwright install chromium
-python -m scraper.export --per-agency 6 --out frontend/public/data/listings.json
+python -m scraper.export --per-agency 50 --max-pages 8 --out frontend/public/data/listings.json
+python -m scraper.embeddings --in frontend/public/data/listings.json --out frontend/public/data/embeddings.json
 
 # run the frontend against it
 cd frontend && npm install && npm run dev
@@ -109,6 +113,41 @@ scraper), Alto, and Vebra.
   tooling, not a production data-resale product, and that distinction matters
   for how much legal risk is acceptable here.
 
+---
+
+## Style matching: CLIP embeddings + swipe preference
+
+`scraper/embeddings.py` embeds each listing's first 3 photos (capped
+deliberately — this feeds a swipe deck, not a photo archive; every photo of
+every listing doesn't serve that and just costs more compute/JSON size) plus
+its description + key features, using `Qdrant/clip-ViT-B-32-vision` and
+`Qdrant/clip-ViT-B-32-text` — ONNX exports of OpenAI's actual CLIP model via
+`fastembed`, not a knockoff, chosen specifically over `open_clip`/
+`transformers` + PyTorch because `onnxruntime` is a ~15MB wheel vs.
+PyTorch's hundreds of MB, and this host is genuinely disk/memory
+constrained. Image and text land in the *same* 512-dim space by
+construction, so descriptions are directly comparable to photos — no
+separate "feature extraction" step needed first (a real question that came
+up while planning this: CLIP doesn't need upstream object detection/labels,
+it embeds raw photos and raw text directly).
+
+The actual mechanic (all client-side, `frontend/src/lib/`):
+
+1. Flatten every listing's photos into one shuffled swipe deck
+   (`preferences.ts`).
+2. On each like/dislike, recompute a preference vector = centroid(liked) −
+   centroid(disliked) (`similarity.ts` — the standard simple baseline here,
+   no training needed since CLIP already did the hard semantic work).
+3. Score each listing by the *max* cosine similarity between the preference
+   vector and its own photo embeddings — max, not average, so one mediocre
+   bathroom photo doesn't tank an otherwise-great flat's score.
+4. Browse view re-sorts by this score once a preference exists.
+
+Verified end to end against the real 101-listing/1,321-photo dataset: same
+listing's own photos cluster far tighter (~0.89 cosine) than different
+listings (~0.64) — i.e. the embedding space actually discriminates between
+interiors, which is the property the whole mechanic depends on.
+
 ## Known gaps / honest limitations
 
 - Only 2 platforms so far, from 2 real example agencies. Real coverage
@@ -123,3 +162,12 @@ scraper), Alto, and Vebra.
   it for anything more precise than sorting/filtering.
 - Homeflow's `/page-N` pagination pattern was reverse-engineered from one
   site; hasn't been confirmed against a second Homeflow-powered agency yet.
+- The swipe deck's photos come entirely from the same 101 listings being
+  ranked — there's no separate curated seed set (e.g. Unsplash/Pinterest
+  interiors), so the deck is only as visually diverse as 2 agencies' actual
+  inventory happens to be. Worth revisiting if matches feel repetitive.
+- Match score is a raw cosine similarity shown as a percentage — it's a
+  *relative* ranking signal, not a calibrated confidence (0.31 isn't "31%
+  sure", it's "higher than 0.30"). Hasn't been validated against a real
+  person's actual taste yet, only checked that the embedding space itself
+  discriminates between interiors (see above).

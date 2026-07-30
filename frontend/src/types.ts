@@ -20,3 +20,18 @@ export interface Listing {
   photo_urls: string[];
   agency_name: string;
 }
+
+/** listing key = `${platform}:${source_id}` — matches scraper/embeddings.py's _listing_key */
+export type ListingKey = string;
+
+export interface PhotoEmbedding {
+  url: string;
+  embedding: number[];
+}
+
+export interface ListingEmbeddings {
+  photos: PhotoEmbedding[];
+  text_embedding: number[] | null;
+}
+
+export type EmbeddingsData = Record<ListingKey, ListingEmbeddings>;

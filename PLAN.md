@@ -26,21 +26,29 @@ current parser status.
 1. **Data source validation — done.** See above.
 2. **Ingestion & normalization — in progress.** Two platform parsers
    (Homeflow, PropertyHive) verified against real live sites, with offline
-   regression tests. Next: validate 1-2 more platforms against real agency
-   sites (not just docs) the same way — Reapit Foundations first, since it
-   has a documented API worth checking before writing another HTML scraper.
+   regression tests, currently pulling their full available inventory (101
+   listings / 1,321 photos). Next: validate 1-2 more platforms against real
+   agency sites (not just docs) the same way — Reapit Foundations first,
+   since it has a documented API worth checking before writing another HTML
+   scraper.
 3. **Image feature extraction — not started.** Room-type classification +
    cheap object-detection proxy for "big windows"/"large sink"-type
    attributes, reserving a VLM pass for a pre-filtered shortlist rather than
-   every photo of every listing (cost).
-4. **Style swipe & preference learning — next up, pending confirmation.**
-   CLIP-embed listing photos, swipe like/dislike on a seed set, learn a
-   preference direction in embedding space from the swipes, rank listings by
-   similarity to it. This is the actual product differentiator and the
-   least certain-to-work-well part — validating it doesn't require Phase 3
-   or a large Phase 2 crawl, so it's worth doing before investing further in
-   either. (Matches the original recommendation: prove the risky, novel part
-   cheaply before scaling ingestion.)
+   every photo of every listing (cost). Explicitly *not* a prerequisite for
+   Phase 4 — CLIP embeds raw photos directly, no upstream feature-extraction
+   step needed (a real question that came up: it seemed like it should make
+   CLIP "easier", but they're independent techniques for different
+   problems — structured facts vs. learned subjective style).
+4. **Style swipe & preference learning — done, first pass.** CLIP-embeds
+   (via `fastembed`'s ONNX export of OpenAI's ViT-B/32 — ONNX chosen over
+   PyTorch specifically for this host's tight disk/memory) each listing's
+   photos + description into one shared 512-dim space. Swipe UI + preference
+   vector (centroid of liked minus disliked) + match-ranked browsing all
+   built and working end to end against the real 101-listing dataset, fully
+   client-side (no backend, swipes persist in `localStorage` only). See
+   `README.md`'s "Style matching" section for the mechanic and what's been
+   verified vs. not. Not yet validated against a real person's actual taste
+   — only that the embedding space itself discriminates between interiors.
 5. **Filter/search API** combining hard filters with Phase 3's derived
    attributes.
 6. **Recommendations & notifications** — combine filter results + style
@@ -58,6 +66,12 @@ current parser status.
 
 ## Open questions (unresolved, revisit later)
 
+- Does the style-matching actually feel right against a real person's taste,
+  not just "the embedding space discriminates between interiors" (verified)
+  vs. "this surfaces flats I'd actually like" (not yet tried by a human).
+- Swipe-deck diversity — currently only the 2 existing agencies' actual
+  photos; may need a curated non-listing seed set if that turns out too
+  narrow/repetitive once someone actually swipes through it.
 - Geographic/volume scope beyond the current 2-agency demo dataset.
 - Budget appetite for VLM calls per listing (main recurring cost driver for
   Phase 3).

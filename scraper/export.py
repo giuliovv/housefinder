@@ -22,6 +22,7 @@ from .cli import build_scraper
 def main() -> None:
     parser = argparse.ArgumentParser()
     parser.add_argument("--per-agency", type=int, default=6)
+    parser.add_argument("--max-pages", type=int, default=2, help="search-result pages to fetch per agency before slicing to --per-agency")
     parser.add_argument("--out", type=pathlib.Path, default=pathlib.Path("listings.json"))
     args = parser.parse_args()
 
@@ -30,7 +31,7 @@ def main() -> None:
         print(f"[{cfg.key}] searching...")
         scraper = build_scraper(cfg.platform)
         try:
-            summaries = list(itertools.islice(scraper.search(cfg.key, cfg.search_url, max_pages=2), args.per_agency))
+            summaries = list(itertools.islice(scraper.search(cfg.key, cfg.search_url, max_pages=args.max_pages), args.per_agency))
             for i, summary in enumerate(summaries, 1):
                 print(f"[{cfg.key}] detail {i}/{len(summaries)}: {summary.address}")
                 detail = scraper.detail(cfg.key, summary)

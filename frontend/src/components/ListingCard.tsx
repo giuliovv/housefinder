@@ -2,7 +2,7 @@ import { useState } from "react";
 import type { Listing } from "../types";
 import { normalizeImageUrl } from "../lib/url";
 
-export function ListingCard({ listing }: { listing: Listing }) {
+export function ListingCard({ listing, matchScore }: { listing: Listing; matchScore?: number }) {
   const { summary } = listing;
   const photos = listing.photo_urls.length > 0
     ? listing.photo_urls
@@ -45,6 +45,11 @@ export function ListingCard({ listing }: { listing: Listing }) {
 
         {summary.status && <span className="listing-card__status">{summary.status}</span>}
         <span className="listing-card__agency">{listing.agency_name}</span>
+        {matchScore != null && (
+          <span className="listing-card__match" title="Relative match to your swiped style — higher is better, compare listings to each other rather than reading it as an absolute percentage">
+            {Math.round(matchScore * 100)}% match
+          </span>
+        )}
       </div>
 
       <div className="listing-card__body">
