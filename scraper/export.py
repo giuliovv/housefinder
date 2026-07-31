@@ -29,12 +29,16 @@ def main() -> None:
     all_listings = []
     for cfg in AGENCIES.values():
         print(f"[{cfg.key}] searching...")
-        scraper = build_scraper(cfg.platform)
+        scraper = build_scraper(cfg)
         try:
             summaries = list(itertools.islice(scraper.search(cfg.key, cfg.search_url, max_pages=args.max_pages), args.per_agency))
             for i, summary in enumerate(summaries, 1):
                 print(f"[{cfg.key}] detail {i}/{len(summaries)}: {summary.address}")
-                detail = scraper.detail(cfg.key, summary)
+                try:
+                    detail = scraper.detail(cfg.key, summary)
+                except Exception as exc:  # noqa: BLE001 - one flaky page shouldn't lose the whole batch
+                    print(f"[{cfg.key}] skipping {summary.address!r}: {exc}")
+                    continue
                 row = dataclasses.asdict(detail)
                 row["agency_name"] = cfg.name
                 all_listings.append(row)

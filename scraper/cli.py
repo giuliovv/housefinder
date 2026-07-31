@@ -14,17 +14,22 @@ import dataclasses
 import json
 import sys
 
-from .agencies import AGENCIES
+from .agencies import AGENCIES, AgencyConfig
 from .homeflow import HomeflowScraper
-from .propertyhive import PropertyHiveScraper
+from .propertyhive import HEALTHYPIXELS_THEME, VECO_THEME, PropertyHiveScraper
+
+PROPERTYHIVE_THEMES = {
+    "healthypixels": HEALTHYPIXELS_THEME,
+    "veco": VECO_THEME,
+}
 
 
-def build_scraper(platform: str):
-    if platform == "homeflow":
+def build_scraper(cfg: AgencyConfig):
+    if cfg.platform == "homeflow":
         return HomeflowScraper()
-    if platform == "propertyhive":
-        return PropertyHiveScraper()
-    raise ValueError(f"no scraper registered for platform: {platform}")
+    if cfg.platform == "propertyhive":
+        return PropertyHiveScraper(theme=PROPERTYHIVE_THEMES[cfg.propertyhive_theme])
+    raise ValueError(f"no scraper registered for platform: {cfg.platform}")
 
 
 def main() -> None:
@@ -35,7 +40,7 @@ def main() -> None:
     args = parser.parse_args()
 
     cfg = AGENCIES[args.agency]
-    scraper = build_scraper(cfg.platform)
+    scraper = build_scraper(cfg)
     try:
         for summary in scraper.search(cfg.key, cfg.search_url, max_pages=args.pages):
             row = dataclasses.asdict(summary)

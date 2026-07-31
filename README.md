@@ -18,10 +18,13 @@ Three parts today:
   (`fastembed`'s ONNX export of OpenAI's ViT-B/32 — no PyTorch dependency,
   which matters on a memory-constrained host).
 - **`frontend/`** — Vite + React + TypeScript. Two tabs: **Browse** (the
-  listing grid) and **Find your style** (swipe photos like/dislike). All
-  preference math (centroid-of-liked-minus-disliked, cosine similarity
-  ranking) runs client-side against the precomputed embeddings — no backend,
-  swipe choices persist in `localStorage` only.
+  listing grid, filterable by agency, postcode area, price range, and
+  minimum bedrooms/bathrooms — see `frontend/src/lib/location.ts` for how
+  postcode areas are extracted from free-text addresses) and **Find your
+  style** (swipe photos like/dislike). All preference math
+  (centroid-of-liked-minus-disliked, cosine similarity ranking) runs
+  client-side against the precomputed embeddings — no backend, swipe choices
+  persist in `localStorage` only.
 - **`infra/`** — CDK app: S3 + CloudFront hosting for the built frontend,
   deployed to Giulio's personal AWS account (not the ERP client account).
 
@@ -49,14 +52,24 @@ this beats scraping Rightmove/Zoopla/SpareRoom directly.
 
 ## Platforms supported today
 
-| Platform | Rendering | Example agency | Notes |
+| Platform | Rendering | Example agencies | Notes |
 |---|---|---|---|
 | **Homeflow** | Client-side (needs a real browser) | innercityestates.com | Cards aren't in the raw HTML at all — verified via plain `curl`. Pagination is `/page-N` appended to the search path; this isn't documented anywhere, found by diffing property IDs returned per page. |
-| **PropertyHive** (WordPress plugin) | Server-rendered | properly.space (via properties.properly.space) | Plain `requests` + BeautifulSoup, no browser needed — this is the cheap platform to scale. Standard WordPress `page/N/` pagination. |
+| **PropertyHive** (WordPress plugin) | Server-rendered | properly.space (healthypixels theme), parkgate.co.uk (veco theme) | Plain `requests` + BeautifulSoup, no browser needed — this is the cheap platform to scale. Standard WordPress `page/N/` pagination. |
 
-Both were verified against real, live sites on 2026-07-29 — not built from
-guessed selectors. `tests/fixtures/` holds saved HTML from that verification;
-the tests run the actual parsing selectors against those fixtures offline.
+PropertyHive is a WordPress *plugin*, not a hosted platform like Homeflow —
+different agencies' *themes* render completely different markup for the same
+underlying data (e.g. properly.space's `.listing-a`/`.bedroom` vs.
+parkgate.co.uk's `li.property`/`.room-bedrooms .room-count`).
+`scraper/propertyhive.py`'s `PropertyHiveTheme` dataclass parameterises every
+selector rather than assuming one theme covers the whole plugin ecosystem —
+add a new preset if a third theme shows up rather than guessing an existing
+one matches.
+
+Both platforms were verified against real, live sites on 2026-07-29/30 — not
+built from guessed selectors. `tests/fixtures/` holds saved HTML from that
+verification; the tests run the actual parsing selectors against those
+fixtures offline.
 
 ## What each parser extracts
 
@@ -70,7 +83,8 @@ pip install -r requirements.txt
 playwright install chromium   # only needed for homeflow.py; skip if you already have a chromium build cached
 
 python -m scraper.cli innercityestates --pages 2           # Homeflow
-python -m scraper.cli properly --pages 2 --detail          # PropertyHive, with full detail
+python -m scraper.cli properly --pages 2 --detail          # PropertyHive, healthypixels theme
+python -m scraper.cli parkgate --pages 2 --detail          # PropertyHive, veco theme
 ```
 
 Each line printed is one listing as JSON.
@@ -89,14 +103,20 @@ entry to `scraper/agencies.py`:
 ),
 ```
 
+If it's on PropertyHive but a new agency's *theme* renders different markup
+(you'll know because none of the existing selectors match anything), add a
+new `PropertyHiveTheme` preset in `scraper/propertyhive.py` rather than
+editing the existing ones — see the healthypixels/veco split for the
+pattern.
+
 If it's on a platform not yet supported, you need a new parser module
 implementing `PlatformScraper` (see `scraper/base.py`) — inspect the site's
 real markup first (`tests/` shows the pattern: capture real HTML, save it as
 a fixture, write selectors against what's actually there, not what you'd
-guess). Given the market structure, the next highest-value platforms to add
-are probably Reapit Foundations (has a documented API — worth checking
-whether individual agency sites expose it client-side before writing an HTML
-scraper), Alto, and Vebra.
+guess). Reapit Foundations was checked and ruled out for now — its API
+requires OAuth2/registered app credentials, not a simple public scrape
+target like Homeflow/PropertyHive's actual rendered pages are. Alto and
+Vebra haven't been checked yet.
 
 ## Being a reasonable citizen about this
 
@@ -150,14 +170,15 @@ interiors, which is the property the whole mechanic depends on.
 
 ## Known gaps / honest limitations
 
-- Only 2 platforms so far, from 2 real example agencies. Real coverage
+- Only 2 platforms so far (Homeflow, PropertyHive), from 3 real example
+  agencies (1 Homeflow, 2 PropertyHive on different themes). Real coverage
   across "most London agencies" requires validating more platforms
-  (Reapit/Alto/Vebra/Dezrez) against real sites, not assuming the docs match
-  reality — that's exactly the gap that bit the price/status field the first
-  time through here (see git history: the "Let" status text turned out to be
-  nested *inside* the price element, not a separate field, and the
-  free-text description turned out to live in a different container than
-  the one that looked right at first glance).
+  (Alto/Vebra/Dezrez — Reapit ruled out, see above) against real sites, not
+  assuming the docs match reality — that's exactly the gap that bit the
+  price/status field the first time through here (see git history: the "Let"
+  status text turned out to be nested *inside* the price element, not a
+  separate field, and the free-text description turned out to live in a
+  different container than the one that looked right at first glance).
 - `price_pcm` is best-effort text parsing, not authoritative — don't trust
   it for anything more precise than sorting/filtering.
 - Homeflow's `/page-N` pagination pattern was reverse-engineered from one

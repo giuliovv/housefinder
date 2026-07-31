@@ -3,6 +3,7 @@ import type { EmbeddingsData, Listing } from "./types";
 import { ListingCard } from "./components/ListingCard";
 import { SwipeDeck } from "./components/SwipeDeck";
 import { useStylePreferences } from "./lib/preferences";
+import { extractPostcodeArea } from "./lib/location";
 import "./App.css";
 
 type SortKey = "price-asc" | "price-desc" | "match";
@@ -18,6 +19,11 @@ function App() {
   const [error, setError] = useState<string | null>(null);
   const [sort, setSort] = useState<SortKey>("price-asc");
   const [agencyFilter, setAgencyFilter] = useState<string>("all");
+  const [areaFilter, setAreaFilter] = useState<string>("all");
+  const [minPrice, setMinPrice] = useState<string>("");
+  const [maxPrice, setMaxPrice] = useState<string>("");
+  const [minBedrooms, setMinBedrooms] = useState<string>("any");
+  const [minBathrooms, setMinBathrooms] = useState<string>("any");
   const [tab, setTab] = useState<Tab>("browse");
 
   useEffect(() => {
@@ -45,10 +51,29 @@ function App() {
     return [...new Set(listings.map((l) => l.agency_name))];
   }, [listings]);
 
+  const areas = useMemo(() => {
+    if (!listings) return [];
+    const found = listings.map((l) => extractPostcodeArea(l.summary.address)).filter((a): a is string => a !== null);
+    return [...new Set(found)].sort();
+  }, [listings]);
+
   const visible = useMemo(() => {
     if (!listings) return [];
     let rows = listings;
     if (agencyFilter !== "all") rows = rows.filter((l) => l.agency_name === agencyFilter);
+    if (areaFilter !== "all") rows = rows.filter((l) => extractPostcodeArea(l.summary.address) === areaFilter);
+    const min = minPrice ? Number(minPrice) : null;
+    const max = maxPrice ? Number(maxPrice) : null;
+    if (min !== null) rows = rows.filter((l) => l.summary.price_pcm !== null && l.summary.price_pcm >= min);
+    if (max !== null) rows = rows.filter((l) => l.summary.price_pcm !== null && l.summary.price_pcm <= max);
+    if (minBedrooms !== "any") {
+      const n = Number(minBedrooms);
+      rows = rows.filter((l) => l.summary.bedrooms !== null && l.summary.bedrooms >= n);
+    }
+    if (minBathrooms !== "any") {
+      const n = Number(minBathrooms);
+      rows = rows.filter((l) => l.summary.bathrooms !== null && l.summary.bathrooms >= n);
+    }
     return [...rows].sort((a, b) => {
       if (sort === "match" && matchScores) {
         const sa = matchScores[listingKey(a)] ?? -Infinity;
@@ -59,7 +84,7 @@ function App() {
       const pb = b.summary.price_pcm ?? Infinity;
       return sort === "price-asc" ? pa - pb : pb - pa;
     });
-  }, [listings, sort, agencyFilter, matchScores]);
+  }, [listings, sort, agencyFilter, areaFilter, minPrice, maxPrice, minBedrooms, minBathrooms, matchScores]);
 
   // Once a preference exists, default to showing matches first rather than
   // making the user notice the new sort option themselves. Depends on the
@@ -104,6 +129,53 @@ function App() {
               </select>
             </label>
             <label>
+              Area:{" "}
+              <select value={areaFilter} onChange={(e) => setAreaFilter(e.target.value)}>
+                <option value="all">All areas</option>
+                {areas.map((a) => (
+                  <option key={a} value={a}>{a}</option>
+                ))}
+              </select>
+            </label>
+            <label>
+              Min price (pcm):{" "}
+              <input
+                type="number"
+                min={0}
+                placeholder="No min"
+                value={minPrice}
+                onChange={(e) => setMinPrice(e.target.value)}
+              />
+            </label>
+            <label>
+              Max price (pcm):{" "}
+              <input
+                type="number"
+                min={0}
+                placeholder="No max"
+                value={maxPrice}
+                onChange={(e) => setMaxPrice(e.target.value)}
+              />
+            </label>
+            <label>
+              Bedrooms:{" "}
+              <select value={minBedrooms} onChange={(e) => setMinBedrooms(e.target.value)}>
+                <option value="any">Any</option>
+                {[1, 2, 3, 4, 5].map((n) => (
+                  <option key={n} value={n}>{n}+</option>
+                ))}
+              </select>
+            </label>
+            <label>
+              Bathrooms:{" "}
+              <select value={minBathrooms} onChange={(e) => setMinBathrooms(e.target.value)}>
+                <option value="any">Any</option>
+                {[1, 2, 3, 4].map((n) => (
+                  <option key={n} value={n}>{n}+</option>
+                ))}
+              </select>
+            </label>
+            <label>
               Sort:{" "}
               <select value={sort} onChange={(e) => setSort(e.target.value as SortKey)}>
                 {matchScores && <option value="match">Best match to your style</option>}
@@ -113,9 +185,10 @@ function App() {
             </label>
           </div>
         )}
-        {tab === "browse" && matchScores && (
+        {tab === "browse" && (
           <p className="app__sort-note">
-            Sorted by your style preference from {likedCount} liked / {dislikedCount} disliked photos.
+            Showing {visible.length} of {listings?.length ?? 0} listings
+            {matchScores ? ` — sorted by your style preference from ${likedCount} liked / ${dislikedCount} disliked photos.` : "."}
           </p>
         )}
       </header>

@@ -26,11 +26,12 @@ current parser status.
 1. **Data source validation — done.** See above.
 2. **Ingestion & normalization — in progress.** Two platform parsers
    (Homeflow, PropertyHive) verified against real live sites, with offline
-   regression tests, currently pulling their full available inventory (101
-   listings / 1,321 photos). Next: validate 1-2 more platforms against real
-   agency sites (not just docs) the same way — Reapit Foundations first,
-   since it has a documented API worth checking before writing another HTML
-   scraper.
+   regression tests, now pulling from 3 agencies (innercityestates on
+   Homeflow; properly.space and parkgate.co.uk on PropertyHive, on two
+   genuinely different themes — see README). Reapit Foundations was checked
+   and ruled out: its API needs OAuth2/registered app credentials, not a
+   simple public scrape target. Next: Alto or Vebra, the same
+   fixture-first-verify way.
 3. **Image feature extraction — not started.** Room-type classification +
    cheap object-detection proxy for "big windows"/"large sink"-type
    attributes, reserving a VLM pass for a pre-filtered shortlist rather than
@@ -49,8 +50,11 @@ current parser status.
    `README.md`'s "Style matching" section for the mechanic and what's been
    verified vs. not. Not yet validated against a real person's actual taste
    — only that the embedding space itself discriminates between interiors.
-5. **Filter/search API** combining hard filters with Phase 3's derived
-   attributes.
+5. **Filter/search — in progress, first pass done.** Client-side filters on
+   the Browse tab: agency, postcode area (derived from the address string,
+   `frontend/src/lib/location.ts`), price range, minimum bedrooms/bathrooms.
+   Still to combine with Phase 3's derived visual attributes once those
+   exist.
 6. **Recommendations & notifications** — combine filter results + style
    ranking, notify on new matches.
 

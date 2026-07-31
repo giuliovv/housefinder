@@ -13,6 +13,12 @@ class AgencyConfig:
     name: str
     platform: str  # "homeflow" | "propertyhive"
     search_url: str
+    # Only meaningful for platform="propertyhive" — PropertyHive is a
+    # WordPress *plugin*, and different agencies' themes restyle its output
+    # differently enough that one selector set doesn't cover all of them
+    # (see scraper/propertyhive.py). Matches a key in
+    # scraper/cli.py's PROPERTYHIVE_THEMES. Defaults to "healthypixels".
+    propertyhive_theme: str = "healthypixels"
 
 
 AGENCIES: dict[str, AgencyConfig] = {
@@ -30,5 +36,13 @@ AGENCIES: dict[str, AgencyConfig] = {
             "https://properties.properly.space/property-search/"
             "?department=residential-lettings&instruction_type=letting"
         ),
+        propertyhive_theme="healthypixels",
+    ),
+    "parkgate": AgencyConfig(
+        key="parkgate",
+        name="Parkgate",
+        platform="propertyhive",
+        search_url="https://www.parkgate.co.uk/properties-for-rent/",
+        propertyhive_theme="veco",
     ),
 }
