@@ -19,7 +19,7 @@ function App() {
   const [error, setError] = useState<string | null>(null);
   const [sort, setSort] = useState<SortKey>("price-asc");
   const [agencyFilter, setAgencyFilter] = useState<string>("all");
-  const [areaFilter, setAreaFilter] = useState<string>("all");
+  const [areaFilters, setAreaFilters] = useState<string[]>([]);
   const [minPrice, setMinPrice] = useState<string>("");
   const [maxPrice, setMaxPrice] = useState<string>("");
   const [minBedrooms, setMinBedrooms] = useState<string>("any");
@@ -61,7 +61,13 @@ function App() {
     if (!listings) return [];
     let rows = listings;
     if (agencyFilter !== "all") rows = rows.filter((l) => l.agency_name === agencyFilter);
-    if (areaFilter !== "all") rows = rows.filter((l) => extractPostcodeArea(l.summary.address) === areaFilter);
+    if (areaFilters.length > 0) {
+      const wanted = new Set(areaFilters);
+      rows = rows.filter((l) => {
+        const area = extractPostcodeArea(l.summary.address);
+        return area !== null && wanted.has(area);
+      });
+    }
     const min = minPrice ? Number(minPrice) : null;
     const max = maxPrice ? Number(maxPrice) : null;
     if (min !== null) rows = rows.filter((l) => l.summary.price_pcm !== null && l.summary.price_pcm >= min);
@@ -84,7 +90,7 @@ function App() {
       const pb = b.summary.price_pcm ?? Infinity;
       return sort === "price-asc" ? pa - pb : pb - pa;
     });
-  }, [listings, sort, agencyFilter, areaFilter, minPrice, maxPrice, minBedrooms, minBathrooms, matchScores]);
+  }, [listings, sort, agencyFilter, areaFilters, minPrice, maxPrice, minBedrooms, minBathrooms, matchScores]);
 
   // Once a preference exists, default to showing matches first rather than
   // making the user notice the new sort option themselves. Depends on the
@@ -128,14 +134,25 @@ function App() {
                 ))}
               </select>
             </label>
-            <label>
-              Area:{" "}
-              <select value={areaFilter} onChange={(e) => setAreaFilter(e.target.value)}>
-                <option value="all">All areas</option>
+            <label className="app__area-filter">
+              Area (ctrl/cmd-click for multiple):{" "}
+              <select
+                multiple
+                size={Math.min(6, areas.length || 1)}
+                value={areaFilters}
+                onChange={(e) =>
+                  setAreaFilters(Array.from(e.target.selectedOptions, (o) => o.value))
+                }
+              >
                 {areas.map((a) => (
                   <option key={a} value={a}>{a}</option>
                 ))}
               </select>
+              {areaFilters.length > 0 && (
+                <button type="button" className="app__clear-areas" onClick={() => setAreaFilters([])}>
+                  Clear ({areaFilters.length})
+                </button>
+              )}
             </label>
             <label>
               Min price (pcm):{" "}

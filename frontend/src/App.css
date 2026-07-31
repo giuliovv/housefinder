@@ -32,6 +32,22 @@
   width: 90px;
 }
 
+.app__area-filter {
+  display: flex;
+  align-items: flex-start;
+  gap: 6px;
+}
+
+.app__area-filter select {
+  min-width: 70px;
+}
+
+.app__clear-areas {
+  padding: 2px 8px;
+  font-size: 0.8rem;
+  cursor: pointer;
+}
+
 .app__error {
   color: #b91c1c;
 }
