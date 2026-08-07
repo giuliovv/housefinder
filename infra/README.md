@@ -37,3 +37,58 @@ infra project on this same host.
 - CloudFront: see stack output `CloudFrontDomain` (`cdk deploy` prints it, or
   `aws cloudformation describe-stacks --stack-name HousefinderFrontend`)
 - Bucket: `housefinder-frontend-854656252703`
+
+## One-off heavy jobs (e.g. re-embedding all photos)
+
+`scraper/embeddings.py` on the full dataset (1,051 photos as of 2026-08-07)
+is too slow/fragile to run on this host's usual `t4g.micro`: not because the
+job is too heavy for it, but because long-running background shells here
+keep getting killed by session restarts before they finish. Fix used: spin
+up a temporary, larger EC2 instance that self-terminates when the job ends
+(success or failure), so nothing lingers or costs money if left unattended.
+
+**Recipe** (ad hoc, not scripted — repeat by hand or turn into a script if
+this becomes a regular thing):
+
+1. Bundle just what the job needs (e.g. `scraper/` + `listings.json`) into a
+   tarball, upload to a temp prefix in the existing frontend bucket
+   (`s3://housefinder-frontend-854656252703/tmp-<job>/`) — reusing that
+   bucket avoids provisioning a new one.
+2. Launch an instance reusing the *existing* `ClaudeServer` IAM instance
+   profile and security group (already has S3 read/write on that bucket, no
+   new IAM role needed) with `--instance-initiated-shutdown-behavior
+   terminate`.
+3. User-data script: `trap '... upload log ...; shutdown -h now' EXIT` at
+   the very top, before anything else — this is what makes the instance
+   self-destruct on *any* exit path, not just success. Then install deps,
+   run the job, upload the result + a log to the same S3 prefix, touch a
+   `DONE` marker object.
+4. Poll (`Monitor` tool, or a loop) for the `DONE` marker or the instance
+   reaching `terminated` state (not `stopped` — confirms
+   `instance-initiated-shutdown-behavior=terminate` actually worked and
+   nothing is left running).
+5. Download the result from S3, `aws s3 rm --recursive` the temp prefix,
+   `aws ec2 describe-instances` once more to confirm `terminated` with
+   reason `Client.InstanceInitiatedShutdown`.
+
+**Sizing — check CloudWatch before assuming you need a bigger box.** The
+first run of this used a `c7g.xlarge` (4 vCPU, 8GB) on the assumption that
+more CPU would help. It didn't need to: `CPUUtilization` for that instance's
+whole ~13-minute lifetime averaged 12-15%, peaking ~19% — well under 1 vCPU
+of actual use. `NetworkIn` showed the first ~5 minutes dominated by a single
+~484MB spike (the one-time CLIP model download, fixed cost regardless of
+instance size), with the rest of the run at 20-50MB per 5-min window (photo
+downloads, throttled by `IMAGE_DOWNLOAD_DELAY_SECONDS` in the script
+itself). Conclusion: this job is I/O-bound and rate-limited by design, not
+CPU-bound — a `t4g.small` or `t4g.medium` (2 vCPU, same Graviton family as
+the always-on host) would finish in about the same wall-clock time for a
+fraction of the cost (~$0.004 vs. ~$0.03 for a 13-minute run). Reach for
+`c7g.xlarge`-class sizing only if a future job is actually compute-heavy
+(e.g. embedding tens of thousands of photos where ONNX inference time, not
+network/throttling, dominates) — check `CPUUtilization` after a first run
+rather than assuming.
+
+No CloudWatch agent was installed, so RAM usage isn't directly observable
+after the fact for these jobs — only CPU/network are captured by default.
+Not investigated further since the same workload already ran fine in-process
+on the 1GB `t4g.micro` earlier in this project.
