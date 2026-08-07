@@ -31,7 +31,11 @@ def main() -> None:
         print(f"[{cfg.key}] searching...")
         scraper = build_scraper(cfg)
         try:
-            summaries = list(itertools.islice(scraper.search(cfg.key, cfg.search_url, max_pages=args.max_pages), args.per_agency))
+            try:
+                summaries = list(itertools.islice(scraper.search(cfg.key, cfg.search_url, max_pages=args.max_pages), args.per_agency))
+            except Exception as exc:  # noqa: BLE001 - one agency being unreachable (rate-limited, down, etc.) shouldn't lose every other agency's results
+                print(f"[{cfg.key}] search failed, skipping this agency entirely: {exc}")
+                continue
             for i, summary in enumerate(summaries, 1):
                 print(f"[{cfg.key}] detail {i}/{len(summaries)}: {summary.address}")
                 try:

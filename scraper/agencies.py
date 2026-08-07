@@ -19,6 +19,11 @@ class AgencyConfig:
     # (see scraper/propertyhive.py). Matches a key in
     # scraper/cli.py's PROPERTYHIVE_THEMES. Defaults to "healthypixels".
     propertyhive_theme: str = "healthypixels"
+    # Only meaningful for platform="homeflow" — Homeflow is fully hosted but
+    # still offers bespoke themes to bigger clients, structurally different
+    # enough (not just class names) that they need separate parsing code
+    # paths (see scraper/homeflow.py). "standard" | "panel".
+    homeflow_theme: str = "standard"
 
 
 AGENCIES: dict[str, AgencyConfig] = {
@@ -27,6 +32,14 @@ AGENCIES: dict[str, AgencyConfig] = {
         name="Inner City Estates",
         platform="homeflow",
         search_url="https://www.innercityestates.com/properties/lettings",
+        homeflow_theme="standard",
+    ),
+    "johndwood": AgencyConfig(
+        key="johndwood",
+        name="John D Wood & Co.",
+        platform="homeflow",
+        search_url="https://www.johndwood.co.uk/properties-to-rent/london/london",
+        homeflow_theme="panel",
     ),
     "properly": AgencyConfig(
         key="properly",

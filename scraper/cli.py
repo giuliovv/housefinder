@@ -26,7 +26,7 @@ PROPERTYHIVE_THEMES = {
 
 def build_scraper(cfg: AgencyConfig):
     if cfg.platform == "homeflow":
-        return HomeflowScraper()
+        return HomeflowScraper(theme=cfg.homeflow_theme)
     if cfg.platform == "propertyhive":
         return PropertyHiveScraper(theme=PROPERTYHIVE_THEMES[cfg.propertyhive_theme])
     raise ValueError(f"no scraper registered for platform: {cfg.platform}")
