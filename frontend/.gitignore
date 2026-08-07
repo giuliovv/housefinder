@@ -12,6 +12,14 @@ dist
 dist-ssr
 *.local
 
+# Scraped/generated data — this is output, not source. It already ends up
+# in S3 on every `cdk deploy` (that's what actually serves the live site);
+# committing it here too was redundant and is how third-party API keys kept
+# leaking into git history via embedded photo/page content. See README for
+# how to populate this locally (run the scraper pipeline, or pull the
+# current copy down from S3).
+public/data/*.json
+
 # Editor directories and files
 .vscode/*
 !.vscode/extensions.json

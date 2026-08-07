@@ -10,6 +10,10 @@ not the ERP client account — this is Giulio's own project.
 
 ## Deploy
 
+`frontend/public/data/*.json` isn't in git (see root `README.md`) — make
+sure it's populated (pull from S3, or regenerate via the scraper pipeline)
+before building, or you'll deploy a site with no listings.
+
 ```bash
 cd ../frontend && npm run build   # produces dist/, which the stack picks up
 cd ../infra

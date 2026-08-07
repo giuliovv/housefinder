@@ -33,15 +33,26 @@ Three parts today:
 - **`infra/`** — CDK app: S3 + CloudFront hosting for the built frontend,
   deployed to Giulio's personal AWS account (not the ERP client account).
 
+`frontend/public/data/*.json` (the scraped listings, their embeddings, and
+area centroids) is **not checked into git** — it's generated output, and it
+already ends up in S3 on every `cdk deploy` anyway (see `infra/`), so
+committing it too was redundant and was how third-party API keys embedded
+in scraped page content kept leaking into git history. After a fresh clone,
+`frontend/public/data/` is empty — populate it one of two ways before
+`npm run dev`/`npm run build` will have anything to serve:
+
 ```bash
-# regenerate the demo dataset + its embeddings
+# option A: pull the current live data down from S3 (fast, no scraping)
+aws s3 cp s3://housefinder-frontend-854656252703/data/ frontend/public/data/ --recursive
+
+# option B: regenerate the dataset from scratch
 pip install -r requirements.txt
 playwright install chromium
 python -m scraper.export --per-agency 50 --max-pages 8 --out frontend/public/data/listings.json
 python -m scraper.embeddings --in frontend/public/data/listings.json --out frontend/public/data/embeddings.json
 python -m scraper.geocode_areas   # only needed if new postcode areas showed up — see below
 
-# run the frontend against it
+# then, either way:
 cd frontend && npm install && npm run dev
 ```
 
