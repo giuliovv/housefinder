@@ -207,6 +207,41 @@
   border-radius: 4px;
 }
 
+.listing-card__rate {
+  position: absolute;
+  bottom: 8px;
+  right: 8px;
+  display: flex;
+  gap: 6px;
+}
+
+.listing-card__rate-btn {
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  border: none;
+  background: rgba(255, 255, 255, 0.9);
+  color: #333;
+  font-size: 0.95rem;
+  line-height: 1;
+  cursor: pointer;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
+}
+
+.listing-card__rate-btn:hover {
+  transform: scale(1.08);
+}
+
+.listing-card__rate-btn--active.listing-card__rate-btn--like {
+  background: #dc2626;
+  color: #fff;
+}
+
+.listing-card__rate-btn--active.listing-card__rate-btn--dislike {
+  background: #333;
+  color: #fff;
+}
+
 /* ── Tabs ─────────────────────────────────────────────────────────────── */
 
 .app__tabs {

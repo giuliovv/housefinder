@@ -23,7 +23,10 @@ Three parts today:
   to toggle) or a plain multi-select dropdown, both backed by the same
   selection state — price range, and minimum bedrooms/bathrooms; see
   `frontend/src/lib/location.ts` for how postcode areas are extracted from
-  free-text addresses) and **Find your style** (swipe photos like/dislike).
+  free-text addresses; each card also has like/dislike buttons on its own
+  photo, rating the currently-shown photo in place while scrolling — same
+  preference vector as the dedicated swipe deck, just without leaving the
+  grid) and **Find your style** (swipe photos like/dislike, one at a time).
   All preference math (centroid-of-liked-minus-disliked, cosine similarity
   ranking) runs client-side against the precomputed embeddings — no backend,
   swipe choices persist in `localStorage` only.
@@ -166,13 +169,25 @@ The actual mechanic (all client-side, `frontend/src/lib/`):
 
 1. Flatten every listing's photos into one shuffled swipe deck
    (`preferences.ts`).
-2. On each like/dislike, recompute a preference vector = centroid(liked) −
-   centroid(disliked) (`similarity.ts` — the standard simple baseline here,
-   no training needed since CLIP already did the hard semantic work).
+2. On each like/dislike — either from the dedicated swipe deck, or from the
+   like/dislike buttons on a card's current photo in the Browse grid, both
+   write to the same `swipes` state via `useStylePreferences` — recompute a
+   preference vector = centroid(liked) − centroid(disliked) (`similarity.ts`
+   — the standard simple baseline here, no training needed since CLIP
+   already did the hard semantic work).
 3. Score each listing by the *max* cosine similarity between the preference
    vector and its own photo embeddings — max, not average, so one mediocre
    bathroom photo doesn't tank an otherwise-great flat's score.
 4. Browse view re-sorts by this score once a preference exists.
+
+**Where ratings live:** entirely in the browser's `localStorage`
+(`housefinder:style-swipes:v1`), keyed by `${listingKey}::${photoUrl}` →
+`"like" | "dislike"`. No backend, no account, no server-side database —
+ratings are per-browser/per-device only (clearing site data or switching
+browsers loses them; there's no cross-device sync). Only photos that were
+actually CLIP-embedded (the first 3 per listing, see below) can be rated —
+the Browse card hides its like/dislike buttons on photos beyond that, since
+rating an unembedded photo wouldn't do anything.
 
 Verified end to end against the real 101-listing/1,321-photo dataset: same
 listing's own photos cluster far tighter (~0.89 cosine) than different

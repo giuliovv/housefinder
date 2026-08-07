@@ -5,14 +5,11 @@ import { SwipeDeck } from "./components/SwipeDeck";
 import { NeighbourhoodMap } from "./components/NeighbourhoodMap";
 import { useStylePreferences } from "./lib/preferences";
 import { extractPostcodeArea } from "./lib/location";
+import { listingKey } from "./lib/listingKey";
 import "./App.css";
 
 type SortKey = "price-asc" | "price-desc" | "match";
 type Tab = "browse" | "style";
-
-function listingKey(listing: Listing): string {
-  return `${listing.summary.platform}:${listing.summary.source_id}`;
-}
 
 function App() {
   const [listings, setListings] = useState<Listing[] | null>(null);
@@ -53,7 +50,7 @@ function App() {
       .catch(() => setAreaCentroids({}));
   }, []);
 
-  const { undecided, swipe, reset, matchScores, likedCount, dislikedCount } = useStylePreferences(embeddings);
+  const { undecided, swipes, swipe, toggleSwipe, reset, matchScores, likedCount, dislikedCount } = useStylePreferences(embeddings);
 
   const agencies = useMemo(() => {
     if (!listings) return [];
@@ -276,6 +273,9 @@ function App() {
               key={`${listing.summary.platform}-${listing.summary.source_id}`}
               listing={listing}
               matchScore={matchScores?.[listingKey(listing)]}
+              embeddings={embeddings}
+              swipes={swipes}
+              onRate={toggleSwipe}
             />
           ))}
         </main>

@@ -1,14 +1,39 @@
 import { useState } from "react";
-import type { Listing } from "../types";
+import type { EmbeddingsData, Listing } from "../types";
+import type { SwipeChoice } from "../lib/preferences";
 import { normalizeImageUrl } from "../lib/url";
+import { listingKey } from "../lib/listingKey";
 
-export function ListingCard({ listing, matchScore }: { listing: Listing; matchScore?: number }) {
+export function ListingCard({
+  listing,
+  matchScore,
+  embeddings,
+  swipes,
+  onRate,
+}: {
+  listing: Listing;
+  matchScore?: number;
+  embeddings?: EmbeddingsData | null;
+  swipes?: Record<string, SwipeChoice>;
+  onRate?: (photoId: string, choice: SwipeChoice) => void;
+}) {
   const { summary } = listing;
   const photos = listing.photo_urls.length > 0
     ? listing.photo_urls
     : [summary.thumbnail_url].filter((u): u is string => Boolean(u));
   const [photoIndex, setPhotoIndex] = useState(0);
-  const currentPhoto = normalizeImageUrl(photos[photoIndex]);
+  const rawCurrentPhoto = photos[photoIndex];
+  const currentPhoto = normalizeImageUrl(rawCurrentPhoto);
+
+  // Only the first few photos per listing were embedded (see
+  // scraper/embeddings.py's MAX_PHOTOS_PER_LISTING) — rating only makes
+  // sense for a photo that actually has a CLIP embedding to feed into the
+  // preference vector, so buttons are hidden otherwise rather than silently
+  // recording a swipe that never affects match scores.
+  const embeddedUrls = embeddings?.[listingKey(listing)]?.photos.map((p) => p.url);
+  const canRate = onRate != null && embeddedUrls != null && rawCurrentPhoto != null && embeddedUrls.includes(rawCurrentPhoto);
+  const photoId = rawCurrentPhoto != null ? `${listingKey(listing)}::${rawCurrentPhoto}` : null;
+  const currentChoice = photoId != null ? swipes?.[photoId] : undefined;
 
   function nextPhoto(e: React.MouseEvent) {
     e.preventDefault();
@@ -18,6 +43,12 @@ export function ListingCard({ listing, matchScore }: { listing: Listing; matchSc
   function prevPhoto(e: React.MouseEvent) {
     e.preventDefault();
     setPhotoIndex((i) => (i - 1 + photos.length) % photos.length);
+  }
+
+  function rate(e: React.MouseEvent, choice: SwipeChoice) {
+    e.preventDefault();
+    e.stopPropagation();
+    if (photoId != null) onRate?.(photoId, choice);
   }
 
   return (
@@ -49,6 +80,26 @@ export function ListingCard({ listing, matchScore }: { listing: Listing; matchSc
           <span className="listing-card__match" title="Relative match to your swiped style — higher is better, compare listings to each other rather than reading it as an absolute percentage">
             {Math.round(matchScore * 100)}% match
           </span>
+        )}
+        {canRate && (
+          <div className="listing-card__rate">
+            <button
+              className={`listing-card__rate-btn listing-card__rate-btn--dislike ${currentChoice === "dislike" ? "listing-card__rate-btn--active" : ""}`}
+              onClick={(e) => rate(e, "dislike")}
+              aria-label="Not my style"
+              title="Not my style"
+            >
+              ✕
+            </button>
+            <button
+              className={`listing-card__rate-btn listing-card__rate-btn--like ${currentChoice === "like" ? "listing-card__rate-btn--active" : ""}`}
+              onClick={(e) => rate(e, "like")}
+              aria-label="My style"
+              title="My style"
+            >
+              ♥
+            </button>
+          </div>
         )}
       </div>
 

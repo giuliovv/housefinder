@@ -66,6 +66,19 @@ export function useStylePreferences(embeddings: EmbeddingsData | null) {
     setSwipes((prev) => ({ ...prev, [id]: choice }));
   }, []);
 
+  // Clicking the same choice again clears it — lets a rating made while
+  // scrolling the Browse grid (as opposed to the dedicated swipe deck, where
+  // there's no way to revisit a photo) be corrected without a full reset.
+  const toggleSwipe = useCallback((id: string, choice: SwipeChoice) => {
+    setSwipes((prev) => {
+      if (prev[id] === choice) {
+        const { [id]: _removed, ...rest } = prev;
+        return rest;
+      }
+      return { ...prev, [id]: choice };
+    });
+  }, []);
+
   const reset = useCallback(() => setSwipes({}), []);
 
   const preferenceVector = useMemo(() => {
@@ -87,5 +100,5 @@ export function useStylePreferences(embeddings: EmbeddingsData | null) {
   const likedCount = useMemo(() => Object.values(swipes).filter((c) => c === "like").length, [swipes]);
   const dislikedCount = useMemo(() => Object.values(swipes).filter((c) => c === "dislike").length, [swipes]);
 
-  return { deck, undecided, swipe, reset, preferenceVector, matchScores, likedCount, dislikedCount };
+  return { deck, undecided, swipes, swipe, toggleSwipe, reset, preferenceVector, matchScores, likedCount, dislikedCount };
 }
