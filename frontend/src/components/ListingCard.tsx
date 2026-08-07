@@ -25,11 +25,12 @@ export function ListingCard({
   const rawCurrentPhoto = photos[photoIndex];
   const currentPhoto = normalizeImageUrl(rawCurrentPhoto);
 
-  // Only the first few photos per listing were embedded (see
-  // scraper/embeddings.py's MAX_PHOTOS_PER_LISTING) — rating only makes
-  // sense for a photo that actually has a CLIP embedding to feed into the
-  // preference vector, so buttons are hidden otherwise rather than silently
-  // recording a swipe that never affects match scores.
+  // Only photos that were actually CLIP-embedded can be rated (in practice
+  // this is every photo, up to scraper/embeddings.py's MAX_PHOTOS_PER_LISTING
+  // safety ceiling) — rating only makes sense for a photo that has an
+  // embedding to feed into the preference vector, so buttons are hidden
+  // otherwise rather than silently recording a swipe that never affects
+  // match scores.
   const embeddedUrls = embeddings?.[listingKey(listing)]?.photos.map((p) => p.url);
   const canRate = onRate != null && embeddedUrls != null && rawCurrentPhoto != null && embeddedUrls.includes(rawCurrentPhoto);
   const photoId = rawCurrentPhoto != null ? `${listingKey(listing)}::${rawCurrentPhoto}` : null;

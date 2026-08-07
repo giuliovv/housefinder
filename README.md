@@ -151,9 +151,11 @@ Vebra haven't been checked yet.
 
 ## Style matching: CLIP embeddings + swipe preference
 
-`scraper/embeddings.py` embeds each listing's first 3 photos (capped
-deliberately — this feeds a swipe deck, not a photo archive; every photo of
-every listing doesn't serve that and just costs more compute/JSON size) plus
+`scraper/embeddings.py` embeds every listing's photos (up to a 30-photo
+safety ceiling, comfortably above the dataset's real max of 24 — an earlier
+3-photo cap saved compute/JSON size but meant the Browse grid's per-card
+like/dislike buttons vanished as soon as someone paged past photo 3 of a
+typical 10+ photo gallery, so it wasn't actually a good tradeoff) plus
 its description + key features, using `Qdrant/clip-ViT-B-32-vision` and
 `Qdrant/clip-ViT-B-32-text` — ONNX exports of OpenAI's actual CLIP model via
 `fastembed`, not a knockoff, chosen specifically over `open_clip`/
@@ -185,9 +187,10 @@ The actual mechanic (all client-side, `frontend/src/lib/`):
 `"like" | "dislike"`. No backend, no account, no server-side database —
 ratings are per-browser/per-device only (clearing site data or switching
 browsers loses them; there's no cross-device sync). Only photos that were
-actually CLIP-embedded (the first 3 per listing, see below) can be rated —
-the Browse card hides its like/dislike buttons on photos beyond that, since
-rating an unembedded photo wouldn't do anything.
+actually CLIP-embedded (every photo, up to the 30-per-listing ceiling above)
+can be rated — the Browse card hides its like/dislike buttons on photos
+beyond that, since rating an unembedded photo wouldn't do anything; in
+practice this now covers every photo of every listing in the dataset.
 
 Verified end to end against the real 101-listing/1,321-photo dataset: same
 listing's own photos cluster far tighter (~0.89 cosine) than different
