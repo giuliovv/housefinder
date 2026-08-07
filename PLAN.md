@@ -51,10 +51,12 @@ current parser status.
    verified vs. not. Not yet validated against a real person's actual taste
    — only that the embedding space itself discriminates between interiors.
 5. **Filter/search — in progress, first pass done.** Client-side filters on
-   the Browse tab: agency, postcode area (derived from the address string,
-   `frontend/src/lib/location.ts`), price range, minimum bedrooms/bathrooms.
-   Still to combine with Phase 3's derived visual attributes once those
-   exist.
+   the Browse tab: agency, postcode area (multi-select, derived from the
+   address string via `frontend/src/lib/location.ts`, pickable either from a
+   plain dropdown or a Leaflet map of area centroids —
+   `scraper/geocode_areas.py` + `NeighbourhoodMap.tsx`), price range,
+   minimum bedrooms/bathrooms. Still to combine with Phase 3's derived
+   visual attributes once those exist.
 6. **Recommendations & notifications** — combine filter results + style
    ranking, notify on new matches.
 

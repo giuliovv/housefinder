@@ -18,13 +18,15 @@ Three parts today:
   (`fastembed`'s ONNX export of OpenAI's ViT-B/32 — no PyTorch dependency,
   which matters on a memory-constrained host).
 - **`frontend/`** — Vite + React + TypeScript. Two tabs: **Browse** (the
-  listing grid, filterable by agency, postcode area, price range, and
-  minimum bedrooms/bathrooms — see `frontend/src/lib/location.ts` for how
-  postcode areas are extracted from free-text addresses) and **Find your
-  style** (swipe photos like/dislike). All preference math
-  (centroid-of-liked-minus-disliked, cosine similarity ranking) runs
-  client-side against the precomputed embeddings — no backend, swipe choices
-  persist in `localStorage` only.
+  listing grid, filterable by agency, postcode area — multi-select, either
+  via a Leaflet map of area centroids (`NeighbourhoodMap.tsx`, click circles
+  to toggle) or a plain multi-select dropdown, both backed by the same
+  selection state — price range, and minimum bedrooms/bathrooms; see
+  `frontend/src/lib/location.ts` for how postcode areas are extracted from
+  free-text addresses) and **Find your style** (swipe photos like/dislike).
+  All preference math (centroid-of-liked-minus-disliked, cosine similarity
+  ranking) runs client-side against the precomputed embeddings — no backend,
+  swipe choices persist in `localStorage` only.
 - **`infra/`** — CDK app: S3 + CloudFront hosting for the built frontend,
   deployed to Giulio's personal AWS account (not the ERP client account).
 
@@ -34,10 +36,19 @@ pip install -r requirements.txt
 playwright install chromium
 python -m scraper.export --per-agency 50 --max-pages 8 --out frontend/public/data/listings.json
 python -m scraper.embeddings --in frontend/public/data/listings.json --out frontend/public/data/embeddings.json
+python -m scraper.geocode_areas   # only needed if new postcode areas showed up — see below
 
 # run the frontend against it
 cd frontend && npm install && npm run dev
 ```
+
+`scraper/geocode_areas.py` looks up a lat/lon centroid for every postcode
+area (outward code, e.g. "SW4") present in `listings.json`, via
+[postcodes.io](https://postcodes.io) (free, no API key) — used to plot the
+Browse tab's neighbourhood map. It's incremental (skips areas already in
+`area-centroids.json`) and separate from the regular export pipeline since
+it calls a third-party API; only re-run it when export finds genuinely new
+areas.
 
 ---
 

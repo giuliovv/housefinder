@@ -1,7 +1,8 @@
 import { useEffect, useMemo, useState } from "react";
-import type { EmbeddingsData, Listing } from "./types";
+import type { AreaCentroids, EmbeddingsData, Listing } from "./types";
 import { ListingCard } from "./components/ListingCard";
 import { SwipeDeck } from "./components/SwipeDeck";
+import { NeighbourhoodMap } from "./components/NeighbourhoodMap";
 import { useStylePreferences } from "./lib/preferences";
 import { extractPostcodeArea } from "./lib/location";
 import "./App.css";
@@ -16,6 +17,7 @@ function listingKey(listing: Listing): string {
 function App() {
   const [listings, setListings] = useState<Listing[] | null>(null);
   const [embeddings, setEmbeddings] = useState<EmbeddingsData | null>(null);
+  const [areaCentroids, setAreaCentroids] = useState<AreaCentroids>({});
   const [error, setError] = useState<string | null>(null);
   const [sort, setSort] = useState<SortKey>("price-asc");
   const [agencyFilter, setAgencyFilter] = useState<string>("all");
@@ -42,6 +44,13 @@ function App() {
       .then((res) => (res.ok ? res.json() : null))
       .then(setEmbeddings)
       .catch(() => setEmbeddings(null));
+
+    // Same deal — the map is a nice-to-have on top of the area filter,
+    // which already works without it via the multi-select.
+    fetch("/data/area-centroids.json")
+      .then((res) => (res.ok ? res.json() : {}))
+      .then(setAreaCentroids)
+      .catch(() => setAreaCentroids({}));
   }, []);
 
   const { undecided, swipe, reset, matchScores, likedCount, dislikedCount } = useStylePreferences(embeddings);
@@ -57,17 +66,14 @@ function App() {
     return [...new Set(found)].sort();
   }, [listings]);
 
-  const visible = useMemo(() => {
+  // Everything except the area filter — used both as the base for the area
+  // filter itself and to compute per-area counts for the map, so the map
+  // reflects "how many results would this area add given my other filters"
+  // rather than raw unfiltered counts.
+  const preAreaFiltered = useMemo(() => {
     if (!listings) return [];
     let rows = listings;
     if (agencyFilter !== "all") rows = rows.filter((l) => l.agency_name === agencyFilter);
-    if (areaFilters.length > 0) {
-      const wanted = new Set(areaFilters);
-      rows = rows.filter((l) => {
-        const area = extractPostcodeArea(l.summary.address);
-        return area !== null && wanted.has(area);
-      });
-    }
     const min = minPrice ? Number(minPrice) : null;
     const max = maxPrice ? Number(maxPrice) : null;
     if (min !== null) rows = rows.filter((l) => l.summary.price_pcm !== null && l.summary.price_pcm >= min);
@@ -80,6 +86,27 @@ function App() {
       const n = Number(minBathrooms);
       rows = rows.filter((l) => l.summary.bathrooms !== null && l.summary.bathrooms >= n);
     }
+    return rows;
+  }, [listings, agencyFilter, minPrice, maxPrice, minBedrooms, minBathrooms]);
+
+  const areaCounts = useMemo(() => {
+    const counts: Record<string, number> = {};
+    for (const l of preAreaFiltered) {
+      const area = extractPostcodeArea(l.summary.address);
+      if (area !== null) counts[area] = (counts[area] ?? 0) + 1;
+    }
+    return counts;
+  }, [preAreaFiltered]);
+
+  const visible = useMemo(() => {
+    let rows = preAreaFiltered;
+    if (areaFilters.length > 0) {
+      const wanted = new Set(areaFilters);
+      rows = rows.filter((l) => {
+        const area = extractPostcodeArea(l.summary.address);
+        return area !== null && wanted.has(area);
+      });
+    }
     return [...rows].sort((a, b) => {
       if (sort === "match" && matchScores) {
         const sa = matchScores[listingKey(a)] ?? -Infinity;
@@ -90,7 +117,13 @@ function App() {
       const pb = b.summary.price_pcm ?? Infinity;
       return sort === "price-asc" ? pa - pb : pb - pa;
     });
-  }, [listings, sort, agencyFilter, areaFilters, minPrice, maxPrice, minBedrooms, minBathrooms, matchScores]);
+  }, [preAreaFiltered, sort, areaFilters, matchScores]);
+
+  function toggleArea(area: string) {
+    setAreaFilters((current) =>
+      current.includes(area) ? current.filter((a) => a !== area) : [...current, area]
+    );
+  }
 
   // Once a preference exists, default to showing matches first rather than
   // making the user notice the new sort option themselves. Depends on the
@@ -122,6 +155,15 @@ function App() {
             Find your style {embeddings ? `(${undecided.length} left)` : ""}
           </button>
         </div>
+
+        {tab === "browse" && Object.keys(areaCentroids).length > 0 && (
+          <NeighbourhoodMap
+            centroids={areaCentroids}
+            counts={areaCounts}
+            selected={areaFilters}
+            onToggle={toggleArea}
+          />
+        )}
 
         {tab === "browse" && (
           <div className="app__controls">

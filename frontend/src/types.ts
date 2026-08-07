@@ -35,3 +35,6 @@ export interface ListingEmbeddings {
 }
 
 export type EmbeddingsData = Record<ListingKey, ListingEmbeddings>;
+
+/** area = postcode outward code, e.g. "SW4" — matches lib/location.ts's extractPostcodeArea */
+export type AreaCentroids = Record<string, { lat: number; lon: number }>;
