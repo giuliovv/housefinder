@@ -79,7 +79,7 @@ this beats scraping Rightmove/Zoopla/SpareRoom directly.
 
 | Platform | Rendering | Example agencies | Notes |
 |---|---|---|---|
-| **Homeflow** | Client-side (needs a real browser) | innercityestates.com | Cards aren't in the raw HTML at all — verified via plain `curl`. Pagination is `/page-N` appended to the search path; this isn't documented anywhere, found by diffing property IDs returned per page. |
+| **Homeflow** | Client-side (needs a real browser) | innercityestates.com (standard theme), johndwood.co.uk (panel theme) | Cards aren't in the raw HTML at all — verified via plain `curl`. Pagination is `/page-N` appended to the search path; this isn't documented anywhere, found by diffing property IDs returned per page. |
 | **PropertyHive** (WordPress plugin) | Server-rendered | properly.space (healthypixels theme), parkgate.co.uk (veco theme) | Plain `requests` + BeautifulSoup, no browser needed — this is the cheap platform to scale. Standard WordPress `page/N/` pagination. |
 
 PropertyHive is a WordPress *plugin*, not a hosted platform like Homeflow —
@@ -91,10 +91,23 @@ selector rather than assuming one theme covers the whole plugin ecosystem —
 add a new preset if a third theme shows up rather than guessing an existing
 one matches.
 
-Both platforms were verified against real, live sites on 2026-07-29/30 — not
-built from guessed selectors. `tests/fixtures/` holds saved HTML from that
-verification; the tests run the actual parsing selectors against those
-fixtures offline.
+Homeflow is fully hosted (unlike PropertyHive), but still offers bespoke
+themes to bigger clients — John D Wood (a substantial multi-branch prime-
+London agency) uses markup structurally different from innercityestates.com's
+stock template, not just different class names: its search cards expose no
+bathroom/reception count at all, and only embed bedrooms in a free-text
+title like "5 bedroom terraced house to rent". `scraper/homeflow.py` handles
+this as a separate code path (`_parse_card_panel`/`_detail_panel`) rather
+than a selector-only config, and `detail()` enriches bed/bath/reception from
+the property page's spec list so those fields aren't permanently `None` for
+every listing on this theme. Their prices also run much higher than the
+other three agencies (£30k+ pcm isn't unusual) — worth knowing if that skews
+what you see in Browse.
+
+All platforms/themes were verified against real, live sites (2026-07-29
+through 2026-08-08) — not built from guessed selectors. `tests/fixtures/`
+holds saved HTML from that verification; the tests run the actual parsing
+selectors against those fixtures offline.
 
 ## What each parser extracts
 
@@ -107,7 +120,8 @@ fixtures offline.
 pip install -r requirements.txt
 playwright install chromium   # only needed for homeflow.py; skip if you already have a chromium build cached
 
-python -m scraper.cli innercityestates --pages 2           # Homeflow
+python -m scraper.cli innercityestates --pages 2           # Homeflow, standard theme
+python -m scraper.cli johndwood --pages 2 --detail         # Homeflow, panel theme
 python -m scraper.cli properly --pages 2 --detail          # PropertyHive, healthypixels theme
 python -m scraper.cli parkgate --pages 2 --detail          # PropertyHive, veco theme
 ```
@@ -203,15 +217,18 @@ can be rated — the Browse card hides its like/dislike buttons on photos
 beyond that, since rating an unembedded photo wouldn't do anything; in
 practice this now covers every photo of every listing in the dataset.
 
-Verified end to end against the real 101-listing/1,321-photo dataset: same
-listing's own photos cluster far tighter (~0.89 cosine) than different
-listings (~0.64) — i.e. the embedding space actually discriminates between
-interiors, which is the property the whole mechanic depends on.
+Verified end to end against the real dataset: same listing's own photos
+cluster tighter (~0.79-0.81 cosine, varies by sample) than different
+listings (~0.72-0.74) — i.e. the embedding space still discriminates between
+interiors, which is the property the whole mechanic depends on, though this
+margin has narrowed a lot as the dataset grew (an earlier check against a
+smaller, less style-diverse 101-listing/2-agency dataset found ~0.89 vs.
+~0.64, a much wider gap — see "Known gaps" below).
 
 ## Known gaps / honest limitations
 
-- Only 2 platforms so far (Homeflow, PropertyHive), from 3 real example
-  agencies (1 Homeflow, 2 PropertyHive on different themes). Real coverage
+- Only 2 platforms so far (Homeflow, PropertyHive), from 4 real example
+  agencies (2 Homeflow themes, 2 PropertyHive themes). Real coverage
   across "most London agencies" requires validating more platforms
   (Alto/Vebra/Dezrez — Reapit ruled out, see above) against real sites, not
   assuming the docs match reality — that's exactly the gap that bit the
@@ -221,14 +238,26 @@ interiors, which is the property the whole mechanic depends on.
   different container than the one that looked right at first glance).
 - `price_pcm` is best-effort text parsing, not authoritative — don't trust
   it for anything more precise than sorting/filtering.
-- Homeflow's `/page-N` pagination pattern was reverse-engineered from one
-  site; hasn't been confirmed against a second Homeflow-powered agency yet.
-- The swipe deck's photos come entirely from the same 101 listings being
-  ranked — there's no separate curated seed set (e.g. Unsplash/Pinterest
-  interiors), so the deck is only as visually diverse as 2 agencies' actual
-  inventory happens to be. Worth revisiting if matches feel repetitive.
+- Homeflow's `/page-N` pagination pattern, originally reverse-engineered
+  from one site, held up on a second, structurally very different
+  Homeflow-powered agency (johndwood.co.uk) — some confidence it's a real
+  platform convention rather than one site's coincidence, though still only
+  confirmed against 2 of 600+ Homeflow-powered agencies.
+- The swipe deck's photos come entirely from the 170 listings being ranked
+  — there's no separate curated seed set (e.g. Unsplash/Pinterest
+  interiors), so the deck is only as visually diverse as these 4 agencies'
+  actual inventory happens to be. Worth revisiting if matches feel
+  repetitive.
 - Match score is a raw cosine similarity shown as a percentage — it's a
   *relative* ranking signal, not a calibrated confidence (0.31 isn't "31%
   sure", it's "higher than 0.30"). Hasn't been validated against a real
   person's actual taste yet, only checked that the embedding space itself
-  discriminates between interiors (see above).
+  discriminates between interiors (see above) — and that discrimination
+  margin narrowed noticeably (from ~0.25 to ~0.05-0.07) once the dataset
+  grew to include John D Wood's very different (much higher-end, more
+  professionally staged) photography style alongside the other three
+  agencies. Not investigated further — could mean match scores are now
+  meaningfully less confident/reliable than when this was first checked, or
+  could just be an artifact of averaging cosine similarity across a more
+  stylistically varied set of "different listings." Worth a real look before
+  trusting match scores much, especially with more agencies added later.
