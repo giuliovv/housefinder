@@ -96,9 +96,9 @@ export function NeighbourhoodMap({
       const isSelected = selectedSet.has(area);
       marker.setRadius(radiusForCount(count));
       marker.setStyle({
-        color: isSelected ? "#1d4ed8" : "#666",
-        fillColor: isSelected ? "#3b82f6" : count > 0 ? "#f59e0b" : "#ccc",
-        fillOpacity: isSelected ? 0.85 : count > 0 ? 0.6 : 0.25,
+        color: isSelected ? "#a8391c" : "#8a7a68",
+        fillColor: isSelected ? "#a8391c" : count > 0 ? "#c9a227" : "#ccc",
+        fillOpacity: isSelected ? 0.85 : count > 0 ? 0.55 : 0.2,
       });
       marker.setTooltipContent(`${area} (${count})${isSelected ? " — selected" : ""}`);
     }

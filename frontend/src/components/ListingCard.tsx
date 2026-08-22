@@ -3,6 +3,7 @@ import type { EmbeddingsData, Listing } from "../types";
 import type { SwipeChoice } from "../lib/preferences";
 import { normalizeImageUrl } from "../lib/url";
 import { listingKey } from "../lib/listingKey";
+import { extractPostcodeArea } from "../lib/location";
 
 export function ListingCard({
   listing,
@@ -105,7 +106,12 @@ export function ListingCard({
       </div>
 
       <div className="listing-card__body">
-        <p className="listing-card__price">{summary.price_text}</p>
+        <div className="listing-card__price-row">
+          <p className="listing-card__price">{summary.price_text}</p>
+          {extractPostcodeArea(summary.address) && (
+            <p className="listing-card__area">{extractPostcodeArea(summary.address)}</p>
+          )}
+        </div>
         <p className="listing-card__address">{summary.address}</p>
         <p className="listing-card__rooms">
           {summary.bedrooms != null && <span>{summary.bedrooms} bed</span>}

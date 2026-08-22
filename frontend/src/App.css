@@ -1,94 +1,277 @@
+/* ── Frame ────────────────────────────────────────────────────────────── */
+
 .app {
-  max-width: 1200px;
-  margin: 0 auto;
-  padding: 24px 16px 64px;
+  width: 100%;
+  max-width: 480px;
+  min-height: 100svh;
+  background: var(--cream);
+  border-left: 1px solid var(--border);
+  border-right: 1px solid var(--border);
+  display: flex;
+  flex-direction: column;
+}
+
+.app__header {
+  padding: 22px 22px 0;
+}
+
+.app__header-row {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
 }
 
 .app__header h1 {
-  font-size: 1.6rem;
-  margin-bottom: 4px;
+  font-size: 27px;
+  letter-spacing: -0.4px;
+}
+
+.app__eyebrow {
+  font-size: 10.5px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--muted);
 }
 
 .app__subtitle {
-  color: #666;
-  margin: 0 0 16px;
-  font-size: 0.9rem;
-}
-
-.app__controls {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 12px 20px;
-  margin-bottom: 8px;
-}
-
-.app__controls select,
-.app__controls input[type="number"] {
-  padding: 4px 8px;
-  font-size: 0.9rem;
-}
-
-.app__controls input[type="number"] {
-  width: 90px;
-}
-
-.neighbourhood-map {
-  height: 320px;
-  width: 100%;
-  margin-bottom: 12px;
-  border-radius: 6px;
-  border: 1px solid #ddd;
-}
-
-.app__area-filter {
-  display: flex;
-  align-items: flex-start;
-  gap: 6px;
-}
-
-.app__area-filter select {
-  min-width: 70px;
-}
-
-.app__clear-areas {
-  padding: 2px 8px;
-  font-size: 0.8rem;
-  cursor: pointer;
+  color: var(--muted);
+  margin: 6px 0 18px;
+  font-size: 13px;
+  line-height: 1.5;
 }
 
 .app__error {
-  color: #b91c1c;
+  color: var(--rust);
+  padding: 0 22px;
 }
 
 .app__loading {
-  color: #666;
+  color: var(--muted);
+  padding: 0 22px;
 }
 
+/* ── Tabs ─────────────────────────────────────────────────────────────── */
+
+.app__tabs {
+  display: flex;
+  gap: 26px;
+  border-bottom: 1px solid var(--border);
+}
+
+.app__tab {
+  background: none;
+  border: none;
+  padding: 10px 0;
+  font-size: 14px;
+  cursor: pointer;
+  border-bottom: 2px solid transparent;
+  color: var(--muted);
+  font-weight: 500;
+}
+
+.app__tab--active {
+  color: var(--ink);
+  font-weight: 600;
+  border-bottom-color: var(--rust);
+}
+
+/* ── Browse: map + chips + filter trigger ────────────────────────────── */
+
+.app__browse {
+  padding: 16px 22px 36px;
+}
+
+.neighbourhood-map {
+  height: 210px;
+  width: 100%;
+  margin-bottom: 12px;
+  border-radius: 14px;
+  overflow: hidden;
+  border: 1px solid var(--border);
+}
+
+.app__map-hint {
+  font-size: 11px;
+  color: var(--muted);
+  margin: 0 0 12px;
+}
+
+.app__chip-row {
+  display: flex;
+  gap: 8px;
+  overflow-x: auto;
+  padding-bottom: 10px;
+  margin-bottom: 2px;
+}
+
+.app__chip {
+  flex: none;
+  padding: 7px 15px;
+  border-radius: 20px;
+  font-size: 12.5px;
+  border: 1px solid var(--border);
+  cursor: pointer;
+  background: #fff;
+  color: var(--ink);
+  white-space: nowrap;
+}
+
+.app__chip--active {
+  border-color: var(--rust);
+  background: var(--rust);
+  color: #fff;
+}
+
+.app__filter-btn {
+  flex: none;
+  padding: 7px 15px;
+  border-radius: 20px;
+  font-size: 12.5px;
+  border: 1px dashed var(--muted);
+  cursor: pointer;
+  background: transparent;
+  color: var(--muted-dark);
+  white-space: nowrap;
+}
+
+.app__sort-note {
+  font-size: 12px;
+  color: var(--muted);
+  margin: 0 0 16px;
+}
+
+/* ── Filter sheet ─────────────────────────────────────────────────────── */
+
+.sheet__overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(20, 14, 10, 0.4);
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  /* Leaflet's own panes (tile/marker/popup/tooltip) use z-index up to ~700
+     internally, so anything lower than that gets click-intercepted by map
+     markers sitting "on top" of this overlay despite being behind it
+     visually. */
+  z-index: 1000;
+}
+
+.sheet__panel {
+  width: 100%;
+  max-width: 480px;
+  background: var(--cream);
+  border-radius: 20px 20px 0 0;
+  padding: 22px 22px 28px;
+  max-height: 82vh;
+  overflow-y: auto;
+}
+
+.sheet__header {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  margin-bottom: 18px;
+}
+
+.sheet__title {
+  font-size: 19px;
+}
+
+.sheet__close {
+  background: none;
+  border: none;
+  color: var(--muted);
+  font-size: 13px;
+  cursor: pointer;
+}
+
+.sheet__label {
+  font-size: 11.5px;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--muted);
+  margin: 0 0 8px;
+}
+
+.sheet__row {
+  display: flex;
+  gap: 10px;
+  margin-bottom: 18px;
+}
+
+.sheet__row--wrap {
+  flex-wrap: wrap;
+}
+
+.sheet__row--col {
+  flex-direction: column;
+}
+
+.sheet__input {
+  flex: 1;
+  padding: 9px 12px;
+  border-radius: 8px;
+  border: 1px solid var(--border);
+  font-size: 13.5px;
+  min-width: 0;
+}
+
+.sheet__opt {
+  text-align: left;
+  padding: 9px 14px;
+  border-radius: 8px;
+  border: 1px solid var(--border);
+  background: #fff;
+  font-size: 13px;
+  color: var(--ink);
+  cursor: pointer;
+}
+
+.sheet__opt--active {
+  border-color: var(--rust);
+  background: var(--rust);
+  color: #fff;
+}
+
+.sheet__apply {
+  width: 100%;
+  background: var(--ink);
+  color: var(--cream);
+  border: none;
+  border-radius: 30px;
+  padding: 14px 0;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+/* ── Listing cards ────────────────────────────────────────────────────── */
+
 .listing-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
-  gap: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 22px;
 }
 
 .listing-card {
   display: block;
-  border: 1px solid #e2e2e2;
-  border-radius: 10px;
-  overflow: hidden;
   text-decoration: none;
   color: inherit;
   background: #fff;
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  overflow: hidden;
   transition: box-shadow 0.15s ease;
 }
 
 .listing-card:hover {
-  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.1);
+  box-shadow: 0 4px 16px rgba(34, 25, 19, 0.1);
 }
 
 .listing-card__photo-wrap {
   position: relative;
-  aspect-ratio: 4 / 3;
-  background: #f0f0f0;
+  height: 190px;
+  background: #f0ece2;
 }
 
 .listing-card__photo {
@@ -102,7 +285,7 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  color: #999;
+  color: var(--muted);
   font-size: 0.85rem;
 }
 
@@ -110,7 +293,7 @@
   position: absolute;
   top: 50%;
   transform: translateY(-50%);
-  background: rgba(0, 0, 0, 0.45);
+  background: rgba(20, 14, 10, 0.5);
   color: #fff;
   border: none;
   width: 28px;
@@ -131,9 +314,9 @@
 
 .listing-card__photo-count {
   position: absolute;
-  bottom: 8px;
-  right: 8px;
-  background: rgba(0, 0, 0, 0.55);
+  bottom: 10px;
+  right: 10px;
+  background: rgba(20, 14, 10, 0.55);
   color: #fff;
   font-size: 0.7rem;
   padding: 2px 6px;
@@ -142,75 +325,93 @@
 
 .listing-card__status {
   position: absolute;
-  top: 8px;
-  right: 8px;
-  background: #dc2626;
+  top: 10px;
+  right: 10px;
+  background: var(--rust);
   color: #fff;
   font-size: 0.7rem;
   font-weight: 600;
-  padding: 3px 8px;
-  border-radius: 4px;
+  padding: 3px 9px;
+  border-radius: 20px;
   text-transform: uppercase;
 }
 
 .listing-card__agency {
   position: absolute;
-  top: 8px;
-  left: 8px;
-  background: rgba(255, 255, 255, 0.9);
-  font-size: 0.7rem;
+  top: 10px;
+  left: 10px;
+  background: rgba(255, 255, 255, 0.92);
+  color: var(--muted-dark);
+  font-size: 10.5px;
   font-weight: 600;
-  padding: 3px 8px;
-  border-radius: 4px;
+  padding: 3px 9px;
+  border-radius: 20px;
 }
 
 .listing-card__body {
-  padding: 12px 14px 14px;
+  padding: 14px 16px 16px;
+}
+
+.listing-card__price-row {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 10px;
 }
 
 .listing-card__price {
-  font-weight: 700;
-  font-size: 1.05rem;
-  margin: 0 0 2px;
+  font-family: var(--serif);
+  font-size: 19px;
+  font-weight: 600;
+  color: var(--ink);
+  margin: 0;
+}
+
+.listing-card__area {
+  font-size: 11px;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--muted);
+  margin: 0;
 }
 
 .listing-card__address {
-  margin: 0 0 6px;
-  font-size: 0.9rem;
-  color: #333;
+  font-size: 13.5px;
+  color: var(--muted-dark);
+  margin: 4px 0 8px;
 }
 
 .listing-card__rooms {
   display: flex;
   gap: 10px;
   margin: 0 0 8px;
-  font-size: 0.8rem;
-  color: #555;
+  font-size: 12px;
+  color: var(--muted);
 }
 
 .listing-card__description {
   margin: 0;
-  font-size: 0.8rem;
-  color: #777;
-  line-height: 1.4;
+  font-size: 12.5px;
+  color: var(--muted);
+  line-height: 1.5;
 }
 
 .listing-card__match {
   position: absolute;
-  bottom: 8px;
-  left: 8px;
-  background: #15803d;
+  bottom: 10px;
+  left: 10px;
+  background: var(--forest);
   color: #fff;
-  font-size: 0.7rem;
+  font-size: 10.5px;
   font-weight: 600;
-  padding: 3px 8px;
-  border-radius: 4px;
+  padding: 4px 10px;
+  border-radius: 20px;
 }
 
 .listing-card__rate {
   position: absolute;
-  bottom: 8px;
-  right: 8px;
+  bottom: 10px;
+  right: 10px;
   display: flex;
   gap: 6px;
 }
@@ -220,12 +421,12 @@
   height: 30px;
   border-radius: 50%;
   border: none;
-  background: rgba(255, 255, 255, 0.9);
-  color: #333;
+  background: rgba(255, 255, 255, 0.92);
+  color: var(--ink);
   font-size: 0.95rem;
   line-height: 1;
   cursor: pointer;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
+  box-shadow: 0 1px 3px rgba(34, 25, 19, 0.3);
 }
 
 .listing-card__rate-btn:hover {
@@ -233,121 +434,188 @@
 }
 
 .listing-card__rate-btn--active.listing-card__rate-btn--like {
-  background: #dc2626;
+  background: var(--rust);
   color: #fff;
 }
 
 .listing-card__rate-btn--active.listing-card__rate-btn--dislike {
-  background: #333;
+  background: var(--ink);
   color: #fff;
 }
 
-/* ── Tabs ─────────────────────────────────────────────────────────────── */
-
-.app__tabs {
-  display: flex;
-  gap: 8px;
-  margin-bottom: 20px;
-  border-bottom: 1px solid #e2e2e2;
-}
-
-.app__tab {
-  background: none;
-  border: none;
-  padding: 8px 4px;
-  font-size: 0.95rem;
-  color: #666;
-  cursor: pointer;
-  border-bottom: 2px solid transparent;
-}
-
-.app__tab--active {
-  color: #111;
-  font-weight: 600;
-  border-bottom-color: #15803d;
-}
-
-.app__sort-note {
-  font-size: 0.8rem;
-  color: #15803d;
-  margin: 0 0 12px;
+/* When a match badge is present it takes the bottom-left spot, so nudge the
+   rate buttons up on that row instead of overlapping it — both bottom-left
+   is only possible because they're mutually exclusive per photo in practice
+   (match badge is listing-level, rate buttons are photo-level), but keep
+   this rule so a future combination doesn't collide silently. */
+.listing-card__photo-wrap:has(.listing-card__match) .listing-card__rate {
+  bottom: 10px;
 }
 
 /* ── Swipe deck ───────────────────────────────────────────────────────── */
 
 .swipe {
-  max-width: 420px;
-  margin: 0 auto;
-  text-align: center;
+  flex: 1;
+  padding: 20px 22px 30px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
 }
 
-.swipe__progress {
-  font-size: 0.85rem;
-  color: #666;
-  margin-bottom: 16px;
-}
-
-.swipe__reset {
-  margin-left: 12px;
-  background: none;
-  border: 1px solid #ccc;
-  border-radius: 4px;
-  padding: 2px 8px;
-  font-size: 0.75rem;
-  cursor: pointer;
-  color: #666;
+.swipe__stack {
+  position: relative;
+  width: 100%;
+  max-width: 340px;
+  height: 430px;
+  margin: 6px 0 22px;
 }
 
 .swipe__card {
-  aspect-ratio: 4 / 3;
-  border-radius: 12px;
-  overflow: hidden;
-  background: #f0f0f0;
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.12);
-  margin-bottom: 20px;
+  position: absolute;
+  inset: 0;
+  cursor: grab;
+  touch-action: none;
+  border-radius: 18px;
+  box-shadow: 0 20px 42px -14px rgba(34, 25, 19, 0.38);
+  display: flex;
+  flex-direction: column;
 }
 
-.swipe__card img {
+.swipe__card:active {
+  cursor: grabbing;
+}
+
+.swipe__photo {
+  position: relative;
+  flex: 1;
+  border-radius: 18px;
+  overflow: hidden;
+  background: #f0ece2;
+}
+
+.swipe__photo img {
   width: 100%;
   height: 100%;
   object-fit: cover;
   display: block;
 }
 
+.swipe__stamp {
+  position: absolute;
+  top: 22px;
+  padding: 5px 12px;
+  border-radius: 6px;
+  font-family: var(--serif);
+  font-weight: 700;
+  font-size: 20px;
+  letter-spacing: 0.03em;
+  background: rgba(255, 255, 255, 0.5);
+}
+
+.swipe__stamp--like {
+  left: 18px;
+  border: 3px solid var(--forest);
+  color: var(--forest);
+  transform: rotate(-14deg);
+}
+
+.swipe__stamp--pass {
+  right: 18px;
+  border: 3px solid var(--rust);
+  color: var(--rust);
+  transform: rotate(14deg);
+}
+
+.swipe__caption {
+  position: absolute;
+  left: 0;
+  bottom: 0;
+  right: 0;
+  background: linear-gradient(to top, rgba(20, 14, 10, 0.74), rgba(20, 14, 10, 0));
+  padding: 18px 18px 15px;
+}
+
+.swipe__caption-addr {
+  font-family: var(--serif);
+  font-size: 15px;
+  font-weight: 500;
+  color: #fff;
+  margin: 0;
+}
+
 .swipe__buttons {
   display: flex;
-  gap: 16px;
+  gap: 30px;
+  align-items: center;
   justify-content: center;
 }
 
 .swipe__btn {
-  flex: 1;
-  padding: 14px 0;
-  font-size: 1rem;
-  font-weight: 600;
-  border-radius: 10px;
+  width: 58px;
+  height: 58px;
+  border-radius: 50%;
   border: none;
   cursor: pointer;
+  font-size: 22px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 6px 16px -6px rgba(34, 25, 19, 0.35);
 }
 
 .swipe__btn--dislike {
-  background: #fee2e2;
-  color: #b91c1c;
+  background: #fff;
+  color: var(--rust);
+  border: 1px solid var(--border);
 }
 
 .swipe__btn--like {
-  background: #dcfce7;
-  color: #15803d;
+  background: var(--rust);
+  color: #fff;
 }
 
-.swipe__hint {
-  margin-top: 12px;
-  font-size: 0.75rem;
-  color: #999;
+.swipe__progress {
+  font-size: 12.5px;
+  color: var(--muted);
+  margin: 16px 0 0;
+  text-align: center;
+}
+
+.swipe__reset {
+  background: none;
+  border: none;
+  color: var(--muted);
+  font-size: 12px;
+  text-decoration: underline;
+  cursor: pointer;
+  margin-top: 14px;
+  display: block;
 }
 
 .swipe__done {
-  padding: 40px 20px;
-  color: #444;
-  line-height: 1.6;
+  text-align: center;
+  padding: 70px 16px 20px;
+}
+
+.swipe__done-title {
+  font-size: 21px;
+  margin: 0 0 10px;
+}
+
+.swipe__done-summary {
+  font-size: 13.5px;
+  color: var(--muted);
+  margin: 0 0 22px;
+  line-height: 1.5;
+}
+
+.swipe__cta {
+  background: var(--ink);
+  color: var(--cream);
+  border: none;
+  border-radius: 30px;
+  padding: 13px 26px;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
 }

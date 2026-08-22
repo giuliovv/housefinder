@@ -3,6 +3,7 @@ import type { AreaCentroids, EmbeddingsData, Listing } from "./types";
 import { ListingCard } from "./components/ListingCard";
 import { SwipeDeck } from "./components/SwipeDeck";
 import { NeighbourhoodMap } from "./components/NeighbourhoodMap";
+import { FilterSheet } from "./components/FilterSheet";
 import { useStylePreferences } from "./lib/preferences";
 import { extractPostcodeArea } from "./lib/location";
 import { listingKey } from "./lib/listingKey";
@@ -23,7 +24,8 @@ function App() {
   const [maxPrice, setMaxPrice] = useState<string>("");
   const [minBedrooms, setMinBedrooms] = useState<string>("any");
   const [minBathrooms, setMinBathrooms] = useState<string>("any");
-  const [tab, setTab] = useState<Tab>("browse");
+  const [tab, setTab] = useState<Tab>("style");
+  const [filterSheetOpen, setFilterSheetOpen] = useState(false);
 
   useEffect(() => {
     fetch("/data/listings.json")
@@ -43,7 +45,7 @@ function App() {
       .catch(() => setEmbeddings(null));
 
     // Same deal — the map is a nice-to-have on top of the area filter,
-    // which already works without it via the multi-select.
+    // which already works without it via the chips.
     fetch("/data/area-centroids.json")
       .then((res) => (res.ok ? res.json() : {}))
       .then(setAreaCentroids)
@@ -51,6 +53,12 @@ function App() {
   }, []);
 
   const { undecided, swipes, swipe, toggleSwipe, reset, matchScores, likedCount, dislikedCount } = useStylePreferences(embeddings);
+
+  const listingsByKey = useMemo(() => {
+    const map: Record<string, Listing> = {};
+    for (const l of listings ?? []) map[listingKey(l)] = l;
+    return map;
+  }, [listings]);
 
   const agencies = useMemo(() => {
     if (!listings) return [];
@@ -132,121 +140,31 @@ function App() {
     if (hasPreference) setSort("match");
   }, [hasPreference]);
 
+  const activeFilterCount =
+    (areaFilters.length > 0 ? 1 : 0) +
+    (agencyFilter !== "all" ? 1 : 0) +
+    (minPrice ? 1 : 0) +
+    (maxPrice ? 1 : 0) +
+    (minBedrooms !== "any" ? 1 : 0) +
+    (minBathrooms !== "any" ? 1 : 0);
+
   return (
     <div className="app">
       <header className="app__header">
-        <h1>House Finder</h1>
-        <p className="app__subtitle">
-          Scraped listings + CLIP-based style matching — swipe on interior photos, then browse ranked by how well
-          each listing matches what you liked.
-        </p>
+        <div className="app__header-row">
+          <h1>House Finder</h1>
+          <span className="app__eyebrow">London Lettings</span>
+        </div>
+        <p className="app__subtitle">Swipe on interiors to teach us your taste, then browse listings ranked to match.</p>
 
         <div className="app__tabs">
-          <button
-            className={`app__tab ${tab === "browse" ? "app__tab--active" : ""}`}
-            onClick={() => setTab("browse")}
-          >
-            Browse ({listings?.length ?? 0})
-          </button>
           <button className={`app__tab ${tab === "style" ? "app__tab--active" : ""}`} onClick={() => setTab("style")}>
-            Find your style {embeddings ? `(${undecided.length} left)` : ""}
+            Find your style
+          </button>
+          <button className={`app__tab ${tab === "browse" ? "app__tab--active" : ""}`} onClick={() => setTab("browse")}>
+            Browse {listings ? `(${listings.length})` : ""}
           </button>
         </div>
-
-        {tab === "browse" && Object.keys(areaCentroids).length > 0 && (
-          <NeighbourhoodMap
-            centroids={areaCentroids}
-            counts={areaCounts}
-            selected={areaFilters}
-            onToggle={toggleArea}
-          />
-        )}
-
-        {tab === "browse" && (
-          <div className="app__controls">
-            <label>
-              Agency:{" "}
-              <select value={agencyFilter} onChange={(e) => setAgencyFilter(e.target.value)}>
-                <option value="all">All ({listings?.length ?? 0})</option>
-                {agencies.map((a) => (
-                  <option key={a} value={a}>{a}</option>
-                ))}
-              </select>
-            </label>
-            <label className="app__area-filter">
-              Area (ctrl/cmd-click for multiple):{" "}
-              <select
-                multiple
-                size={Math.min(6, areas.length || 1)}
-                value={areaFilters}
-                onChange={(e) =>
-                  setAreaFilters(Array.from(e.target.selectedOptions, (o) => o.value))
-                }
-              >
-                {areas.map((a) => (
-                  <option key={a} value={a}>{a}</option>
-                ))}
-              </select>
-              {areaFilters.length > 0 && (
-                <button type="button" className="app__clear-areas" onClick={() => setAreaFilters([])}>
-                  Clear ({areaFilters.length})
-                </button>
-              )}
-            </label>
-            <label>
-              Min price (pcm):{" "}
-              <input
-                type="number"
-                min={0}
-                placeholder="No min"
-                value={minPrice}
-                onChange={(e) => setMinPrice(e.target.value)}
-              />
-            </label>
-            <label>
-              Max price (pcm):{" "}
-              <input
-                type="number"
-                min={0}
-                placeholder="No max"
-                value={maxPrice}
-                onChange={(e) => setMaxPrice(e.target.value)}
-              />
-            </label>
-            <label>
-              Bedrooms:{" "}
-              <select value={minBedrooms} onChange={(e) => setMinBedrooms(e.target.value)}>
-                <option value="any">Any</option>
-                {[1, 2, 3, 4, 5].map((n) => (
-                  <option key={n} value={n}>{n}+</option>
-                ))}
-              </select>
-            </label>
-            <label>
-              Bathrooms:{" "}
-              <select value={minBathrooms} onChange={(e) => setMinBathrooms(e.target.value)}>
-                <option value="any">Any</option>
-                {[1, 2, 3, 4].map((n) => (
-                  <option key={n} value={n}>{n}+</option>
-                ))}
-              </select>
-            </label>
-            <label>
-              Sort:{" "}
-              <select value={sort} onChange={(e) => setSort(e.target.value as SortKey)}>
-                {matchScores && <option value="match">Best match to your style</option>}
-                <option value="price-asc">Price: low to high</option>
-                <option value="price-desc">Price: high to low</option>
-              </select>
-            </label>
-          </div>
-        )}
-        {tab === "browse" && (
-          <p className="app__sort-note">
-            Showing {visible.length} of {listings?.length ?? 0} listings
-            {matchScores ? ` — sorted by your style preference from ${likedCount} liked / ${dislikedCount} disliked photos.` : "."}
-          </p>
-        )}
       </header>
 
       {error && <p className="app__error">Failed to load listings: {error}</p>}
@@ -255,11 +173,13 @@ function App() {
       {tab === "style" && embeddings && (
         <SwipeDeck
           undecided={undecided}
+          listingsByKey={listingsByKey}
           likedCount={likedCount}
           dislikedCount={dislikedCount}
           totalCount={undecided.length + likedCount + dislikedCount}
           onSwipe={swipe}
           onReset={reset}
+          onGoBrowse={() => setTab("browse")}
         />
       )}
       {tab === "style" && !embeddings && (
@@ -267,19 +187,70 @@ function App() {
       )}
 
       {tab === "browse" && (
-        <main className="listing-grid">
-          {visible.map((listing) => (
-            <ListingCard
-              key={`${listing.summary.platform}-${listing.summary.source_id}`}
-              listing={listing}
-              matchScore={matchScores?.[listingKey(listing)]}
-              embeddings={embeddings}
-              swipes={swipes}
-              onRate={toggleSwipe}
+        <div className="app__browse">
+          {Object.keys(areaCentroids).length > 0 && (
+            <NeighbourhoodMap
+              centroids={areaCentroids}
+              counts={areaCounts}
+              selected={areaFilters}
+              onToggle={toggleArea}
             />
-          ))}
-        </main>
+          )}
+          <p className="app__map-hint">Tap a neighbourhood on the map or a chip below to filter by area.</p>
+
+          <div className="app__chip-row">
+            {areas.map((area) => (
+              <button
+                key={area}
+                className={`app__chip ${areaFilters.includes(area) ? "app__chip--active" : ""}`}
+                onClick={() => toggleArea(area)}
+              >
+                {area}
+              </button>
+            ))}
+            <button className="app__filter-btn" onClick={() => setFilterSheetOpen(true)}>
+              Filters{activeFilterCount > 0 ? ` (${activeFilterCount})` : ""}
+            </button>
+          </div>
+
+          <p className="app__sort-note">
+            Showing {visible.length} of {listings?.length ?? 0} listings
+            {matchScores ? ` — sorted by your style preference from ${likedCount} liked / ${dislikedCount} disliked photos.` : "."}
+          </p>
+
+          <main className="listing-grid">
+            {visible.map((listing) => (
+              <ListingCard
+                key={`${listing.summary.platform}-${listing.summary.source_id}`}
+                listing={listing}
+                matchScore={matchScores?.[listingKey(listing)]}
+                embeddings={embeddings}
+                swipes={swipes}
+                onRate={toggleSwipe}
+              />
+            ))}
+          </main>
+        </div>
       )}
+
+      <FilterSheet
+        open={filterSheetOpen}
+        onClose={() => setFilterSheetOpen(false)}
+        agencies={agencies}
+        agencyFilter={agencyFilter}
+        setAgencyFilter={setAgencyFilter}
+        minPrice={minPrice}
+        setMinPrice={setMinPrice}
+        maxPrice={maxPrice}
+        setMaxPrice={setMaxPrice}
+        minBedrooms={minBedrooms}
+        setMinBedrooms={setMinBedrooms}
+        minBathrooms={minBathrooms}
+        setMinBathrooms={setMinBathrooms}
+        sort={sort}
+        setSort={setSort}
+        hasMatchScores={matchScores !== null}
+      />
     </div>
   );
 }

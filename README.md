@@ -17,19 +17,24 @@ Three parts today:
   `embeddings.py` which embeds listing photos + descriptions with CLIP
   (`fastembed`'s ONNX export of OpenAI's ViT-B/32 — no PyTorch dependency,
   which matters on a memory-constrained host).
-- **`frontend/`** — Vite + React + TypeScript. Two tabs: **Browse** (the
-  listing grid, filterable by agency, postcode area — multi-select, either
-  via a Leaflet map of area centroids (`NeighbourhoodMap.tsx`, click circles
-  to toggle) or a plain multi-select dropdown, both backed by the same
-  selection state — price range, and minimum bedrooms/bathrooms; see
-  `frontend/src/lib/location.ts` for how postcode areas are extracted from
-  free-text addresses; each card also has like/dislike buttons on its own
-  photo, rating the currently-shown photo in place while scrolling — same
-  preference vector as the dedicated swipe deck, just without leaving the
-  grid) and **Find your style** (swipe photos like/dislike, one at a time).
-  All preference math (centroid-of-liked-minus-disliked, cosine similarity
-  ranking) runs client-side against the precomputed embeddings — no backend,
-  swipe choices persist in `localStorage` only.
+- **`frontend/`** — Vite + React + TypeScript, redesigned 2026-08-22 as a
+  mobile-first single-column app (max-width 480px, centred on a tan
+  background) rather than a desktop grid — warm cream/rust editorial look
+  (Lora serif headings, Work Sans body, palette in `App.css`'s CSS
+  variables). Two tabs, **Find your style** first/default: a draggable
+  Tinder-style stacked swipe deck (`SwipeDeck.tsx` — pointer-drag with a
+  ±90px like/pass threshold, LIKE/PASS stamps that fade in with drag
+  distance, real photos + real addresses as captions) and **Browse** (a
+  Leaflet neighbourhood map + horizontal area chips — both toggle the same
+  selection state — a consolidated bottom filter sheet (`FilterSheet.tsx`:
+  price, bedrooms, bathrooms, agency, sort), and a vertical listing-card
+  feed; see `frontend/src/lib/location.ts` for how postcode areas are
+  extracted from free-text addresses). Cards also have like/dislike buttons
+  on the current photo, rating in place while scrolling — same preference
+  vector as the dedicated swipe deck. All preference math
+  (centroid-of-liked-minus-disliked, cosine similarity ranking) runs
+  client-side against the precomputed embeddings — no backend, swipe
+  choices persist in `localStorage` only.
 - **`infra/`** — CDK app: S3 + CloudFront hosting for the built frontend,
   deployed to Giulio's personal AWS account (not the ERP client account).
 
