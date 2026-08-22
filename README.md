@@ -79,7 +79,7 @@ this beats scraping Rightmove/Zoopla/SpareRoom directly.
 
 | Platform | Rendering | Example agencies | Notes |
 |---|---|---|---|
-| **Homeflow** | Client-side (needs a real browser) | innercityestates.com (standard theme), johndwood.co.uk (panel theme) | Cards aren't in the raw HTML at all — verified via plain `curl`. Pagination is `/page-N` appended to the search path; this isn't documented anywhere, found by diffing property IDs returned per page. |
+| **Homeflow** | Client-side (needs a real browser) | innercityestates.com, tatesestates.co.uk, aspire.co.uk (standard theme except aspire, which is panel); johndwood.co.uk (panel theme) | Cards aren't in the raw HTML at all — verified via plain `curl`. Pagination is `/page-N` appended to the search path; this isn't documented anywhere, found by diffing property IDs returned per page. |
 | **PropertyHive** (WordPress plugin) | Server-rendered | properly.space (healthypixels theme), parkgate.co.uk (veco theme) | Plain `requests` + BeautifulSoup, no browser needed — this is the cheap platform to scale. Standard WordPress `page/N/` pagination. |
 
 PropertyHive is a WordPress *plugin*, not a hosted platform like Homeflow —
@@ -101,11 +101,26 @@ this as a separate code path (`_parse_card_panel`/`_detail_panel`) rather
 than a selector-only config, and `detail()` enriches bed/bath/reception from
 the property page's spec list so those fields aren't permanently `None` for
 every listing on this theme. Their prices also run much higher than the
-other three agencies (£30k+ pcm isn't unusual) — worth knowing if that skews
-what you see in Browse.
+other agencies (£30k+ pcm isn't unusual) — worth knowing if that skews what
+you see in Browse.
+
+Tates (W14, West Kensington) and Aspire (SW6/SW19/SW2 etc.) were added
+specifically to counter that skew — both are normal-market-priced
+(tatesestates in particular: ~£2,000-2,700 pcm live-verified), reuse the
+existing standard/panel theme code unchanged, no new parser needed. One
+genuine quirk hit while adding them: both agencies' search pages
+consistently timed out (even after doubling the wait, see `homeflow.py`'s
+retry) when scraped from a freshly-launched EC2 instance's IP, every single
+time across several attempts, while always working fine when run
+interactively from an already-established host — the other four agencies
+never showed this. No Cloudflare challenge or explicit block message was
+ever seen, so this looks like IP-reputation-based throttling of unfamiliar
+cloud IPs rather than an active block worth routing around; the practical
+workaround was simply running those two agencies' scrape from a host with
+existing browsing history rather than a disposable one.
 
 All platforms/themes were verified against real, live sites (2026-07-29
-through 2026-08-08) — not built from guessed selectors. `tests/fixtures/`
+through 2026-08-22) — not built from guessed selectors. `tests/fixtures/`
 holds saved HTML from that verification; the tests run the actual parsing
 selectors against those fixtures offline.
 
@@ -121,7 +136,9 @@ pip install -r requirements.txt
 playwright install chromium   # only needed for homeflow.py; skip if you already have a chromium build cached
 
 python -m scraper.cli innercityestates --pages 2           # Homeflow, standard theme
+python -m scraper.cli tatesestates --pages 2 --detail      # Homeflow, standard theme
 python -m scraper.cli johndwood --pages 2 --detail         # Homeflow, panel theme
+python -m scraper.cli aspire --pages 2 --detail            # Homeflow, panel theme
 python -m scraper.cli properly --pages 2 --detail          # PropertyHive, healthypixels theme
 python -m scraper.cli parkgate --pages 2 --detail          # PropertyHive, veco theme
 ```
@@ -218,32 +235,35 @@ beyond that, since rating an unembedded photo wouldn't do anything; in
 practice this now covers every photo of every listing in the dataset.
 
 Verified end to end against the real dataset: same listing's own photos
-cluster tighter (~0.79-0.81 cosine, varies by sample) than different
-listings (~0.72-0.74) — i.e. the embedding space still discriminates between
+cluster tighter (~0.78-0.83 cosine, varies by sample) than different
+listings (~0.74-0.76) — i.e. the embedding space still discriminates between
 interiors, which is the property the whole mechanic depends on, though this
 margin has narrowed a lot as the dataset grew (an earlier check against a
 smaller, less style-diverse 101-listing/2-agency dataset found ~0.89 vs.
-~0.64, a much wider gap — see "Known gaps" below).
+~0.64, a much wider gap — see "Known gaps" below). Re-checked again after
+growing to 250 listings/6 agencies and the gap held roughly steady
+(~0.03-0.08) rather than narrowing further, for whatever that's worth.
 
 ## Known gaps / honest limitations
 
-- Only 2 platforms so far (Homeflow, PropertyHive), from 4 real example
-  agencies (2 Homeflow themes, 2 PropertyHive themes). Real coverage
-  across "most London agencies" requires validating more platforms
-  (Alto/Vebra/Dezrez — Reapit ruled out, see above) against real sites, not
-  assuming the docs match reality — that's exactly the gap that bit the
-  price/status field the first time through here (see git history: the "Let"
-  status text turned out to be nested *inside* the price element, not a
-  separate field, and the free-text description turned out to live in a
-  different container than the one that looked right at first glance).
+- Only 2 platforms so far (Homeflow, PropertyHive), from 6 real example
+  agencies (4 Homeflow across 2 themes, 2 PropertyHive across 2 themes).
+  Real coverage across "most London agencies" requires validating more
+  platforms (Alto/Vebra/Dezrez — Reapit ruled out, see above) against real
+  sites, not assuming the docs match reality — that's exactly the gap that
+  bit the price/status field the first time through here (see git history:
+  the "Let" status text turned out to be nested *inside* the price element,
+  not a separate field, and the free-text description turned out to live in
+  a different container than the one that looked right at first glance).
 - `price_pcm` is best-effort text parsing, not authoritative — don't trust
   it for anything more precise than sorting/filtering.
 - Homeflow's `/page-N` pagination pattern, originally reverse-engineered
-  from one site, held up on a second, structurally very different
-  Homeflow-powered agency (johndwood.co.uk) — some confidence it's a real
-  platform convention rather than one site's coincidence, though still only
-  confirmed against 2 of 600+ Homeflow-powered agencies.
-- The swipe deck's photos come entirely from the 170 listings being ranked
+  from one site, held up on three more, structurally-varied Homeflow-powered
+  agencies (johndwood.co.uk, tatesestates.co.uk, aspire.co.uk) — good
+  confidence it's a real platform convention rather than one site's
+  coincidence, though still only confirmed against 4 of 600+ Homeflow-powered
+  agencies.
+- The swipe deck's photos come entirely from the 250 listings being ranked
   — there's no separate curated seed set (e.g. Unsplash/Pinterest
   interiors), so the deck is only as visually diverse as these 4 agencies'
   actual inventory happens to be. Worth revisiting if matches feel

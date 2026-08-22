@@ -58,4 +58,26 @@ AGENCIES: dict[str, AgencyConfig] = {
         search_url="https://www.parkgate.co.uk/properties-for-rent/",
         propertyhive_theme="veco",
     ),
+    # Added specifically to counter johndwood's ultra-prime price skew in
+    # central/west London (£14k-65k pcm) — tatesestates covers W14 (West
+    # Kensington) at normal-market prices (~£2,000-2,700 pcm seen live),
+    # same "standard" theme as innercityestates, no new parser code needed.
+    "tatesestates": AgencyConfig(
+        key="tatesestates",
+        name="Tates Estate Agents",
+        platform="homeflow",
+        search_url="https://www.tatesestates.co.uk/london/lettings/tag-flat/",
+        homeflow_theme="standard",
+    ),
+    # Same "panel" theme as johndwood (verified live, not assumed) — covers
+    # SW6/SW19/SW2/SW9 at a wide price spread (£4.2k-14k pcm seen live),
+    # still cheaper than johndwood's range but not as affordable as
+    # tatesestates.
+    "aspire": AgencyConfig(
+        key="aspire",
+        name="Aspire",
+        platform="homeflow",
+        search_url="https://www.aspire.co.uk/properties/lettings",
+        homeflow_theme="panel",
+    ),
 }

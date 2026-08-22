@@ -26,13 +26,16 @@ current parser status.
 1. **Data source validation — done.** See above.
 2. **Ingestion & normalization — in progress.** Two platform parsers
    (Homeflow, PropertyHive) verified against real live sites, with offline
-   regression tests, now pulling 170 listings from 4 agencies across 4
-   themes: innercityestates.com + johndwood.co.uk on Homeflow (two
-   structurally different themes, not just different class names — see
-   README), properly.space + parkgate.co.uk on PropertyHive. Reapit
-   Foundations and Alto were both checked and ruled out: both are backend
-   CRMs that many different website vendors plug into, not a single shared
-   public-facing template the way Homeflow/PropertyHive are — no one
+   regression tests, now pulling 250 listings from 6 agencies across 4
+   themes: innercityestates.com, tatesestates.co.uk (standard theme) +
+   johndwood.co.uk, aspire.co.uk (panel theme) on Homeflow; properly.space +
+   parkgate.co.uk on PropertyHive. Tates/Aspire were added specifically to
+   fix a real gap: johndwood's ultra-prime pricing (£14k-65k pcm) meant
+   central/west London had effectively no affordable inventory in the
+   dataset — tatesestates alone brought that down to ~£2,000 pcm in W14.
+   Reapit Foundations and Alto were both checked and ruled out: both are
+   backend CRMs that many different website vendors plug into, not a single
+   shared public-facing template the way Homeflow/PropertyHive are — no one
    selector set could cover "Alto-integrated sites" the way it does for
    Homeflow/PropertyHive's own hosted templates. Next: Vebra or Dezrez, the
    same fixture-first-verify way — check whether they're actually a shared
@@ -50,15 +53,16 @@ current parser status.
    PyTorch specifically for this host's tight disk/memory) every listing's
    photos + description into one shared 512-dim space. Swipe UI + preference
    vector (centroid of liked minus disliked) + match-ranked browsing all
-   built and working end to end against the real 170-listing/1,910-photo
+   built and working end to end against the real 250-listing/3,004-photo
    dataset, fully client-side (no backend, swipes persist in `localStorage`
    only) — and can now be rated directly from the Browse grid too, not just
    the dedicated swipe deck. See `README.md`'s "Style matching" section for
    the mechanic and what's been verified vs. not. Not yet validated against
    a real person's actual taste — only that the embedding space itself
-   discriminates between interiors, and that discrimination margin has
-   narrowed noticeably as the dataset grew more style-diverse (worth
-   understanding before leaning on match scores much more).
+   discriminates between interiors, and that discrimination margin narrowed
+   noticeably as the dataset first grew more style-diverse, then held
+   roughly steady on the next growth pass (worth understanding before
+   leaning on match scores much more).
 5. **Filter/search — in progress, first pass done.** Client-side filters on
    the Browse tab: agency, postcode area (multi-select, derived from the
    address string via `frontend/src/lib/location.ts`, pickable either from a
@@ -86,10 +90,10 @@ current parser status.
   though a shrinking margin as the dataset diversifies is now a real open
   question too — see README's "Known gaps") vs. "this surfaces flats I'd
   actually like" (not yet tried by a human).
-- Swipe-deck diversity — currently only the 4 existing agencies' actual
+- Swipe-deck diversity — currently only the 6 existing agencies' actual
   photos; may need a curated non-listing seed set if that turns out too
   narrow/repetitive once someone actually swipes through it.
-- Geographic/volume scope beyond the current 4-agency demo dataset.
+- Geographic/volume scope beyond the current 6-agency demo dataset.
 - Budget appetite for VLM calls per listing (main recurring cost driver for
   Phase 3).
 - Personal tool vs. eventually-multi-user — affects how seriously the

@@ -35,6 +35,7 @@ from dataclasses import replace
 from urllib.parse import urljoin
 
 from playwright.sync_api import Browser, sync_playwright
+from playwright.sync_api import TimeoutError as PlaywrightTimeoutError
 
 from .base import PlatformScraper
 from .models import ListingDetail, ListingSummary
@@ -84,8 +85,25 @@ class HomeflowScraper(PlatformScraper):
                 # analytics/chat-widget stack keeps background connections
                 # open indefinitely, so networkidle reliably times out there
                 # even though the content we need has long since rendered.
-                page.goto(url, wait_until="domcontentloaded", timeout=30_000)
-                page.wait_for_selector(card_selector, timeout=15_000)
+                #
+                # Retried once on timeout: tatesestates/aspire specifically
+                # (both Homeflow, like the other two agencies that don't need
+                # this) have repeatedly rendered slowly enough to miss a 15s
+                # wait when scraped from a freshly-booted EC2 instance, while
+                # always succeeding within that window when tested
+                # interactively from an already-warmed-up host — looks like a
+                # one-off slow render on a cold connection, not a real block
+                # (no Cloudflare/challenge page involved), so a bare retry
+                # with more time is the proportionate fix rather than
+                # abandoning the whole agency over one slow page load.
+                for attempt in (1, 2):
+                    try:
+                        page.goto(url, wait_until="domcontentloaded", timeout=30_000)
+                        page.wait_for_selector(card_selector, timeout=15_000 * attempt)
+                        break
+                    except PlaywrightTimeoutError:
+                        if attempt == 2:
+                            raise
                 page.wait_for_timeout(800)
 
                 cards = page.query_selector_all(card_selector)

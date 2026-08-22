@@ -92,6 +92,32 @@ fraction of the cost (~$0.004 vs. ~$0.03 for a 13-minute run). Reach for
 network/throttling, dominates) — check `CPUUtilization` after a first run
 rather than assuming.
 
+**AWS CLI reliability at fresh boot.** `pip install awscli` inside a venv
+failed unreliably on a freshly-booted instance more than once (the trap
+itself then can't upload a log, so the failure is silent — the instance
+just terminates with nothing in S3). Fixed by installing via the official
+curl+unzip installer (`https://awscli.amazonaws.com/awscli-exe-linux-<arch>.zip`)
+instead, and — since even *that* needs `unzip`/`apt-get` to succeed first —
+registering a bare `trap 'shutdown -h now' EXIT` as the very first line,
+before any package installation, upgraded to the log-uploading version only
+once `aws` is confirmed working. Belt-and-braces: guarantees self-termination
+even if the very first apt step fails, not just failures after `aws` exists.
+
+**Scraping specifically (not embedding/other jobs) may fail from a fresh
+IP.** Two Homeflow-powered agencies (tatesestates.co.uk, aspire.co.uk) added
+2026-08-22 consistently timed out when scraped from a newly-launched
+temporary instance's IP — every attempt, across several relaunches, even
+after doubling the page-load timeout — while always working fine when run
+interactively from this project's regular long-lived host. The other four
+agencies in `scraper/agencies.py` never showed this from the same temp
+instances. No Cloudflare challenge or explicit block page was ever seen, so
+this looks like IP-reputation throttling of unfamiliar cloud IPs rather
+than an active block worth trying to route around (which wouldn't fit this
+project's own "don't defeat active resistance" stance anyway) — the
+practical fix was running just those two agencies' `scraper.export` call
+from the regular host instead of a disposable one, then merging the
+resulting JSON with whatever the temp instance produced for the rest.
+
 No CloudWatch agent was installed, so RAM usage isn't directly observable
 after the fact for these jobs — only CPU/network are captured by default.
 Not investigated further since the same workload already ran fine in-process
