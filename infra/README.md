@@ -20,6 +20,26 @@ cd ../infra
 npx cdk deploy
 ```
 
+### Custom domain
+
+The CloudFront distribution can be attached to a custom subdomain with an ACM
+certificate in `us-east-1`:
+
+```bash
+cd infra
+NODE_OPTIONS="--max-old-space-size=700" TS_NODE_TRANSPILE_ONLY=true npx cdk deploy \
+  -c domainName=houseswipe.giuliovaccari.it \
+  -c certificateArn=arn:aws:acm:us-east-1:854656252703:certificate/42c20075-7a64-497f-9f83-27410e79beb2
+```
+
+When DNS is managed outside Route 53, add the DNS record manually:
+
+```text
+Type: CNAME
+Name: houseswipe
+Alias data: <CloudFrontDomain output>
+```
+
 ### If `cdk synth`/`cdk deploy` hangs or thrashes
 
 This host is memory-constrained; full `tsc` type-checking during CDK's

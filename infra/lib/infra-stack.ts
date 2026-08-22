@@ -3,12 +3,24 @@ import * as s3 from 'aws-cdk-lib/aws-s3';
 import * as cloudfront from 'aws-cdk-lib/aws-cloudfront';
 import * as origins from 'aws-cdk-lib/aws-cloudfront-origins';
 import * as s3deploy from 'aws-cdk-lib/aws-s3-deployment';
+import * as acm from 'aws-cdk-lib/aws-certificatemanager';
 import { Construct } from 'constructs';
 import * as path from 'path';
 
 export class InfraStack extends cdk.Stack {
   constructor(scope: Construct, id: string, props?: cdk.StackProps) {
     super(scope, id, props);
+
+    const domainName = this.node.tryGetContext('domainName');
+    const certificateArn = this.node.tryGetContext('certificateArn');
+    if (domainName && !certificateArn) {
+      throw new Error(
+        'certificateArn is required when domainName is set. For CloudFront, use an ACM certificate in us-east-1.',
+      );
+    }
+    const certificate = certificateArn
+      ? acm.Certificate.fromCertificateArn(this, 'Certificate', certificateArn)
+      : undefined;
 
     const bucket = new s3.Bucket(this, 'FrontendBucket', {
       bucketName: `housefinder-frontend-${this.account}`,
@@ -19,6 +31,8 @@ export class InfraStack extends cdk.Stack {
 
     const distribution = new cloudfront.Distribution(this, 'Distribution', {
       comment: 'House Finder frontend',
+      domainNames: domainName ? [domainName] : undefined,
+      certificate,
       defaultBehavior: {
         origin: origins.S3BucketOrigin.withOriginAccessControl(bucket),
         viewerProtocolPolicy: cloudfront.ViewerProtocolPolicy.REDIRECT_TO_HTTPS,
@@ -41,6 +55,9 @@ export class InfraStack extends cdk.Stack {
     });
 
     new cdk.CfnOutput(this, 'CloudFrontDomain', { value: distribution.distributionDomainName });
+    if (domainName) {
+      new cdk.CfnOutput(this, 'CustomUrl', { value: `https://${domainName}` });
+    }
     new cdk.CfnOutput(this, 'BucketName', { value: bucket.bucketName });
     new cdk.CfnOutput(this, 'DistributionId', { value: distribution.distributionId });
   }
