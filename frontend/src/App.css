@@ -122,16 +122,20 @@
   color: #fff;
 }
 
+.app__filter-row {
+  margin-bottom: 12px;
+}
+
 .app__filter-btn {
-  flex: none;
-  padding: 7px 15px;
-  border-radius: 20px;
-  font-size: 12.5px;
-  border: 1px dashed var(--muted);
+  width: 100%;
+  padding: 9px 15px;
+  border-radius: 10px;
+  font-size: 13px;
+  font-weight: 600;
+  border: 1px solid var(--border);
   cursor: pointer;
-  background: transparent;
-  color: var(--muted-dark);
-  white-space: nowrap;
+  background: #fff;
+  color: var(--ink);
 }
 
 .app__sort-note {

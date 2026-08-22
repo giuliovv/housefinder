@@ -198,6 +198,12 @@ function App() {
           )}
           <p className="app__map-hint">Tap a neighbourhood on the map or a chip below to filter by area.</p>
 
+          <div className="app__filter-row">
+            <button className="app__filter-btn" onClick={() => setFilterSheetOpen(true)}>
+              Filters{activeFilterCount > 0 ? ` (${activeFilterCount})` : ""}
+            </button>
+          </div>
+
           <div className="app__chip-row">
             {areas.map((area) => (
               <button
@@ -208,9 +214,6 @@ function App() {
                 {area}
               </button>
             ))}
-            <button className="app__filter-btn" onClick={() => setFilterSheetOpen(true)}>
-              Filters{activeFilterCount > 0 ? ` (${activeFilterCount})` : ""}
-            </button>
           </div>
 
           <p className="app__sort-note">
