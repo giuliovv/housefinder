@@ -32,6 +32,16 @@ NODE_OPTIONS="--max-old-space-size=700" TS_NODE_TRANSPILE_ONLY=true npx cdk depl
   -c certificateArn=arn:aws:acm:us-east-1:854656252703:certificate/42c20075-7a64-497f-9f83-27410e79beb2
 ```
 
+For domains under the delegated Route 53 experiment zone, CDK can also create
+the DNS alias record:
+
+```bash
+NODE_OPTIONS="--max-old-space-size=700" TS_NODE_TRANSPILE_ONLY=true npx cdk deploy \
+  -c domainName=houseswipe.aws.giuliovaccari.it \
+  -c hostedZoneName=aws.giuliovaccari.it \
+  -c certificateArn=arn:aws:acm:us-east-1:854656252703:certificate/...
+```
+
 When DNS is managed outside Route 53, add the DNS record manually:
 
 ```text
@@ -39,6 +49,10 @@ Type: CNAME
 Name: houseswipe
 Alias data: <CloudFrontDomain output>
 ```
+
+The shared delegated experiment zone is `aws.giuliovaccari.it`. Once
+Squarespace delegates that subdomain to Route 53, use names under that zone for
+future experiments to avoid editing Squarespace DNS for every app.
 
 ### If `cdk synth`/`cdk deploy` hangs or thrashes
 
