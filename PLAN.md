@@ -72,6 +72,23 @@ current parser status.
    visual attributes once those exist.
 6. **Recommendations & notifications** — combine filter results + style
    ranking, notify on new matches.
+7. **Agency outreach automation — deferred, not started.** A "reach out"
+   button that has an agent email the agency and follow up to schedule a
+   viewing, gated as a premium feature. Deliberately not building this yet
+   — it's a different tier of feature from everything else here: the first
+   one that needs a real backend, the first that takes a real-world action
+   on a third party (an actual email to an actual agency, potentially
+   repeated follow-ups), and "premium" implies accounts + payments, a
+   genuine architecture shift from the current no-backend/single-user/
+   localStorage design. Open questions to resolve before building any of
+   it: (a) personal tool vs. actual paid multi-user product — very
+   different builds, and PLAN.md's "personal tool vs. eventually-multi-user"
+   question below is now blocking, not academic; (b) how autonomous should
+   "follows up" be — one inquiry email vs. an agent that reads replies and
+   negotiates viewing times, the latter being a much bigger, more
+   failure-prone system; (c) tone/disclosure, so this doesn't read as spam
+   or misrepresent the user to an agency they might actually want to rent
+   from.
 
 ## Infra
 
