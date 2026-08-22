@@ -72,7 +72,27 @@ current parser status.
    visual attributes once those exist.
 6. **Recommendations & notifications** — combine filter results + style
    ranking, notify on new matches.
-7. **Agency outreach automation — deferred, not started.** A "reach out"
+7. **Joint/shared matching — deferred, not started.** Two people
+   house-hunting together each swipe their own style and set their own hard
+   filters, and the app surfaces what satisfies *both* — combined
+   preference vector, intersected filters (e.g. the higher of two
+   minimum-bedroom asks, the overlap of two price ranges). The real design
+   fork: this is the first feature that can't stay pure
+   localStorage-on-one-device, because "two people" almost always means
+   two separate phones. Options, cheapest first: (a) both people swipe on
+   the *same* device in turn, under two local profiles, combined
+   client-side — no backend, but awkward in practice; (b) one person
+   generates a shareable link encoding their preference vector + filters
+   (base64 in the URL), the other opens it on their own device and the app
+   combines it with their own local state — still no backend, but the
+   vector is ~512 floats and doesn't compress small, so the link would be
+   long/ugly; (c) a minimal shared-state backend (even just a small
+   DynamoDB table behind an API Gateway/Lambda) that both devices read
+   from — the most natural UX, but the project's first real backend,
+   which is the same fork Phase 8 below (agency outreach) already flags as
+   a bigger decision than it looks. Worth deciding (b) vs (c) once this is
+   actually prioritized rather than guessing now.
+8. **Agency outreach automation — deferred, not started.** A "reach out"
    button that has an agent email the agency and follow up to schedule a
    viewing, gated as a premium feature. Deliberately not building this yet
    — it's a different tier of feature from everything else here: the first
@@ -95,10 +115,43 @@ current parser status.
 - `frontend/` (Vite/React) + `infra/` (CDK: S3 + CloudFront) — done, deployed
   to Giulio's personal AWS account. Live at
   https://d1kri12g86gqhh.cloudfront.net.
-- **Not done yet, not urgent:** a deploy GitHub Action (push to `main` →
-  rebuild → `cdk deploy`). Currently deploys are manual
-  (`infra/README.md`). Worth doing once the frontend has enough real
-  features that redeploying by hand gets annoying — premature right now.
+- **AWS vs. moving to something free like Vercel — decided: stay on AWS.**
+  Current spend is already near-zero at this traffic (S3 + CloudFront for a
+  few MB of data, plus a few cents per one-off temp-EC2 scrape/embed job —
+  see `infra/README.md`'s "one-off heavy jobs" section), so migrating
+  wouldn't meaningfully save money. It would also throw away a working,
+  tested CDK stack (including a custom-domain setup in progress) for real
+  migration effort and cutover risk. The actual appeal of Vercel here isn't
+  "free," it's "git push and it's live" — but that ergonomic is available
+  on the *current* AWS setup too, via a GitHub Action that runs the
+  existing `cdk deploy` on push, no migration needed (see below). Vercel
+  would only be a clear win if the goal were "stop touching CDK/
+  CloudFormation entirely," and even then its serverless functions aren't
+  suited to the scraping/embedding pipeline (execution-time limits far
+  below the multi-minute Playwright + fastembed jobs this needs) — that
+  compute would have to live somewhere else regardless (GitHub Actions
+  runners are the natural fit, see below), so a Vercel migration would only
+  ever cover the static frontend, not the actual automation this section is
+  about. Worth re-opening if the project ever needs paid/commercial hosting
+  (Vercel's free Hobby tier is personal-use-only per its own ToS, which
+  would matter if Phase 8's "premium" agency-outreach feature ever ships).
+- **Scraping/embedding automation — wanted now, not built yet.** Today this
+  is entirely manual: spin up a temp EC2 instance by hand, run
+  `scraper.export` then `scraper.embeddings`, download the result, rebuild,
+  `cdk deploy` (see `infra/README.md`). Plan: a scheduled GitHub Actions
+  workflow (daily cron) that does all of this — checks out the repo,
+  installs Python + Playwright + fastembed, runs the export/embed pipeline
+  directly on the GH-hosted runner (2 vCPU/7GB is comfortable for both;
+  jobs so far have taken well under an hour combined, nowhere near the
+  6-hour per-job limit), commits/uploads the refreshed data to S3, then
+  runs `cdk deploy`. This also incidentally solves the recurring problem
+  this session hit repeatedly — long-running background jobs on the
+  interactive dev host getting killed by session restarts — since GitHub
+  Actions runners are ephemeral by design and don't depend on this host's
+  session lifecycle at all. Same workflow (or a second one) can also do
+  deploy-on-push for pure code changes, which is the "not done yet, not
+  urgent" GitHub Action this section used to just be a placeholder for —
+  folded in here since it's the same piece of infra either way.
 
 ## Open questions (unresolved, revisit later)
 
