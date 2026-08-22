@@ -29,6 +29,7 @@ export function SwipeDeck({
   onSwipe,
   onReset,
   onGoBrowse,
+  styleDescription,
 }: {
   undecided: DeckPhoto[];
   listingsByKey: Record<ListingKey, Listing>;
@@ -38,6 +39,7 @@ export function SwipeDeck({
   onSwipe: (id: string, choice: "like" | "dislike") => void;
   onReset: () => void;
   onGoBrowse: () => void;
+  styleDescription: string[] | null;
 }) {
   const current = undecided[0];
   const [drag, setDrag] = useState<Drag>({ active: false, dx: 0, dy: 0 });
@@ -135,6 +137,9 @@ export function SwipeDeck({
           <p className="swipe__progress">
             {decided} of {totalCount} rated · {likedCount} liked · {dislikedCount} disliked
           </p>
+          {styleDescription && (
+            <p className="swipe__style-note">Your style so far: {styleDescription.join(" · ")}</p>
+          )}
           {decided > 0 && (
             <button className="swipe__reset" onClick={onReset}>start over</button>
           )}
@@ -145,6 +150,9 @@ export function SwipeDeck({
           <p className="swipe__done-summary">
             {likedCount} liked, {dislikedCount} disliked — head to Browse to see what matches your style.
           </p>
+          {styleDescription && (
+            <p className="swipe__style-note">Your style: {styleDescription.join(" · ")}</p>
+          )}
           <button className="swipe__cta" onClick={onGoBrowse}>See your matches →</button>
           {totalCount > 0 && (
             <div>

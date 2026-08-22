@@ -49,3 +49,21 @@ export function computePreferenceVector(
 export function listingMatchScore(preference: number[], photoEmbeddings: number[][]): number {
   return Math.max(...photoEmbeddings.map((p) => cosineSimilarity(preference, p)));
 }
+
+/** Describes a preference vector in words: cosine-similarity it against a
+ * fixed vocabulary of style phrases (same CLIP text space) and return the
+ * closest few labels. Turns an opaque 512-dim vector into "Bright &
+ * light-filled, Period features, Wooden flooring" — no separate classifier,
+ * just the same embedding-space trick the whole match-score mechanic
+ * already relies on. */
+export function topStyleLabels(
+  preference: number[],
+  labels: { label: string; embedding: number[] }[],
+  topN = 3,
+): string[] {
+  return labels
+    .map((l) => ({ label: l.label, score: cosineSimilarity(preference, l.embedding) }))
+    .sort((a, b) => b.score - a.score)
+    .slice(0, topN)
+    .map((l) => l.label);
+}

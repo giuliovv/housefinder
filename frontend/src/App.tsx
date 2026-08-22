@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import type { AreaCentroids, EmbeddingsData, Listing } from "./types";
+import type { AreaCentroids, EmbeddingsData, Listing, StyleLabel } from "./types";
 import { ListingCard } from "./components/ListingCard";
 import { SwipeDeck } from "./components/SwipeDeck";
 import { NeighbourhoodMap } from "./components/NeighbourhoodMap";
@@ -7,6 +7,7 @@ import { FilterSheet } from "./components/FilterSheet";
 import { useStylePreferences } from "./lib/preferences";
 import { extractPostcodeArea } from "./lib/location";
 import { listingKey } from "./lib/listingKey";
+import { topStyleLabels } from "./lib/similarity";
 import "./App.css";
 
 type SortKey = "price-asc" | "price-desc" | "match";
@@ -16,6 +17,7 @@ function App() {
   const [listings, setListings] = useState<Listing[] | null>(null);
   const [embeddings, setEmbeddings] = useState<EmbeddingsData | null>(null);
   const [areaCentroids, setAreaCentroids] = useState<AreaCentroids>({});
+  const [styleLabels, setStyleLabels] = useState<StyleLabel[]>([]);
   const [error, setError] = useState<string | null>(null);
   const [sort, setSort] = useState<SortKey>("price-asc");
   const [agencyFilter, setAgencyFilter] = useState<string>("all");
@@ -50,9 +52,21 @@ function App() {
       .then((res) => (res.ok ? res.json() : {}))
       .then(setAreaCentroids)
       .catch(() => setAreaCentroids({}));
+
+    // Also optional — without it the preference vector still works for
+    // ranking, it just can't be described in words.
+    fetch("/data/style-labels.json")
+      .then((res) => (res.ok ? res.json() : []))
+      .then(setStyleLabels)
+      .catch(() => setStyleLabels([]));
   }, []);
 
-  const { undecided, swipes, swipe, toggleSwipe, reset, matchScores, likedCount, dislikedCount } = useStylePreferences(embeddings);
+  const { undecided, swipes, swipe, toggleSwipe, reset, preferenceVector, matchScores, likedCount, dislikedCount } = useStylePreferences(embeddings);
+
+  const styleDescription = useMemo(() => {
+    if (!preferenceVector || styleLabels.length === 0) return null;
+    return topStyleLabels(preferenceVector, styleLabels, 3);
+  }, [preferenceVector, styleLabels]);
 
   const listingsByKey = useMemo(() => {
     const map: Record<string, Listing> = {};
@@ -180,6 +194,7 @@ function App() {
           onSwipe={swipe}
           onReset={reset}
           onGoBrowse={() => setTab("browse")}
+          styleDescription={styleDescription}
         />
       )}
       {tab === "style" && !embeddings && (
@@ -220,6 +235,9 @@ function App() {
             Showing {visible.length} of {listings?.length ?? 0} listings
             {matchScores ? ` — sorted by your style preference from ${likedCount} liked / ${dislikedCount} disliked photos.` : "."}
           </p>
+          {styleDescription && (
+            <p className="app__style-note">Your style so far: {styleDescription.join(" · ")}</p>
+          )}
 
           <main className="listing-grid">
             {visible.map((listing) => (

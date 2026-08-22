@@ -38,3 +38,11 @@ export type EmbeddingsData = Record<ListingKey, ListingEmbeddings>;
 
 /** area = postcode outward code, e.g. "SW4" — matches lib/location.ts's extractPostcodeArea */
 export type AreaCentroids = Record<string, { lat: number; lon: number }>;
+
+/** a fixed, hand-curated vocabulary (scraper/style_labels.py) embedded with
+ * the same CLIP text model as everything else — lets a swipe-derived
+ * preference vector be described in words, not just used as a ranking. */
+export interface StyleLabel {
+  label: string;
+  embedding: number[];
+}

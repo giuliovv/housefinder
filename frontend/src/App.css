@@ -144,6 +144,13 @@
   margin: 0 0 16px;
 }
 
+.app__style-note {
+  font-size: 12px;
+  color: var(--rust-dark);
+  margin: -10px 0 16px;
+  font-style: italic;
+}
+
 /* ── Filter sheet ─────────────────────────────────────────────────────── */
 
 .sheet__overlay {
@@ -582,6 +589,14 @@
   font-size: 12.5px;
   color: var(--muted);
   margin: 16px 0 0;
+  text-align: center;
+}
+
+.swipe__style-note {
+  font-size: 12.5px;
+  color: var(--rust-dark);
+  font-style: italic;
+  margin: 8px 0 0;
   text-align: center;
 }
 
