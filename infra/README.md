@@ -39,6 +39,7 @@ the DNS alias record:
 NODE_OPTIONS="--max-old-space-size=700" TS_NODE_TRANSPILE_ONLY=true npx cdk deploy \
   -c domainName=houseswipe.aws.giuliovaccari.it \
   -c hostedZoneName=aws.giuliovaccari.it \
+  -c hostedZoneId=Z08788173CZC2PM1CQDUQ \
   -c certificateArn=arn:aws:acm:us-east-1:854656252703:certificate/...
 ```
 

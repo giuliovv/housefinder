@@ -16,6 +16,7 @@ export class InfraStack extends cdk.Stack {
     const domainName = this.node.tryGetContext('domainName');
     const certificateArn = this.node.tryGetContext('certificateArn');
     const hostedZoneName = this.node.tryGetContext('hostedZoneName');
+    const hostedZoneId = this.node.tryGetContext('hostedZoneId');
     if (domainName && !certificateArn) {
       throw new Error(
         'certificateArn is required when domainName is set. For CloudFront, use an ACM certificate in us-east-1.',
@@ -23,6 +24,9 @@ export class InfraStack extends cdk.Stack {
     }
     if (hostedZoneName && !domainName) {
       throw new Error('domainName is required when hostedZoneName is set.');
+    }
+    if (hostedZoneName && !hostedZoneId) {
+      throw new Error('hostedZoneId is required when hostedZoneName is set.');
     }
     const certificate = certificateArn
       ? acm.Certificate.fromCertificateArn(this, 'Certificate', certificateArn)
@@ -54,8 +58,9 @@ export class InfraStack extends cdk.Stack {
     });
 
     if (domainName && hostedZoneName) {
-      const hostedZone = route53.HostedZone.fromLookup(this, 'HostedZone', {
-        domainName: hostedZoneName,
+      const hostedZone = route53.HostedZone.fromHostedZoneAttributes(this, 'HostedZone', {
+        hostedZoneId,
+        zoneName: hostedZoneName,
       });
       const suffix = `.${hostedZoneName}`;
       const recordName =
