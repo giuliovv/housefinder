@@ -148,11 +148,19 @@ current parser status.
   two consecutive misses marks it off-market (hidden in the UI, pruned after
   14 days); an agency whose search failed, or that exceeded the per-agency
   cap, never counts as a miss. Verified end to end on 2026-10-07 (deploy
-  path, and a scrape run). **Known gap:** on the first scrape run the four
-  Homeflow agencies (Playwright) failed from the GitHub runner while the two
-  PropertyHive ones worked — consistent with the IP-reputation throttling of
-  cloud IPs already seen with temp EC2 instances. Their listings are left
-  untouched (not wrongly expired) but not refreshed until that's resolved.
+  path, and a scrape run). **Known gap — Homeflow is now behind a Cloudflare challenge:** as of
+2026-10-07 all four Homeflow agencies (innercityestates, johndwood,
+tatesestates, aspire) answer plain requests with a Cloudflare "Just a
+moment..." challenge (HTTP 403) — from GitHub runners *and* from the dev
+host, where the same scrape worked weeks earlier. That's active bot
+protection, which this project's stance is not to defeat, so those agencies
+can no longer be refreshed. Their ~164 live listings are left untouched
+(never wrongly expired by a failed scrape) but can't be verified as still
+available; PropertyHive agencies refresh fine. `scraper.refresh` has
+`--dump`/`--inject` (scrape on one host, merge on another) from an attempt to
+route around IP-based throttling; it's not needed unless that returns. Open
+decision: how long to keep unverifiable Homeflow listings visible, and
+whether to replace them with agencies on other platforms.
 
 ## Open questions (unresolved, revisit later)
 
