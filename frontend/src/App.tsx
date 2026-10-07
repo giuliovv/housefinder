@@ -35,7 +35,9 @@ function App() {
         if (!res.ok) throw new Error(`HTTP ${res.status}`);
         return res.json();
       })
-      .then(setListings)
+      // listings the daily refresh found let/withdrawn are kept in the data
+      // briefly (so they aren't re-added), but never shown
+      .then((rows: Listing[]) => setListings(rows.filter((l) => !l.off_market)))
       .catch((err) => setError(err instanceof Error ? err.message : String(err)));
 
     // Embeddings are optional — the app still works (minus style-matching)

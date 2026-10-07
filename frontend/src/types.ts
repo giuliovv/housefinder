@@ -19,6 +19,10 @@ export interface Listing {
   key_features: string[];
   photo_urls: string[];
   agency_name: string;
+  /** set by scraper/refresh.py */
+  first_seen?: string;
+  last_seen?: string;
+  off_market?: boolean;
 }
 
 /** listing key = `${platform}:${source_id}` — matches scraper/embeddings.py's _listing_key */

@@ -1,0 +1,88 @@
+name: Refresh listings and deploy
+
+on:
+  schedule:
+    - cron: "0 5 * * *"   # daily, 05:00 UTC
+  workflow_dispatch: {}
+  push:
+    branches: [main]
+    paths: ["frontend/**", "infra/**", ".github/workflows/refresh-and-deploy.yml"]
+
+# One run at a time: two overlapping runs would race on the S3 data files.
+concurrency:
+  group: refresh-and-deploy
+  cancel-in-progress: false
+
+permissions:
+  id-token: write   # GitHub OIDC -> AWS, no stored access keys
+  contents: read
+
+env:
+  AWS_REGION: us-east-1
+  BUCKET: housefinder-frontend-854656252703
+
+jobs:
+  refresh-and-deploy:
+    runs-on: ubuntu-latest
+    timeout-minutes: 120
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: arn:aws:iam::854656252703:role/housefinder-github-deploy
+          aws-region: ${{ env.AWS_REGION }}
+
+      # The data files aren't in git; the live copy in S3 is the source of truth.
+      - name: Pull current data from S3
+        run: |
+          mkdir -p frontend/public/data
+          aws s3 cp "s3://$BUCKET/data/" frontend/public/data/ --recursive
+
+      # Only scrape on the schedule / manual runs — a code-only push just
+      # redeploys with the data as it already is.
+      - uses: actions/setup-python@v5
+        if: github.event_name != 'push'
+        with:
+          python-version: "3.12"
+          cache: pip
+
+      - name: Install scraper dependencies
+        if: github.event_name != 'push'
+        run: |
+          pip install -r requirements.txt
+          playwright install --with-deps chromium
+
+      - name: Re-scrape agencies and merge into listings.json
+        if: github.event_name != 'push'
+        run: python -m scraper.refresh --listings frontend/public/data/listings.json --per-agency 80 --max-pages 12
+
+      - name: Embed new listings (existing ones are reused)
+        if: github.event_name != 'push'
+        run: python -m scraper.embeddings --incremental --in frontend/public/data/listings.json --out frontend/public/data/embeddings.json
+
+      - name: Geocode any new postcode areas
+        if: github.event_name != 'push'
+        run: python -m scraper.geocode_areas
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+          cache-dependency-path: |
+            frontend/package-lock.json
+            infra/package-lock.json
+
+      - name: Build frontend
+        working-directory: frontend
+        run: |
+          npm ci
+          npm run build
+
+      # BucketDeployment uploads frontend/dist (which now contains the
+      # refreshed data/) and invalidates CloudFront.
+      - name: Deploy
+        working-directory: infra
+        run: |
+          npm ci
+          NODE_OPTIONS="--max-old-space-size=3000" TS_NODE_TRANSPILE_ONLY=true npx cdk deploy HousefinderFrontend --require-approval never

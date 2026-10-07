@@ -66,23 +66,40 @@ def main() -> None:
     parser.add_argument("--in", dest="infile", type=pathlib.Path, required=True)
     parser.add_argument("--out", type=pathlib.Path, required=True)
     parser.add_argument("--limit", type=int, default=None, help="only process the first N listings (for a quick test run)")
+    parser.add_argument("--incremental", action="store_true", help="reuse entries already in --out for listings that haven't changed; only embed new ones, and drop entries for listings no longer in --in")
     args = parser.parse_args()
 
     listings = json.loads(args.infile.read_text())
     if args.limit is not None:
         listings = listings[: args.limit]
-    print(f"loaded {len(listings)} listings")
+    # Off-market listings (see scraper/refresh.py) aren't embedded: the swipe
+    # deck is built from embeddings, so they'd otherwise keep being shown.
+    listings = [l for l in listings if not l.get("off_market")]
+    print(f"loaded {len(listings)} on-market listings")
+
+    previous: dict[str, dict] = {}
+    if args.incremental and args.out.exists():
+        previous = json.loads(args.out.read_text())
+    result: dict[str, dict] = {_listing_key(l): previous[_listing_key(l)] for l in listings if _listing_key(l) in previous}
+    if not result and not listings:
+        raise SystemExit("no listings to embed")
+    if len(result) == len(listings):
+        print(f"all {len(listings)} listings already embedded, nothing to do")
+        args.out.write_text(json.dumps(result, ensure_ascii=False))
+        return
+    print(f"reusing {len(result)} existing, embedding {len(listings) - len(result)} new")
 
     print("loading CLIP models (first run downloads ~0.6GB, cached after)...")
     img_model = ImageEmbedding(IMAGE_MODEL)
     txt_model = TextEmbedding(TEXT_MODEL)
 
-    result: dict[str, dict] = {}
     with tempfile.TemporaryDirectory() as tmpdir:
         tmp = pathlib.Path(tmpdir)
 
         for i, listing in enumerate(listings, 1):
             key = _listing_key(listing)
+            if key in result:
+                continue
             photo_urls = listing["photo_urls"][:MAX_PHOTOS_PER_LISTING]
             print(f"[{i}/{len(listings)}] {key} — {listing['summary']['address']} ({len(photo_urls)} photos)")
 
