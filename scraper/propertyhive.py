@@ -58,6 +58,11 @@ class PropertyHiveTheme:
     description_selector: str      # on the detail page
     features_item_selector: str    # on the detail page
     gallery_container_selector: str  # on the detail page — direct children (or their <a>/<img>) are photos
+    # If set, photos are the lightbox links (<a href=...>) of elements matching
+    # this selector inside the gallery container, rather than the
+    # wp-content-hosted direct children above — for themes whose photos live on
+    # an external CDN (e.g. assets.reapit.net) instead of under wp-content.
+    gallery_item_selector: str | None = None
 
 
 # properly.space's theme
@@ -75,6 +80,26 @@ HEALTHYPIXELS_THEME = PropertyHiveTheme(
     description_selector=".property-description",
     features_item_selector=".property-features li",
     gallery_container_selector=".property-gallery > div",
+)
+
+# stirlingackroyd.com's theme — photos come from Reapit's CDN, not wp-content
+# (hence gallery_item_selector). Beds/baths/receptions are three unlabelled
+# <li>s in a fixed order inside .property-residential-details.
+STIRLINGACKROYD_THEME = PropertyHiveTheme(
+    name="stirlingackroyd",
+    card_selector="li.type-property",
+    card_link_selector="h6 a[href]",
+    card_address_selector="h6 a",
+    card_price_selector=".price",
+    card_thumb_selector=".thumbnail img",
+    card_bedrooms_selector=".property-residential-details li:nth-of-type(1)",
+    card_bathrooms_selector=".property-residential-details li:nth-of-type(2)",
+    card_receptions_selector=".property-residential-details li:nth-of-type(3)",
+    card_status_selector=".flag",
+    description_selector=".summary-contents",
+    features_item_selector=".property-features li",
+    gallery_container_selector=".flexslider .slides",
+    gallery_item_selector=":scope > li",
 )
 
 # parkgate.co.uk's theme ("veco" — per the image filename prefix, e.g.
@@ -105,14 +130,15 @@ VECO_THEME = PropertyHiveTheme(
 class PropertyHiveScraper(PlatformScraper):
     platform = "propertyhive"
 
-    def __init__(self, theme: PropertyHiveTheme = HEALTHYPIXELS_THEME) -> None:
+    def __init__(self, theme: PropertyHiveTheme = HEALTHYPIXELS_THEME, user_agent: str | None = None) -> None:
         self.theme = theme
+        self.user_agent = user_agent
 
     def search(self, agency: str, search_url: str, max_pages: int = 5) -> Iterator[ListingSummary]:
         url: str | None = search_url
         pages_fetched = 0
         while url and pages_fetched < max_pages:
-            html = http.get(url)
+            html = http.get(url, user_agent=self.user_agent)
             soup = BeautifulSoup(html, "html.parser")
             for card in soup.select(self.theme.card_selector):
                 summary = self._parse_card(agency, card)
@@ -152,7 +178,7 @@ class PropertyHiveScraper(PlatformScraper):
 
     def detail(self, agency: str, summary: ListingSummary) -> ListingDetail:
         t = self.theme
-        html = http.get(summary.url)
+        html = http.get(summary.url, user_agent=self.user_agent)
         soup = BeautifulSoup(html, "html.parser")
 
         description_el = soup.select_one(t.description_selector)
@@ -173,7 +199,12 @@ class PropertyHiveScraper(PlatformScraper):
             # Prefer each thumbnail's full-resolution lightbox link over the
             # <img src> itself, same reasoning as the healthypixels theme;
             # fall back to <img src> directly if there's no wrapping <a>.
-            children = gallery.select(":scope > div") or [gallery]
+            if t.gallery_item_selector:
+                for item in gallery.select(t.gallery_item_selector):
+                    link = item.select_one("a[href]")
+                    if link is not None and link["href"] not in photo_urls:
+                        photo_urls.append(link["href"])
+            children = [] if t.gallery_item_selector else (gallery.select(":scope > div") or [gallery])
             for child in children:
                 link = child.select_one("a[href]")
                 img = child.select_one("img[src]")

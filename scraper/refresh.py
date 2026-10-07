@@ -106,10 +106,10 @@ def merge(
     return out
 
 
-def _scrape(agencies, per_agency: int, max_pages: int) -> dict[str, tuple[list[dict], bool]]:
+def _scrape(agencies, per_agency: int, max_pages: int, known: dict[str, dict] | None = None) -> dict[str, tuple[list[dict], bool]]:
     scraped: dict[str, tuple[list[dict], bool]] = {}
     for cfg in agencies:
-        result = scrape_agency(cfg, per_agency, max_pages)
+        result = scrape_agency(cfg, per_agency, max_pages, known)
         if result is None:
             continue
         scraped[cfg.key] = result
@@ -133,8 +133,8 @@ def _load_injected(path: pathlib.Path, now: dt.datetime) -> dict[str, tuple[list
 def main() -> None:
     parser = argparse.ArgumentParser()
     parser.add_argument("--listings", type=pathlib.Path, help="existing listings.json, updated in place (may not exist yet)")
-    parser.add_argument("--per-agency", type=int, default=80)
-    parser.add_argument("--max-pages", type=int, default=12)
+    parser.add_argument("--per-agency", type=int, default=400)
+    parser.add_argument("--max-pages", type=int, default=60)
     parser.add_argument("--platform", action="append", help="only scrape agencies on this platform (repeatable)")
     parser.add_argument("--dump", type=pathlib.Path, help="scrape and write the raw per-agency results here instead of merging")
     parser.add_argument("--inject", type=pathlib.Path, help="pre-scraped results from --dump to merge in; agencies in it are not re-scraped")
@@ -158,7 +158,7 @@ def main() -> None:
 
     existing = json.loads(args.listings.read_text()) if args.listings.exists() else []
     injected = _load_injected(args.inject, now) if args.inject else {}
-    scraped = _scrape([c for c in agencies if c.key not in injected], args.per_agency, args.max_pages)
+    scraped = _scrape([c for c in agencies if c.key not in injected], args.per_agency, args.max_pages, {listing_key(l): l for l in existing})
     scraped.update(injected)
 
     if not scraped:

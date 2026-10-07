@@ -14,16 +14,38 @@ import dataclasses
 import itertools
 import json
 import pathlib
+import re
 
 from .agencies import AGENCIES
 from .cli import build_scraper
 
 
-def scrape_agency(cfg, per_agency: int, max_pages: int) -> tuple[list[dict], bool] | None:
+_LONDON_WORD = re.compile(r"\bLondon\b", re.IGNORECASE)
+_INNER_LONDON_POSTCODE = re.compile(r"\b(?:EC|WC|NW|SE|SW|E|N|W)\d{1,2}[A-Z]?\b")
+
+
+def is_london(address: str) -> bool:
+    """Deliberately conservative: says "London" or has an inner-London postcode
+    area. Misses outer-London addresses written with only e.g. a DA/BR/CR
+    postcode, which is the right side to err on."""
+    return bool(_LONDON_WORD.search(address) or _INNER_LONDON_POSTCODE.search(address))
+
+
+def _listing_key(summary) -> str:
+    return f"{summary.platform}:{summary.source_id}"
+
+
+def scrape_agency(cfg, per_agency: int, max_pages: int, known: dict[str, dict] | None = None) -> tuple[list[dict], bool] | None:
     """Returns (rows, truncated), or None if the agency's search itself
     failed. `truncated` means the agency had more listings than `per_agency`
     — callers deciding whether an unseen listing has genuinely gone must
-    not treat it as gone in that case, since it may just be past the cap."""
+    not treat it as gone in that case, since it may just be past the cap.
+
+    `known` maps listing key -> a previously scraped row. For those we reuse
+    the stored description/photos and only refresh the search-card fields
+    (price, status), instead of re-fetching every detail page every day —
+    far fewer requests to the agency."""
+    known = known or {}
     print(f"[{cfg.key}] searching...")
     scraper = build_scraper(cfg)
     rows: list[dict] = []
@@ -38,7 +60,17 @@ def scrape_agency(cfg, per_agency: int, max_pages: int) -> tuple[list[dict], boo
             return None
         truncated = len(summaries) > per_agency
         summaries = summaries[:per_agency]
+        if cfg.london_only:
+            summaries = [x for x in summaries if is_london(x.address)]
+        seen: set[str] = set()
+        summaries = [x for x in summaries if not (_listing_key(x) in seen or seen.add(_listing_key(x)))]
         for i, summary in enumerate(summaries, 1):
+            prev = known.get(_listing_key(summary))
+            if prev is not None:
+                row = dict(prev)
+                row["summary"] = dataclasses.asdict(summary)
+                rows.append(row)
+                continue
             print(f"[{cfg.key}] detail {i}/{len(summaries)}: {summary.address}")
             try:
                 detail = scraper.detail(cfg.key, summary)

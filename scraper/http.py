@@ -25,9 +25,9 @@ def _throttle(host: str) -> None:
     _last_request_at[host] = time.monotonic()
 
 
-def get(url: str, *, timeout: float = 15.0) -> str:
+def get(url: str, *, timeout: float = 15.0, user_agent: str | None = None) -> str:
     host = requests.utils.urlparse(url).netloc
     _throttle(host)
-    resp = requests.get(url, headers={"User-Agent": USER_AGENT}, timeout=timeout)
+    resp = requests.get(url, headers={"User-Agent": user_agent or USER_AGENT}, timeout=timeout)
     resp.raise_for_status()
     return resp.text
