@@ -37,9 +37,21 @@ current parser status.
    backend CRMs that many different website vendors plug into, not a single
    shared public-facing template the way Homeflow/PropertyHive are — no one
    selector set could cover "Alto-integrated sites" the way it does for
-   Homeflow/PropertyHive's own hosted templates. Next: Vebra or Dezrez, the
-   same fixture-first-verify way — check whether they're actually a shared
-   website platform before investing parser time, not just a CRM brand name.
+   Homeflow/PropertyHive's own hosted templates. Vebra (now Alto) and Dezrez were checked on 2026-10-07 and
+   ruled out for the same reason as Reapit/Alto: both are back-office CRMs
+   whose "website" side is a data feed (an API import into whatever site the
+   agency's web vendor built — their own docs describe WordPress feed
+   plugins), not a shared public template, and their APIs need agent
+   credentials. Agencies on them look different from each other, so there's
+   no single parser to write. The useful observation: Stirling Ackroyd's
+   photos come from Reapit's CDN but its *site* is Property Hive — the
+   scrapable unit is the website platform, whatever CRM sits behind it.
+   Added Stirling Ackroyd (Property Hive, own theme preset, truthful
+   non-"bot" User-Agent because its server 403s scraper-looking ones;
+   ~320 London listings). Next: find more Property Hive agencies (needs a
+   candidate list — no directory of them exists; probing guessed domains had
+   a very low hit rate), or other shared website vendors (Street, Expert
+   Agent, Jupix sites, Apex27) checked the same fixture-first way.
 3. **Image feature extraction — not started.** Room-type classification +
    cheap object-detection proxy for "big windows"/"large sink"-type
    attributes, reserving a VLM pass for a pre-filtered shortlist rather than
