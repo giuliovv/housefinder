@@ -48,10 +48,25 @@ current parser status.
    scrapable unit is the website platform, whatever CRM sits behind it.
    Added Stirling Ackroyd (Property Hive, own theme preset, truthful
    non-"bot" User-Agent because its server 403s scraper-looking ones;
-   ~320 London listings). Next: find more Property Hive agencies (needs a
-   candidate list — no directory of them exists; probing guessed domains had
-   a very low hit rate), or other shared website vendors (Street, Expert
-   Agent, Jupix sites, Apex27) checked the same fixture-first way.
+   ~320 London listings). Discovery (2026-10-07, `scraper/discover.py`): OpenStreetMap lists 641
+   London estate agents with websites; fingerprinting their homepages found
+   49 on Property Hive, 25 Expert Agent, 10 Street, 8 Jupix, 5 Gnomen, 2
+   Apex27, ~56 behind a Cloudflare challenge, 124 unreachable. Of the 49
+   Property Hive sites, ~22 have a working lettings results page
+   (`/?post_type=property&department=residential-lettings` is the stock
+   Property Hive search URL and works on most): andrewlloyd.net, kayandco.com,
+   spencermunson.co.uk, pompproperties.com, victormichael.com,
+   bargets.co.uk, astonchase.com, oakhill.london, oaktreewestlondon.co.uk,
+   veezedresidential.co.uk, njestates.co.uk, wdbproperty.co.uk,
+   thomasjamesestateagents.co.uk, wilkinsonbyrne.com, lakinandco.com,
+   sturgeslondon.co.uk, andrewreeves.co.uk, griffingroup.co.uk,
+   fairfieldestates.co.uk, hiltons-estates.co.uk, aspenestateagents.co.uk,
+   edward-barclay.co.uk. Several use Property Hive's stock markup
+   (`li.type-property`, `.price`, `.rooms .room-bedrooms`), so one generic
+   "default" theme may cover many. Next: build that theme, verify it
+   fixture-first on 3-4 of them (check robots.txt, that our UA isn't refused,
+   London + lettings share, detail-page photos), then add them to
+   `scraper/agencies.py`. Expert Agent / Street / Jupix hits are unchecked.
 3. **Image feature extraction — not started.** Room-type classification +
    cheap object-detection proxy for "big windows"/"large sink"-type
    attributes, reserving a VLM pass for a pre-filtered shortlist rather than
