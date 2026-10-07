@@ -33,6 +33,8 @@ def scrape_agency(cfg, per_agency: int, max_pages: int) -> tuple[list[dict], boo
             summaries = list(itertools.islice(scraper.search(cfg.key, cfg.search_url, max_pages=max_pages), per_agency + 1))
         except Exception as exc:  # noqa: BLE001 - one agency being unreachable (rate-limited, down, etc.) shouldn't lose every other agency's results
             print(f"[{cfg.key}] search failed, skipping this agency entirely: {exc}")
+            # GitHub Actions annotation (plain text elsewhere) — surfaces the reason on the run page
+            print(f"::warning title={cfg.key} search failed::{type(exc).__name__}: {str(exc)[:300]!r}")
             return None
         truncated = len(summaries) > per_agency
         summaries = summaries[:per_agency]
