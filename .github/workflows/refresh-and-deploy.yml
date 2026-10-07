@@ -54,9 +54,15 @@ jobs:
           pip install -r requirements.txt
           playwright install --with-deps chromium
 
+      # Homeflow agencies time out from GitHub's IPs; the dev host scrapes them
+      # on cron and uploads the raw result here (see scraper/refresh.py).
+      - name: Fetch pre-scraped Homeflow results
+        if: env.DO_SCRAPE == 'true'
+        run: aws s3 cp "s3://$BUCKET/inbox/homeflow.json" /tmp/homeflow.json || echo "no inbox file"
+
       - name: Re-scrape agencies and merge into listings.json
         if: env.DO_SCRAPE == 'true'
-        run: python -m scraper.refresh --listings frontend/public/data/listings.json --per-agency 80 --max-pages 12
+        run: python -m scraper.refresh --listings frontend/public/data/listings.json --per-agency 80 --max-pages 12 --inject /tmp/homeflow.json
 
       - name: Embed new listings (existing ones are reused)
         if: env.DO_SCRAPE == 'true'

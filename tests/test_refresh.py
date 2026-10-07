@@ -77,3 +77,18 @@ def test_old_off_market_listings_are_pruned_and_not_readded():
     later = D2 + dt.timedelta(days=15)
     out = by_id(merge(state, {"a": ([row("1", status="Let"), row("2")], False)}, later))
     assert set(out) == {"2"}
+
+
+def test_stale_injected_results_are_ignored(tmp_path):
+    import json
+    from scraper.refresh import _load_injected
+
+    now = dt.datetime(2026, 10, 12, 12, 0)
+    path = tmp_path / "x.json"
+    def write(scraped_at):
+        path.write_text(json.dumps({"scraped_at": scraped_at.isoformat(), "agencies": {"a": {"rows": [row("1")], "truncated": False}}}))
+    write(now - dt.timedelta(hours=5))
+    assert set(_load_injected(path, now)) == {"a"}
+    write(now - dt.timedelta(hours=40))
+    assert _load_injected(path, now) == {}
+    assert _load_injected(tmp_path / "missing.json", now) == {}
