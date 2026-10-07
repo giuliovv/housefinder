@@ -6,7 +6,7 @@ on:
   workflow_dispatch: {}
   push:
     branches: [main]
-    paths: ["frontend/**", "infra/**", ".github/workflows/refresh-and-deploy.yml"]
+    paths: ["frontend/**", "infra/**", "scraper/**", "requirements.txt", ".github/workflows/refresh-and-deploy.yml"]
 
 # One run at a time: two overlapping runs would race on the S3 data files.
 concurrency:
