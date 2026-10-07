@@ -20,6 +20,9 @@ permissions:
 env:
   AWS_REGION: us-east-1
   BUCKET: housefinder-frontend-854656252703
+  # Scrape on the schedule / manual runs, or on a push whose commit message
+  # contains "[refresh]". Any other push just redeploys with the data as is.
+  DO_SCRAPE: ${{ github.event_name != 'push' || contains(github.event.head_commit.message, '[refresh]') }}
 
 jobs:
   refresh-and-deploy:
@@ -39,30 +42,28 @@ jobs:
           mkdir -p frontend/public/data
           aws s3 cp "s3://$BUCKET/data/" frontend/public/data/ --recursive
 
-      # Only scrape on the schedule / manual runs — a code-only push just
-      # redeploys with the data as it already is.
       - uses: actions/setup-python@v5
-        if: github.event_name != 'push'
+        if: env.DO_SCRAPE == 'true'
         with:
           python-version: "3.12"
           cache: pip
 
       - name: Install scraper dependencies
-        if: github.event_name != 'push'
+        if: env.DO_SCRAPE == 'true'
         run: |
           pip install -r requirements.txt
           playwright install --with-deps chromium
 
       - name: Re-scrape agencies and merge into listings.json
-        if: github.event_name != 'push'
+        if: env.DO_SCRAPE == 'true'
         run: python -m scraper.refresh --listings frontend/public/data/listings.json --per-agency 80 --max-pages 12
 
       - name: Embed new listings (existing ones are reused)
-        if: github.event_name != 'push'
+        if: env.DO_SCRAPE == 'true'
         run: python -m scraper.embeddings --incremental --in frontend/public/data/listings.json --out frontend/public/data/embeddings.json
 
       - name: Geocode any new postcode areas
-        if: github.event_name != 'push'
+        if: env.DO_SCRAPE == 'true'
         run: python -m scraper.geocode_areas
 
       - uses: actions/setup-node@v4
