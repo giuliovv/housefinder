@@ -2,7 +2,10 @@ import * as cdk from 'aws-cdk-lib/core';
 import * as iam from 'aws-cdk-lib/aws-iam';
 import { Construct } from 'constructs';
 
-const GITHUB_REPO = 'giuliovv/housefinder';
+// GitHub's immutable-subject format (default for repos created after
+// 2026-07-15): the sub claim embeds numeric owner/repo IDs, so a renamed or
+// recreated repo can't inherit this role. `repo:<owner>@<id>/<repo>@<id>`.
+const GITHUB_SUB_PREFIX = 'repo:giuliovv@44315076/housefinder@1317262535';
 const DEV_HOST_ROLE_NAME = 'ClaudeServer-Role1ABCC5F0-qSggUp4PUW45';
 
 /**
@@ -27,7 +30,7 @@ export class CiStack extends cdk.Stack {
         {
           StringEquals: { 'token.actions.githubusercontent.com:aud': 'sts.amazonaws.com' },
           // main branch of this repo only — PRs/forks/other branches can't assume it.
-          StringLike: { 'token.actions.githubusercontent.com:sub': `repo:${GITHUB_REPO}:ref:refs/heads/main` },
+          StringLike: { 'token.actions.githubusercontent.com:sub': `${GITHUB_SUB_PREFIX}:ref:refs/heads/main` },
         },
         'sts:AssumeRoleWithWebIdentity',
       ),
