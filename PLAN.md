@@ -63,10 +63,19 @@ current parser status.
    fairfieldestates.co.uk, hiltons-estates.co.uk, aspenestateagents.co.uk,
    edward-barclay.co.uk. Several use Property Hive's stock markup
    (`li.type-property`, `.price`, `.rooms .room-bedrooms`), so one generic
-   "default" theme may cover many. Next: build that theme, verify it
-   fixture-first on 3-4 of them (check robots.txt, that our UA isn't refused,
-   London + lettings share, detail-page photos), then add them to
-   `scraper/agencies.py`. Expert Agent / Street / Jupix hits are unchecked.
+   "default" theme may cover many. Built the generic `stock` theme and live-checked 21 of them (robots.txt
+   allowed us on all). **Added (8):** Sturges, Thomas James, Wilkinson Byrne,
+   Oak Hill, Oaktree West London, NJ Estates, Andrew Reeves, Spencer Munson
+   — ~105 London listings in total (small independents; many already let).
+   **Not added, and why:** pompproperties, bargets, astonchase (ultra-prime,
+   £4k-40k *per week*); aspenestateagents, edward-barclay, griffingroup,
+   fairfieldestates, lakinandco (Surrey/Essex/Herts/outer-London, not London
+   by our filter); veezedresidential (placeholder/test data); kayandco,
+   wdbproperty, andrewlloyd, hiltons-estates, victormichael (different markup
+   — detail pages or cards don't parse with the stock theme; each would need
+   its own preset). Where a card doesn't show beds/baths, `detail()` falls
+   back to the description ("a four bedroom townhouse"). Expert Agent /
+   Street / Jupix hits from discovery are still unchecked.
 3. **Image feature extraction — not started.** Room-type classification +
    cheap object-detection proxy for "big windows"/"large sink"-type
    attributes, reserving a VLM pass for a pre-filtered shortlist rather than

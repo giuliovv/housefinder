@@ -22,8 +22,9 @@ tests/fixtures/parkgate_*.html (veco).
 """
 from __future__ import annotations
 
+import re
 from collections.abc import Iterator
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 from urllib.parse import urljoin
 
 from bs4 import BeautifulSoup, Tag
@@ -39,8 +40,23 @@ def _text(node: Tag | None) -> str | None:
 
 
 def _int(node: Tag | None) -> int | None:
-    txt = _text(node)
-    return int(txt) if txt and txt.isdigit() else None
+    """First integer in the node's text — "4" and "5 Bedrooms" both work."""
+    match = re.search(r"\d+", _text(node) or "")
+    return int(match.group()) if match else None
+
+
+_NUMBER_WORDS = {w: i for i, w in enumerate(
+    ["zero", "one", "two", "three", "four", "five", "six", "seven", "eight", "nine", "ten"])}
+
+
+def _count_before(text: str, noun_pattern: str) -> int | None:
+    """"a 4 bedroom house" / "four-bedroom" / "2 double bedrooms" -> the number."""
+    words = "|".join(_NUMBER_WORDS)
+    m = re.search(rf"\b(\d{{1,2}}|{words})[\s-]*(?:double\s+)?{noun_pattern}\b", text, re.IGNORECASE)
+    if not m:
+        return None
+    token = m.group(1).lower()
+    return int(token) if token.isdigit() else _NUMBER_WORDS[token]
 
 
 @dataclass(frozen=True)
@@ -80,6 +96,29 @@ HEALTHYPIXELS_THEME = PropertyHiveTheme(
     description_selector=".property-description",
     features_item_selector=".property-features li",
     gallery_container_selector=".property-gallery > div",
+)
+
+# Property Hive's own stock templates (shared by many agencies that haven't
+# restyled the plugin): cards are `li.type-property` with a `.details h3 a`
+# title, `.price`, and a `.rooms .room-bedrooms` block; detail pages use the
+# plugin's flexslider gallery (`#slider .slides`) and `.summary-contents` /
+# `.description` / `.features`. Verified against sturgeslondon.co.uk,
+# thomasjamesestateagents.co.uk, wilkinsonbyrne.com, victormichael.com.
+STOCK_THEME = PropertyHiveTheme(
+    name="stock",
+    card_selector="li.type-property",
+    card_link_selector="h3 a[href], h2 a[href]",
+    card_address_selector="h3 a, h2 a",
+    card_price_selector=".price",
+    card_thumb_selector=".thumbnail img",
+    card_bedrooms_selector=".room-bedrooms",
+    card_bathrooms_selector=".room-bathrooms",
+    card_receptions_selector=".room-receptions",
+    card_status_selector=".availability, .flag",
+    description_selector=".description, .tab-content.overview, .summary-contents",
+    features_item_selector=".features li",
+    gallery_container_selector="#slider .slides",
+    gallery_item_selector=":scope > li",
 )
 
 # stirlingackroyd.com's theme — photos come from Reapit's CDN, not wp-content
@@ -212,6 +251,16 @@ class PropertyHiveScraper(PlatformScraper):
                     photo_urls.append(link["href"])
                 elif img is not None and "wp-content" in img.get("src", ""):
                     photo_urls.append(img["src"])
+
+        # Some themes don't show bed/bath counts on the search cards at all;
+        # fall back to what the description says ("a 4 bedroom townhouse").
+        # Best-effort and deliberately only fills a missing value.
+        if summary.bedrooms is None or summary.bathrooms is None:
+            summary = replace(
+                summary,
+                bedrooms=summary.bedrooms if summary.bedrooms is not None else _count_before(description, "bed(?:room)?s?"),
+                bathrooms=summary.bathrooms if summary.bathrooms is not None else _count_before(description, "bath(?:room)?s?"),
+            )
 
         return ListingDetail(
             summary=summary,

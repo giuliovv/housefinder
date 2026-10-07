@@ -46,3 +46,49 @@ def test_is_london() -> None:
     assert is_london("Rochester Row, SW1P 1JU")
     assert not is_london("Frimley Road, Ash Vale, Surrey, GU12 5PP")
     assert not is_london("The Crescent, Egham, Surrey, TW20 9PN")
+
+
+# --- Property Hive "stock" theme (sturgeslondon.co.uk, thomasjamesestateagents.co.uk), captured 2026-10-07
+
+def test_stock_theme_search_card() -> None:
+    from scraper.propertyhive import STOCK_THEME
+
+    soup = BeautifulSoup((FIXTURES / "stock_search_sturges.html").read_text(), "html.parser")
+    cards = soup.select(STOCK_THEME.card_selector)
+    assert len(cards) == 12
+    summary = PropertyHiveScraper(theme=STOCK_THEME)._parse_card("sturges", cards[0])
+    assert summary is not None
+    assert summary.url.startswith("https://www.sturgeslondon.co.uk/property/")
+    assert summary.price_pcm and summary.bedrooms and summary.bathrooms is not None
+    assert soup.select_one("a.next.page-numbers") is not None
+
+
+def test_stock_theme_detail_photos_and_description(monkeypatch) -> None:
+    from scraper.propertyhive import STOCK_THEME
+
+    html = (FIXTURES / "stock_detail_sturges.html").read_text()
+    monkeypatch.setattr("scraper.propertyhive.http.get", lambda url, **kw: html)
+    scraper = PropertyHiveScraper(theme=STOCK_THEME)
+    soup = BeautifulSoup((FIXTURES / "stock_search_sturges.html").read_text(), "html.parser")
+    summary = scraper._parse_card("sturges", soup.select_one(STOCK_THEME.card_selector))
+
+    detail = scraper.detail("sturges", summary)
+
+    assert len(detail.photo_urls) >= 6 and len(set(detail.photo_urls)) == len(detail.photo_urls)
+    assert detail.description
+
+
+def test_bedrooms_fall_back_to_description_when_card_has_none(monkeypatch) -> None:
+    from dataclasses import replace
+
+    from scraper.propertyhive import STOCK_THEME
+
+    html = (FIXTURES / "stock_detail_thomasjames.html").read_text()
+    monkeypatch.setattr("scraper.propertyhive.http.get", lambda url, **kw: html)
+    scraper = PropertyHiveScraper(theme=STOCK_THEME)
+    soup = BeautifulSoup((FIXTURES / "stock_search_sturges.html").read_text(), "html.parser")
+    summary = replace(scraper._parse_card("x", soup.select_one(STOCK_THEME.card_selector)), bedrooms=None, bathrooms=None)
+
+    detail = scraper.detail("x", summary)
+
+    assert detail.summary.bedrooms == 4

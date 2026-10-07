@@ -16,11 +16,12 @@ import sys
 
 from .agencies import AGENCIES, AgencyConfig
 from .homeflow import HomeflowScraper
-from .propertyhive import HEALTHYPIXELS_THEME, STIRLINGACKROYD_THEME, VECO_THEME, PropertyHiveScraper
+from .propertyhive import HEALTHYPIXELS_THEME, STIRLINGACKROYD_THEME, STOCK_THEME, VECO_THEME, PropertyHiveScraper
 
 PROPERTYHIVE_THEMES = {
     "healthypixels": HEALTHYPIXELS_THEME,
     "veco": VECO_THEME,
+    "stock": STOCK_THEME,
     "stirlingackroyd": STIRLINGACKROYD_THEME,
 }
 

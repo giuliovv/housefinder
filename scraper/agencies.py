@@ -104,4 +104,48 @@ AGENCIES: dict[str, AgencyConfig] = {
         user_agent="house-finder/0.1 (personal rental search; not for resale)",
         london_only=True,  # ~45% of its lettings are Surrey/Berkshire
     ),
+    # --- Property Hive agencies on the plugin's stock templates (found via
+    # scraper/discover.py, each live-checked: robots.txt allows us, our
+    # User-Agent isn't refused, London lettings, photos + description parse).
+    # Candidates that failed that check are listed in PLAN.md.
+    "sturges": AgencyConfig(
+        key="sturges", name="Sturges", platform="propertyhive",
+        search_url="https://www.sturgeslondon.co.uk/?post_type=property&department=residential-lettings",
+        propertyhive_theme="stock", london_only=True,
+    ),
+    "thomasjames": AgencyConfig(
+        key="thomasjames", name="Thomas James", platform="propertyhive",
+        search_url="https://thomasjamesestateagents.co.uk/?post_type=property&department=residential-lettings",
+        propertyhive_theme="stock", london_only=True,
+    ),
+    "wilkinsonbyrne": AgencyConfig(
+        key="wilkinsonbyrne", name="Wilkinson Byrne", platform="propertyhive",
+        search_url="https://www.wilkinsonbyrne.com/?post_type=property&department=residential-lettings",
+        propertyhive_theme="stock", london_only=True,
+    ),
+    "oakhill": AgencyConfig(
+        key="oakhill", name="Oak Hill", platform="propertyhive",
+        search_url="https://oakhill.london/properties/?department=residential-lettings",
+        propertyhive_theme="stock", london_only=True,
+    ),
+    "oaktreewestlondon": AgencyConfig(
+        key="oaktreewestlondon", name="Oaktree West London", platform="propertyhive",
+        search_url="https://oaktreewestlondon.co.uk/find-a-property/?department=residential-lettings",
+        propertyhive_theme="stock", london_only=True,
+    ),
+    "njestates": AgencyConfig(
+        key="njestates", name="NJ Estates", platform="propertyhive",
+        search_url="https://njestates.co.uk/properties/?department=residential-lettings",
+        propertyhive_theme="stock", london_only=True,
+    ),
+    "andrewreeves": AgencyConfig(
+        key="andrewreeves", name="Andrew Reeves", platform="propertyhive",
+        search_url="https://andrewreeves.co.uk/search-results/?department=residential-lettings",
+        propertyhive_theme="stock", london_only=True,
+    ),
+    "spencermunson": AgencyConfig(
+        key="spencermunson", name="Spencer Munson", platform="propertyhive",
+        search_url="https://www.spencermunson.co.uk/propertysearch/?department=residential-lettings",
+        propertyhive_theme="stock", london_only=True,
+    ),
 }
