@@ -41,6 +41,15 @@ jobs:
         run: |
           mkdir -p frontend/public/data
           aws s3 cp "s3://$BUCKET/data/" frontend/public/data/ --recursive
+          # A previous run that died part-way saved its progress here (see
+          # "Save checkpoint" below); it's a superset of data/ for the same
+          # listings, so overlay it. Cleared after every successful deploy.
+          # Only for scraping runs: a code-only push must deploy the data as it
+          # is, not a half-finished checkpoint.
+          if [ "$DO_SCRAPE" = "true" ] && aws s3 ls "s3://$BUCKET/cache/" > /dev/null 2>&1; then
+            echo "resuming from checkpoint"
+            aws s3 cp "s3://$BUCKET/cache/" frontend/public/data/ --recursive
+          fi
 
       - uses: actions/setup-python@v5
         if: env.DO_SCRAPE == 'true'
@@ -64,9 +73,27 @@ jobs:
         if: env.DO_SCRAPE == 'true'
         run: python -m scraper.refresh --listings frontend/public/data/listings.json --per-agency 400 --max-pages 60 --inject /tmp/homeflow.json
 
+      # Save the merged listings right away: if embedding dies, the next run
+      # won't have to redo the scrape.
+      - name: Checkpoint listings
+        if: env.DO_SCRAPE == 'true'
+        run: aws s3 cp frontend/public/data/listings.json "s3://$BUCKET/cache/listings.json"
+
+      # embeddings.py writes embeddings.json every few listings; a background
+      # loop copies it to S3 so even a hard kill loses at most a few minutes.
       - name: Embed new listings (existing ones are reused)
         if: env.DO_SCRAPE == 'true'
-        run: python -m scraper.embeddings --incremental --in frontend/public/data/listings.json --out frontend/public/data/embeddings.json
+        timeout-minutes: 200   # leaves time for the always() checkpoint step below
+        run: |
+          ( while true; do sleep 300; aws s3 cp frontend/public/data/embeddings.json "s3://$BUCKET/cache/embeddings.json" --quiet || true; done ) &
+          python -m scraper.embeddings --incremental --in frontend/public/data/listings.json --out frontend/public/data/embeddings.json
+
+      - name: Save checkpoint
+        if: always() && env.DO_SCRAPE == 'true'
+        run: |
+          for f in listings embeddings; do
+            [ -f "frontend/public/data/$f.json" ] && aws s3 cp "frontend/public/data/$f.json" "s3://$BUCKET/cache/$f.json" --quiet || true
+          done
 
       - name: Geocode any new postcode areas
         if: env.DO_SCRAPE == 'true'
@@ -93,3 +120,10 @@ jobs:
         run: |
           npm ci
           NODE_OPTIONS="--max-old-space-size=3000" TS_NODE_TRANSPILE_ONLY=true npx cdk deploy HousefinderFrontend --require-approval never
+
+      # Only reached if everything above succeeded: the deployed data/ now
+      # contains this run's work, so the checkpoint is obsolete (and would
+      # otherwise overlay newer data next time).
+      - name: Clear checkpoint
+        if: env.DO_SCRAPE == 'true'
+        run: aws s3 rm "s3://$BUCKET/cache/" --recursive

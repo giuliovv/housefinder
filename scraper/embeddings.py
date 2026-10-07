@@ -61,12 +61,22 @@ def _download_image(url: str, dest: pathlib.Path) -> bool:
         return False
 
 
+def _write_atomic(path: pathlib.Path, data: dict) -> None:
+    """Write-then-rename, so a kill mid-write can't leave a truncated file that
+    the next --incremental run would fail to parse."""
+    path.parent.mkdir(parents=True, exist_ok=True)
+    tmp = path.with_suffix(path.suffix + ".tmp")
+    tmp.write_text(json.dumps(data, ensure_ascii=False))
+    tmp.replace(path)
+
+
 def main() -> None:
     parser = argparse.ArgumentParser()
     parser.add_argument("--in", dest="infile", type=pathlib.Path, required=True)
     parser.add_argument("--out", type=pathlib.Path, required=True)
     parser.add_argument("--limit", type=int, default=None, help="only process the first N listings (for a quick test run)")
     parser.add_argument("--incremental", action="store_true", help="reuse entries already in --out for listings that haven't changed; only embed new ones, and drop entries for listings no longer in --in")
+    parser.add_argument("--checkpoint-every", type=int, default=20, help="write --out after every N newly embedded listings, so an interrupted run can be resumed with --incremental")
     args = parser.parse_args()
 
     listings = json.loads(args.infile.read_text())
@@ -123,9 +133,10 @@ def main() -> None:
                 "photos": photo_entries,
                 "text_embedding": [round(float(x), 5) for x in text_embedding] if text_embedding is not None else None,
             }
+            if len(result) % args.checkpoint_every == 0:
+                _write_atomic(args.out, result)
 
-    args.out.parent.mkdir(parents=True, exist_ok=True)
-    args.out.write_text(json.dumps(result, ensure_ascii=False))
+    _write_atomic(args.out, result)
     total_photos = sum(len(v["photos"]) for v in result.values())
     print(f"wrote embeddings for {len(result)} listings ({total_photos} photos) to {args.out}")
 

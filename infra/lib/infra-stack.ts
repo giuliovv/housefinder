@@ -82,9 +82,9 @@ export class InfraStack extends cdk.Stack {
       distribution,
       distributionPaths: ['/*'],
       // inbox/ holds pre-scraped results uploaded by the dev host's cron
-      // (see scraper/refresh.py --dump); without this, prune would delete it
-      // on every deploy.
-      exclude: ['inbox/*'],
+      // (see scraper/refresh.py --dump); cache/ holds a CI run's checkpoint
+      // (see the workflow). Without this, prune would delete them on deploy.
+      exclude: ['inbox/*', 'cache/*'],
     });
 
     new cdk.CfnOutput(this, 'CloudFrontDomain', { value: distribution.distributionDomainName });
