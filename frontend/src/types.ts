@@ -23,6 +23,8 @@ export interface Listing {
   first_seen?: string;
   last_seen?: string;
   off_market?: boolean;
+  /** not seen in the agency's results recently, so availability can't be confirmed */
+  unverified?: boolean;
 }
 
 /** listing key = `${platform}:${source_id}` — matches scraper/embeddings.py's _listing_key */

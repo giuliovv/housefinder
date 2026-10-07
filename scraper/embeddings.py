@@ -72,10 +72,10 @@ def main() -> None:
     listings = json.loads(args.infile.read_text())
     if args.limit is not None:
         listings = listings[: args.limit]
-    # Off-market listings (see scraper/refresh.py) aren't embedded: the swipe
-    # deck is built from embeddings, so they'd otherwise keep being shown.
-    listings = [l for l in listings if not l.get("off_market")]
-    print(f"loaded {len(listings)} on-market listings")
+    # Off-market/unverified listings (see scraper/refresh.py) are embedded
+    # too: the swipe deck is built from embeddings and only cares how a
+    # place looks; the frontend hides them from Browse separately.
+    print(f"loaded {len(listings)} listings")
 
     previous: dict[str, dict] = {}
     if args.incremental and args.out.exists():

@@ -14,7 +14,7 @@ type SortKey = "price-asc" | "price-desc" | "match";
 type Tab = "browse" | "style";
 
 function App() {
-  const [listings, setListings] = useState<Listing[] | null>(null);
+  const [allListings, setAllListings] = useState<Listing[] | null>(null);
   const [embeddings, setEmbeddings] = useState<EmbeddingsData | null>(null);
   const [areaCentroids, setAreaCentroids] = useState<AreaCentroids>({});
   const [styleLabels, setStyleLabels] = useState<StyleLabel[]>([]);
@@ -35,9 +35,7 @@ function App() {
         if (!res.ok) throw new Error(`HTTP ${res.status}`);
         return res.json();
       })
-      // listings the daily refresh found let/withdrawn are kept in the data
-      // briefly (so they aren't re-added), but never shown
-      .then((rows: Listing[]) => setListings(rows.filter((l) => !l.off_market)))
+      .then(setAllListings)
       .catch((err) => setError(err instanceof Error ? err.message : String(err)));
 
     // Embeddings are optional — the app still works (minus style-matching)
@@ -63,6 +61,14 @@ function App() {
       .catch(() => setStyleLabels([]));
   }, []);
 
+  // Browse only shows listings we can say are still available. Let ones and
+  // ones we can't currently verify stay in `allListings` so the style-swipe
+  // deck can still show their photos (it only needs how a place looks).
+  const listings = useMemo(
+    () => (allListings ? allListings.filter((l) => !l.off_market && !l.unverified) : null),
+    [allListings],
+  );
+
   const { undecided, swipes, swipe, toggleSwipe, reset, preferenceVector, matchScores, likedCount, dislikedCount } = useStylePreferences(embeddings);
 
   const styleDescription = useMemo(() => {
@@ -72,9 +78,9 @@ function App() {
 
   const listingsByKey = useMemo(() => {
     const map: Record<string, Listing> = {};
-    for (const l of listings ?? []) map[listingKey(l)] = l;
+    for (const l of allListings ?? []) map[listingKey(l)] = l;
     return map;
-  }, [listings]);
+  }, [allListings]);
 
   const agencies = useMemo(() => {
     if (!listings) return [];

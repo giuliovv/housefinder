@@ -66,16 +66,31 @@ def test_listing_that_becomes_let_agreed_goes_off_market_but_to_let_does_not():
     assert out["2"]["off_market"] is False
 
 
-def test_listing_already_let_when_first_seen_is_not_stored():
+def test_listing_already_let_when_first_seen_is_kept_as_off_market():
     out = by_id(merge([], {"a": ([row("1", status="Let"), row("2")], False)}, D1))
-    assert set(out) == {"2"}
+    assert out["1"]["off_market"] is True and out["2"]["off_market"] is False
 
 
-def test_old_off_market_listings_are_pruned_and_not_readded():
+def test_unverified_when_agency_stops_being_scraped_but_listing_is_kept():
+    state = merge([], {"a": ([row("1", "a")], False), "b": ([row("2", "b")], False)}, D1)
+    day = D1
+    for _ in range(4):
+        day += dt.timedelta(days=1)
+        state = merge(state, {"a": ([row("1", "a")], False)}, day)  # b keeps failing
+    out = by_id(state)
+    assert out["1"]["unverified"] is False
+    assert out["2"]["unverified"] is True and out["2"]["off_market"] is False
+
+
+def test_legacy_listings_without_dates_are_unverified_and_baselined():
+    out = by_id(merge([row("1")], {"a": ([], False)}, D1))
+    assert out["1"]["unverified"] is True and out["1"]["first_seen"] == "2026-10-10"
+
+
+def test_listings_unseen_for_retention_period_are_dropped():
     state = merge([], {"a": ([row("1"), row("2")], False)}, D1)
-    state = merge(state, {"a": ([row("1", status="Let"), row("2")], False)}, D2)
-    later = D2 + dt.timedelta(days=15)
-    out = by_id(merge(state, {"a": ([row("1", status="Let"), row("2")], False)}, later))
+    later = D1 + dt.timedelta(days=91)
+    out = by_id(merge(state, {"a": ([row("2")], False)}, later))
     assert set(out) == {"2"}
 
 

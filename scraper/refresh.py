@@ -3,14 +3,18 @@ existing dataset, so listings that have come off the market stop being
 shown instead of lingering forever.
 
 Per listing this tracks `first_seen`/`last_seen` dates, a `missed_runs`
-counter, and `off_market`. A listing is marked off-market when the agency
-lists it as let/under offer, or when it has been absent from the agency's
-search results for MISS_THRESHOLD consecutive successful runs (one miss
-alone could be a flaky page). Two things deliberately do NOT count as a miss:
-an agency whose search failed outright (rate-limited, down, blocked from
-this IP), and an agency with more listings than --per-agency (the listing
-may just be past the cap). Off-market listings are kept for
-OFF_MARKET_RETENTION_DAYS, then dropped.
+counter, `off_market` and `unverified`. A listing is marked off-market when
+the agency lists it as let/under offer, or when it has been absent from the
+agency's search results for MISS_THRESHOLD consecutive successful runs (one
+miss alone could be a flaky page). It is `unverified` when it hasn't been
+seen in an agency's results within VERIFY_WINDOW_DAYS — e.g. the agency's
+site is blocking us — so we can't say it's still available. Both flags only
+hide a listing from Browse: its photos and embeddings are kept for the
+style-swipe deck, which cares about how a place looks, not whether it's
+available. Things that deliberately do NOT count as a miss: an agency whose
+search failed outright, and an agency with more listings than --per-agency
+(the listing may just be past the cap). Listings not seen at all for
+RETENTION_DAYS are dropped (their photo URLs would be rotting by then).
 
 Some agencies (the Homeflow ones, which need a real browser) time out when
 scraped from GitHub Actions' IP ranges but work from the long-lived dev host.
@@ -36,8 +40,9 @@ from .agencies import AGENCIES
 from .export import scrape_agency
 
 MISS_THRESHOLD = 2
+VERIFY_WINDOW_DAYS = 3
+RETENTION_DAYS = 90
 MAX_INJECT_AGE_HOURS = 36
-OFF_MARKET_RETENTION_DAYS = 14
 _UNAVAILABLE_STATUS = re.compile(r"^(let|let agreed|under offer|reserved|sstc)$", re.IGNORECASE)
 
 
@@ -65,10 +70,6 @@ def merge(
         for row in rows:
             key = listing_key(row)
             seen_keys.add(key)
-            if _unavailable(row) and key not in by_key:
-                # Already let when first seen — no point storing/embedding it, and
-                # it would just be re-added after each retention-window prune.
-                continue
             prev = by_key.get(key, {})
             row["first_seen"] = prev.get("first_seen", today_s)
             row["last_seen"] = today_s
@@ -90,11 +91,19 @@ def merge(
             listing["off_market"] = True
             listing["off_market_since"] = today_s
 
-    cutoff = today - dt.timedelta(days=OFF_MARKET_RETENTION_DAYS)
-    return [
-        l for l in by_key.values()
-        if not (l.get("off_market") and dt.date.fromisoformat(l.get("off_market_since", today_s)) < cutoff)
-    ]
+    verify_cutoff = today - dt.timedelta(days=VERIFY_WINDOW_DAYS)
+    retention_cutoff = today - dt.timedelta(days=RETENTION_DAYS)
+    out = []
+    for l in by_key.values():
+        # Listings from before this tracking existed have no dates; treat
+        # today as their baseline so retention counts from now.
+        l.setdefault("first_seen", today_s)
+        last_seen = dt.date.fromisoformat(l["last_seen"]) if l.get("last_seen") else None
+        l["unverified"] = last_seen is None or last_seen < verify_cutoff
+        if dt.date.fromisoformat(l.get("last_seen") or l["first_seen"]) < retention_cutoff:
+            continue
+        out.append(l)
+    return out
 
 
 def _scrape(agencies, per_agency: int, max_pages: int) -> dict[str, tuple[list[dict], bool]]:
