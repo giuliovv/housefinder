@@ -6,8 +6,8 @@ over listing photos (CLIP embeddings, no training needed), and ranks
 listings by how well they match. Filtering on hard visual attributes (window
 size, kitchen/bathroom size) is a later phase — see `PLAN.md`.
 
-**Live preview:** https://d1kri12g86gqhh.cloudfront.net (redeployed manually
-for now — see `infra/README.md`; nothing auto-deploys on push yet).
+**Live preview:** https://d1kri12g86gqhh.cloudfront.net (refreshed and redeployed daily by
+GitHub Actions — see `PLAN.md`'s Infra section).
 
 See [`PLAN.md`](PLAN.md) for the phased roadmap and what's decided vs. open.
 

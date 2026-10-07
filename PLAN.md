@@ -135,23 +135,24 @@ current parser status.
   about. Worth re-opening if the project ever needs paid/commercial hosting
   (Vercel's free Hobby tier is personal-use-only per its own ToS, which
   would matter if Phase 8's "premium" agency-outreach feature ever ships).
-- **Scraping/embedding automation — wanted now, not built yet.** Today this
-  is entirely manual: spin up a temp EC2 instance by hand, run
-  `scraper.export` then `scraper.embeddings`, download the result, rebuild,
-  `cdk deploy` (see `infra/README.md`). Plan: a scheduled GitHub Actions
-  workflow (daily cron) that does all of this — checks out the repo,
-  installs Python + Playwright + fastembed, runs the export/embed pipeline
-  directly on the GH-hosted runner (2 vCPU/7GB is comfortable for both;
-  jobs so far have taken well under an hour combined, nowhere near the
-  6-hour per-job limit), commits/uploads the refreshed data to S3, then
-  runs `cdk deploy`. This also incidentally solves the recurring problem
-  this session hit repeatedly — long-running background jobs on the
-  interactive dev host getting killed by session restarts — since GitHub
-  Actions runners are ephemeral by design and don't depend on this host's
-  session lifecycle at all. Same workflow (or a second one) can also do
-  deploy-on-push for pure code changes, which is the "not done yet, not
-  urgent" GitHub Action this section used to just be a placeholder for —
-  folded in here since it's the same piece of infra either way.
+- **Scraping/embedding automation — built, with one known gap.**
+  `.github/workflows/refresh-and-deploy.yml` runs daily (05:00 UTC), on manual
+  dispatch, and on pushes touching `frontend/`, `infra/` or `scraper/` (a
+  push only scrapes if its commit message contains `[refresh]`; otherwise it
+  just redeploys with the current data). It authenticates to AWS with GitHub
+  OIDC (role `housefinder-github-deploy`, defined in `infra/lib/ci-stack.ts`,
+  main branch of this repo only — no stored keys), pulls the live data from
+  S3, runs `scraper.refresh` -> incremental `scraper.embeddings` ->
+  `geocode_areas`, builds, and `cdk deploy`s. `scraper/refresh.py` tracks
+  `first_seen`/`last_seen`/`off_market` per listing: let/under-offer status or
+  two consecutive misses marks it off-market (hidden in the UI, pruned after
+  14 days); an agency whose search failed, or that exceeded the per-agency
+  cap, never counts as a miss. Verified end to end on 2026-10-07 (deploy
+  path, and a scrape run). **Known gap:** on the first scrape run the four
+  Homeflow agencies (Playwright) failed from the GitHub runner while the two
+  PropertyHive ones worked — consistent with the IP-reputation throttling of
+  cloud IPs already seen with temp EC2 instances. Their listings are left
+  untouched (not wrongly expired) but not refreshed until that's resolved.
 
 ## Open questions (unresolved, revisit later)
 
