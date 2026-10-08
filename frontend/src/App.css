@@ -285,11 +285,33 @@
   background: #f0ece2;
 }
 
+.listing-card__strip {
+  display: flex;
+  height: 100%;
+  overflow-x: auto;
+  scroll-snap-type: x mandatory;
+  overscroll-behavior-x: contain; /* a swipe past the last photo shouldn't trigger browser back/forward */
+  scrollbar-width: none;
+}
+
+.listing-card__strip::-webkit-scrollbar {
+  display: none;
+}
+
+.listing-card__slide {
+  flex: 0 0 100%;
+  height: 100%;
+  scroll-snap-align: start;
+  scroll-snap-stop: always; /* one photo per flick */
+}
+
 .listing-card__photo {
   width: 100%;
   height: 100%;
   object-fit: cover;
   display: block;
+  -webkit-user-drag: none;
+  user-select: none;
 }
 
 .listing-card__photo--placeholder {
@@ -300,27 +322,51 @@
   font-size: 0.85rem;
 }
 
-.listing-card__nav {
+/* Big invisible tap targets down each side of the photo: missing the small
+   arrow used to open the listing. The arrow is now just a visual hint inside
+   a zone that is a quarter of the card wide and the full photo height. */
+.listing-card__zone {
   position: absolute;
-  top: 50%;
-  transform: translateY(-50%);
-  background: rgba(20, 14, 10, 0.5);
-  color: #fff;
+  top: 0;
+  bottom: 0;
+  width: 24%;
+  display: flex;
+  align-items: center;
+  background: none;
   border: none;
+  padding: 0 8px;
+  cursor: pointer;
+  color: #fff;
+  -webkit-tap-highlight-color: transparent;
+  z-index: 1;
+}
+
+.listing-card__zone--prev {
+  left: 0;
+  justify-content: flex-start;
+}
+
+.listing-card__zone--next {
+  right: 0;
+  justify-content: flex-end;
+}
+
+.listing-card__zone-arrow {
+  display: flex;
+  align-items: center;
+  justify-content: center;
   width: 28px;
   height: 28px;
   border-radius: 50%;
-  cursor: pointer;
+  background: rgba(20, 14, 10, 0.5);
   font-size: 1.1rem;
   line-height: 1;
+  transition: background 0.15s ease;
 }
 
-.listing-card__nav--prev {
-  left: 8px;
-}
-
-.listing-card__nav--next {
-  right: 8px;
+.listing-card__zone:hover .listing-card__zone-arrow,
+.listing-card__zone:focus-visible .listing-card__zone-arrow {
+  background: rgba(20, 14, 10, 0.75);
 }
 
 .listing-card__photo-count {
@@ -425,6 +471,14 @@
   right: 10px;
   display: flex;
   gap: 6px;
+  z-index: 2; /* above the edge tap zones */
+}
+
+/* labels sit over the edge zones; let taps fall through to them */
+.listing-card__photo-count,
+.listing-card__status,
+.listing-card__agency {
+  pointer-events: none;
 }
 
 .listing-card__rate-btn {
@@ -637,4 +691,21 @@
   font-size: 14px;
   font-weight: 600;
   cursor: pointer;
+}
+
+.app__show-more {
+  display: block;
+  margin: 8px auto 28px;
+  padding: 12px 22px;
+  background: var(--cream, #fbf7ee);
+  color: var(--rust);
+  border: 1.5px solid var(--rust);
+  font: inherit;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.app__show-more:hover {
+  background: var(--rust);
+  color: #fff;
 }

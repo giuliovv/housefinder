@@ -13,6 +13,10 @@ import "./App.css";
 type SortKey = "price-asc" | "price-desc" | "match";
 type Tab = "browse" | "style";
 
+// Browse renders cards in pages: thousands of cards (each with a photo strip)
+// at once would make the page crawl.
+const PAGE_SIZE = 40;
+
 function App() {
   const [allListings, setAllListings] = useState<Listing[] | null>(null);
   const [embeddings, setEmbeddings] = useState<EmbeddingsData | null>(null);
@@ -28,6 +32,7 @@ function App() {
   const [minBathrooms, setMinBathrooms] = useState<string>("any");
   const [tab, setTab] = useState<Tab>("style");
   const [filterSheetOpen, setFilterSheetOpen] = useState(false);
+  const [shownCount, setShownCount] = useState(PAGE_SIZE);
 
   useEffect(() => {
     fetch("/data/listings.json")
@@ -68,6 +73,12 @@ function App() {
     () => (allListings ? allListings.filter((l) => !l.off_market && !l.unverified) : null),
     [allListings],
   );
+
+  // back to the first page whenever the filters/sort change (but not when a
+  // rating re-ranks the list — that would yank the user back up mid-scroll)
+  useEffect(() => {
+    setShownCount(PAGE_SIZE);
+  }, [agencyFilter, areaFilters, minPrice, maxPrice, minBedrooms, minBathrooms, sort]);
 
   const { undecided, swipes, swipe, toggleSwipe, reset, preferenceVector, matchScores, likedCount, dislikedCount } = useStylePreferences(embeddings);
 
@@ -248,7 +259,7 @@ function App() {
           )}
 
           <main className="listing-grid">
-            {visible.map((listing) => (
+            {visible.slice(0, shownCount).map((listing) => (
               <ListingCard
                 key={`${listing.summary.platform}-${listing.summary.source_id}`}
                 listing={listing}
@@ -259,6 +270,11 @@ function App() {
               />
             ))}
           </main>
+          {shownCount < visible.length && (
+            <button className="app__show-more" onClick={() => setShownCount((n) => n + PAGE_SIZE)}>
+              Show {Math.min(PAGE_SIZE, visible.length - shownCount)} more ({visible.length - shownCount} left)
+            </button>
+          )}
         </div>
       )}
 

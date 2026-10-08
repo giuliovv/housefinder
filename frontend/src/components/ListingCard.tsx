@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import type { EmbeddingsData, Listing } from "../types";
 import type { SwipeChoice } from "../lib/preferences";
 import { normalizeImageUrl } from "../lib/url";
@@ -23,8 +23,9 @@ export function ListingCard({
     ? listing.photo_urls
     : [summary.thumbnail_url].filter((u): u is string => Boolean(u));
   const [photoIndex, setPhotoIndex] = useState(0);
+  const stripRef = useRef<HTMLDivElement>(null);
+  const scrollFrame = useRef<number | null>(null);
   const rawCurrentPhoto = photos[photoIndex];
-  const currentPhoto = normalizeImageUrl(rawCurrentPhoto);
 
   // Only photos that were actually CLIP-embedded can be rated (in practice
   // this is every photo, up to scraper/embeddings.py's MAX_PHOTOS_PER_LISTING
@@ -37,14 +38,37 @@ export function ListingCard({
   const photoId = rawCurrentPhoto != null ? `${listingKey(listing)}::${rawCurrentPhoto}` : null;
   const currentChoice = photoId != null ? swipes?.[photoId] : undefined;
 
-  function nextPhoto(e: React.MouseEvent) {
-    e.preventDefault();
-    setPhotoIndex((i) => (i + 1) % photos.length);
+  // The photos are a horizontally scrolling, scroll-snapping strip: swipe on
+  // touch, horizontal wheel/trackpad on desktop, or tap the big edge zones.
+  // `photoIndex` just follows whichever slide is in view (so the rating
+  // buttons and counter stay in sync); it is never the source of truth.
+  function onStripScroll() {
+    if (scrollFrame.current != null) return;
+    scrollFrame.current = requestAnimationFrame(() => {
+      scrollFrame.current = null;
+      const el = stripRef.current;
+      if (el && el.clientWidth > 0) {
+        const index = Math.min(photos.length - 1, Math.max(0, Math.round(el.scrollLeft / el.clientWidth)));
+        setPhotoIndex(index);
+      }
+    });
   }
 
-  function prevPhoto(e: React.MouseEvent) {
+  useEffect(
+    () => () => {
+      if (scrollFrame.current != null) cancelAnimationFrame(scrollFrame.current);
+    },
+    [],
+  );
+
+  function goTo(e: React.MouseEvent, delta: 1 | -1) {
+    // the whole card is a link; a tap on a zone must not open the listing
     e.preventDefault();
-    setPhotoIndex((i) => (i - 1 + photos.length) % photos.length);
+    e.stopPropagation();
+    const el = stripRef.current;
+    if (!el) return;
+    const target = (photoIndex + delta + photos.length) % photos.length; // wraps around
+    el.scrollTo({ left: target * el.clientWidth, behavior: "smooth" });
   }
 
   function rate(e: React.MouseEvent, choice: SwipeChoice) {
@@ -56,19 +80,43 @@ export function ListingCard({
   return (
     <a className="listing-card" href={summary.url} target="_blank" rel="noreferrer">
       <div className="listing-card__photo-wrap">
-        {currentPhoto ? (
-          <img className="listing-card__photo" src={currentPhoto} alt={summary.address} loading="lazy" />
+        {photos.length > 0 ? (
+          <div className="listing-card__strip" ref={stripRef} onScroll={onStripScroll}>
+            {photos.map((raw, i) => (
+              <div className="listing-card__slide" key={raw}>
+                {/* only mount images near the visible slide: a few thousand cards
+                    with 10+ photos each would otherwise be tens of thousands of <img>s */}
+                {Math.abs(i - photoIndex) <= 2 && (
+                  <img
+                    className="listing-card__photo"
+                    src={normalizeImageUrl(raw) ?? undefined}
+                    alt={i === 0 ? summary.address : ""}
+                    loading="lazy"
+                    draggable={false}
+                  />
+                )}
+              </div>
+            ))}
+          </div>
         ) : (
           <div className="listing-card__photo listing-card__photo--placeholder">No photo</div>
         )}
 
         {photos.length > 1 && (
           <>
-            <button className="listing-card__nav listing-card__nav--prev" onClick={prevPhoto} aria-label="Previous photo">
-              ‹
+            <button
+              className="listing-card__zone listing-card__zone--prev"
+              onClick={(e) => goTo(e, -1)}
+              aria-label="Previous photo"
+            >
+              <span className="listing-card__zone-arrow">‹</span>
             </button>
-            <button className="listing-card__nav listing-card__nav--next" onClick={nextPhoto} aria-label="Next photo">
-              ›
+            <button
+              className="listing-card__zone listing-card__zone--next"
+              onClick={(e) => goTo(e, 1)}
+              aria-label="Next photo"
+            >
+              <span className="listing-card__zone-arrow">›</span>
             </button>
             <span className="listing-card__photo-count">
               {photoIndex + 1} / {photos.length}

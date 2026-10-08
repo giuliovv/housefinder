@@ -81,6 +81,11 @@ export class InfraStack extends cdk.Stack {
       destinationBucket: bucket,
       distribution,
       distributionPaths: ['/*'],
+      // The default 128MB / 512MB-disk copier function can't unzip the embeddings
+      // file once it grows past a few tens of MB: it dies without answering
+      // CloudFormation, which then waits an hour before failing the deploy.
+      memoryLimit: 1024,
+      ephemeralStorageSize: cdk.Size.gibibytes(2),
       // inbox/ holds pre-scraped results uploaded by the dev host's cron
       // (see scraper/refresh.py --dump); cache/ holds a CI run's checkpoint
       // (see the workflow). Without this, prune would delete them on deploy.
