@@ -18,6 +18,7 @@ from .agencies import AGENCIES, AgencyConfig
 from .estatetrack import EstateTrackScraper
 from .expertagent import ExpertAgentScraper
 from .homeflow import HomeflowScraper
+from .starberry import StarberryScraper
 from .propertyhive import HEALTHYPIXELS_THEME, STIRLINGACKROYD_THEME, STOCK_THEME, VECO_THEME, PropertyHiveScraper
 
 PROPERTYHIVE_THEMES = {
@@ -31,6 +32,8 @@ PROPERTYHIVE_THEMES = {
 def build_scraper(cfg: AgencyConfig):
     if cfg.platform == "homeflow":
         return HomeflowScraper(theme=cfg.homeflow_theme)
+    if cfg.platform == "starberry":
+        return StarberryScraper(user_agent=cfg.user_agent)
     if cfg.platform == "estatetrack":
         return EstateTrackScraper(user_agent=cfg.user_agent)
     if cfg.platform == "expertagent":

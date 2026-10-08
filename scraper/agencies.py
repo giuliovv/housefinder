@@ -286,4 +286,17 @@ AGENCIES: dict[str, AgencyConfig] = {
         key="jamesanderson", name="James Anderson", platform="estatetrack",
         search_url="https://jamesanderson.co.uk/properties/to-rent", london_only=True,
     ),
+    # --- Starberry CMS agencies; see scraper/starberry.py.
+    "dexters": AgencyConfig(
+        key="dexters", name="Dexters", platform="starberry",
+        search_url="https://www.dexters.co.uk/property-lettings/properties-to-rent-in-london", london_only=True,
+    ),
+    "jonathanarron": AgencyConfig(
+        key="jonathanarron", name="Jonathan Arron", platform="starberry",
+        search_url="https://www.jonathanarron.com/property-lettings/properties-to-rent-in-london", london_only=True,
+    ),
+    "battersea9elms": AgencyConfig(
+        key="battersea9elms", name="Battersea & Nine Elms", platform="starberry",
+        search_url="https://www.battersea9elms.co.uk/property-lettings/properties-available-to-rent-in-london", london_only=True,
+    ),
 }

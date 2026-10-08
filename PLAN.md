@@ -101,6 +101,20 @@ current parser status.
    listed among lettings). Central coverage from this batch is thin (Parkes:
    Belgravia/Marylebone, Compton Reeback: St John's Wood/Maida Vale) — a
    separate hunt for Pimlico/Chelsea/City agencies is needed.
+   **Starberry CMS (built 2026-10-08, found via the central-London hunt):**
+   `scraper/starberry.py` — Dexters (~970 London lettings, median £5k pcm,
+   Notting Hill/Kensington/Fulham/Hampstead/Westminster/Mayfair), Jonathan
+   Arron (Kensington/Mayfair), Battersea & Nine Elms. Three card layouts
+   across themes, weekly or monthly prices. Central hunt method: OSM
+   coordinates (`discover.py` now records lat/lon) -> 193 agencies within
+   Zone 1-2; 102 matched no platform, so third-party hosts on their pages were
+   counted to find shared vendors: GNB Property (6: Kravens, Interlet,
+   Griffins, Metropole, Michael Charles, FMJ), Acquaint CRM (3: Home
+   Fullstop, Astberrys, Ashdown Marks), The Property Jungle (3: Faradays,
+   Alexander Lewis, McKee), EstatesIT (3: Londonwide, City Rooms, Lyons) —
+   all unchecked. Remaining central Property Hive agencies with unusual
+   markup: Kay & Co, Pomp, Bargets, Aston Chase (all prime, weekly rents).
+   Embedding is now 12 photos/listing for new listings, 4 parallel downloads.
 3. **Image feature extraction — not started.** Room-type classification +
    cheap object-detection proxy for "big windows"/"large sink"-type
    attributes, reserving a VLM pass for a pre-filtered shortlist rather than

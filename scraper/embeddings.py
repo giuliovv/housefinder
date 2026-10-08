@@ -8,13 +8,13 @@ Image and text embeddings land in the *same* 512-dim space by construction
 against photos, and a user's learned "style" preference vector (built from
 swiped photos) can later be compared against both.
 
-Caps photos per listing (see MAX_PHOTOS_PER_LISTING) as a safety ceiling
-against a pathological listing with hundreds of photos, not as a real
-budget constraint — set high enough (30) to cover every listing in the
-dataset in full (max observed: 24), since the Browse grid's per-card
-like/dislike only works on a photo that's actually embedded: a low cap
-here meant the rate buttons vanished the moment someone paged past photo 3
-of what's usually a 10+ photo gallery.
+Caps photos per listing (see MAX_PHOTOS_PER_LISTING). It was 30 when the
+dataset was ~250 listings; with ~3,000 listings embedding time is dominated
+by photos, and for the style deck diversity across listings matters more than
+depth within one, so new listings are capped at 12. Already-embedded
+listings keep whatever they have. The Browse grid's per-card like/dislike
+only works on a photo that's actually embedded, so photos past the cap show
+without rate buttons.
 
 Usage:
     python -m scraper.embeddings --in frontend/public/data/listings.json \
@@ -27,10 +27,12 @@ import json
 import pathlib
 import tempfile
 import time
+from concurrent.futures import ThreadPoolExecutor
 
 from fastembed import ImageEmbedding, TextEmbedding
 
-MAX_PHOTOS_PER_LISTING = 30
+MAX_PHOTOS_PER_LISTING = 12
+DOWNLOAD_THREADS = 4
 IMAGE_MODEL = "Qdrant/clip-ViT-B-32-vision"
 TEXT_MODEL = "Qdrant/clip-ViT-B-32-text"
 # Lighter than scraper/http.py's 1.5s (these are static CDN assets, not the
@@ -113,10 +115,15 @@ def main() -> None:
             photo_urls = listing["photo_urls"][:MAX_PHOTOS_PER_LISTING]
             print(f"[{i}/{len(listings)}] {key} — {listing['summary']['address']} ({len(photo_urls)} photos)")
 
+            # Download this listing's photos in parallel (they're static CDN
+            # assets; the per-download delay still applies in each thread),
+            # then embed them one by one so a corrupt image only skips itself.
+            paths = [tmp / f"{i}_{j}.jpg" for j in range(len(photo_urls))]
+            with ThreadPoolExecutor(DOWNLOAD_THREADS) as pool:
+                ok = list(pool.map(_download_image, photo_urls, paths))
             photo_entries = []
-            for j, url in enumerate(photo_urls):
-                local_path = tmp / f"{i}_{j}.jpg"
-                if not _download_image(url, local_path):
+            for url, local_path, downloaded in zip(photo_urls, paths, ok):
+                if not downloaded:
                     continue
                 try:
                     embedding = next(img_model.embed([str(local_path)]))
