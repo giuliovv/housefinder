@@ -35,10 +35,11 @@ class Blocked(Exception):
 _CHALLENGE = re.compile(r"sgcaptcha|just a moment|cf_chl|challenge-platform|captcha-delivery|px-captcha", re.IGNORECASE)
 
 
-def get(url: str, *, timeout: float = 15.0, user_agent: str | None = None) -> str:
+def _request(method: str, url: str, *, data: dict | None, timeout: float, user_agent: str | None, session) -> str:
     host = requests.utils.urlparse(url).netloc
     _throttle(host)
-    resp = requests.get(url, headers={"User-Agent": user_agent or USER_AGENT}, timeout=timeout)
+    send = session.request if session is not None else requests.request
+    resp = send(method, url, data=data, headers={"User-Agent": user_agent or USER_AGENT}, timeout=timeout)
     # Some protections answer 200/202 with a tiny redirect-to-captcha page, which
     # would otherwise parse as "a valid page with zero listings".
     if resp.status_code in (202, 403, 429, 503) or len(resp.text) < 2000:
@@ -46,3 +47,12 @@ def get(url: str, *, timeout: float = 15.0, user_agent: str | None = None) -> st
             raise Blocked(f"bot challenge at {url} (HTTP {resp.status_code})")
     resp.raise_for_status()
     return resp.text
+
+
+def get(url: str, *, timeout: float = 15.0, user_agent: str | None = None, session=None) -> str:
+    return _request("GET", url, data=None, timeout=timeout, user_agent=user_agent, session=session)
+
+
+def post(url: str, data: dict, *, timeout: float = 15.0, user_agent: str | None = None, session=None) -> str:
+    """Form POST (e.g. ASP.NET postback paging) — same throttle, UA and challenge detection as get()."""
+    return _request("POST", url, data=data, timeout=timeout, user_agent=user_agent, session=session)

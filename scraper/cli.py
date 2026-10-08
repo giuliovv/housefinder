@@ -15,6 +15,8 @@ import json
 import sys
 
 from .agencies import AGENCIES, AgencyConfig
+from .acquaint import AcquaintScraper
+from .estatesit import EstatesItScraper
 from .estatetrack import EstateTrackScraper
 from .expertagent import ExpertAgentScraper
 from .homeflow import HomeflowScraper
@@ -32,6 +34,10 @@ PROPERTYHIVE_THEMES = {
 def build_scraper(cfg: AgencyConfig):
     if cfg.platform == "homeflow":
         return HomeflowScraper(theme=cfg.homeflow_theme)
+    if cfg.platform == "acquaint":
+        return AcquaintScraper(user_agent=cfg.user_agent)
+    if cfg.platform == "estatesit":
+        return EstatesItScraper(user_agent=cfg.user_agent)
     if cfg.platform == "starberry":
         return StarberryScraper(user_agent=cfg.user_agent)
     if cfg.platform == "estatetrack":

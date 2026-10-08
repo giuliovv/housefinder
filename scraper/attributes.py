@@ -77,7 +77,7 @@ def classify_property_type(*texts: str) -> str | None:
 
 
 def floor_area_sqft(text: str) -> int | None:
-    m = re.search(r"([\d,]+(?:\.\d+)?)\s*(?:sq\.?\s?ft|sqft|square\s+f(?:ee|oo)t)\b", text, re.IGNORECASE)
+    m = re.search(r"([\d,]+(?:\.\d+)?)\s*(?:sq\.?\s?ft\b|sqft\b|square\s+f(?:ee|oo)t\b|ft²|ft2\b)", text, re.IGNORECASE)
     if m:
         value = float(m.group(1).replace(",", ""))
     else:
@@ -130,11 +130,11 @@ def extract_attributes(
         if parsed:
             attrs["available_from"] = parsed
 
-    council = _first([(re.compile(r"council\s+tax(?:\s+band)?\s*:\s*([A-H])\b", re.I), 1)], labelled)
+    council = _first([(re.compile(r"council\s+tax(?:\s+band)?\s*:\s*(?:band\s+)?([A-H])\b", re.I), 1)], labelled)
     if council:
         attrs["council_tax_band"] = council.upper()
 
-    epc = _first([(re.compile(r"\bEPC(?:\s+(?:rating|band))?\s*:\s*([A-G])\b", re.I), 1)], labelled + [free])
+    epc = _first([(re.compile(r"\bEPC(?:\s+(?:rating|band))?\s*:\s*(?:rating\s+|band\s+)?([A-G])\b", re.I), 1)], labelled + [free])
     if epc:
         attrs["epc"] = epc.upper()
 

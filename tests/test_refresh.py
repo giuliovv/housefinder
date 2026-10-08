@@ -127,7 +127,7 @@ def test_blocked_response_is_detected_not_parsed_as_empty(monkeypatch):
         def raise_for_status(self):
             pass
 
-    monkeypatch.setattr(requests, "get", lambda *a, **k: Resp())
+    monkeypatch.setattr(requests, "request", lambda *a, **k: Resp())
     http._last_request_at.clear()
     with pytest.raises(http.Blocked):
         http.get("https://example.com/search")

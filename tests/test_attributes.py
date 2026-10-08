@@ -65,3 +65,10 @@ def test_extra_structured_data_and_postcode():
 def test_amenity_flags():
     a = extract_attributes(None, description="Private garden, off street parking and a concierge", features=["Lift access"])
     assert set(a["amenities"]) == {"garden", "parking", "concierge", "lift"}
+
+
+def test_acquaint_style_area_epc_and_council_tax_lines():
+    html = BeautifulSoup("<ul><li>275m²/ 2,958ft²</li><li>EPC: Rating B, Council Tax: Band H</li></ul>", "html.parser")
+    a = extract_attributes(html)
+    assert (a["floor_area_sqft"], a["epc"], a["council_tax_band"]) == (2958, "B", "H")
+    assert floor_area_sqft("1,200 ft2") == 1200

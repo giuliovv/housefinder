@@ -301,4 +301,23 @@ AGENCIES: dict[str, AgencyConfig] = {
         key="battersea9elms", name="Battersea & Nine Elms", platform="starberry",
         search_url="https://www.battersea9elms.co.uk/property-lettings/properties-available-to-rent-in-london", london_only=True,
     ),
+    # --- Acquaint CRM website template (ASP.NET); see scraper/acquaint.py. Central:
+    # Knightsbridge / Chelsea / Cadogan area; rents mostly weekly.
+    "ashdownmarks": AgencyConfig(
+        key="ashdownmarks", name="Ashdown Marks", platform="acquaint",
+        search_url="https://www.ashdownmarks.co.uk/properties.aspx?mode=1&menuID=4", london_only=True,
+    ),
+    "homefullstop": AgencyConfig(
+        key="homefullstop", name="Home Fullstop", platform="acquaint",
+        search_url="https://www.homefullstop.com/properties.aspx?mode=1&menuID=50", london_only=True,
+    ),
+    # --- EstatesIT website platform; see scraper/estatesit.py.
+    "lyons": AgencyConfig(
+        key="lyons", name="Lyons", platform="estatesit",
+        search_url="https://www.lyonslondon.co.uk/results?querytype=8&market=1&displayperpage=12", london_only=True,
+    ),
+    "londonwide": AgencyConfig(
+        key="londonwide", name="Londonwide Estates", platform="estatesit",
+        search_url="https://www.londonwideestates.com/results?querytype=8&market=1&displayperpage=12", london_only=True,
+    ),
 }
