@@ -86,7 +86,18 @@ current parser status.
    homeviewestates) use a different template. London detection moved to
    `scraper/london.py` (district/borough names + postcodes), since these
    sites often write just "Mile End" or "Maida Vale". Street / Jupix hits
-   from discovery are still unchecked.
+   from discovery were checked 2026-10-08 and **not built**: *Jupix* (ZPG
+   "estateweb" sites: russellcollins, chissickestates, sintonandrews, ...) render
+   results client-side via a Knockout/JS API, so they'd need Playwright and a
+   bespoke parser for ~3-4 London-ish agencies; *Street* ("Spectre"/WordPress
+   plugin sites: portland, payne, davies, birchills, bourne, ...) differ site
+   by site, so no shared parser, and only ~1-2 are London (portland: Kensal Rise
+   / Queen's Park). **Open lead:** a Next.js "Estate-Track" template
+   (squiresestates.co.uk, collins-sarwar.com, homeviewestates.com; results at
+   `/properties/to-rent/page/N`, detail at `/property-to-rent/<slug>`, photos
+   from `<agency>.estate-track.co.uk/wp-content/uploads`, robots allows `/`
+   except `/api/`) — server-rendered, one shared template, Squires covers
+   Finchley/Hendon/Mill Hill. Worth a parser next; not yet built.
 3. **Image feature extraction — not started.** Room-type classification +
    cheap object-detection proxy for "big windows"/"large sink"-type
    attributes, reserving a VLM pass for a pre-filtered shortlist rather than
