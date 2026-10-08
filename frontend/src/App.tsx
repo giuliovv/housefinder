@@ -5,6 +5,7 @@ import { ListingCard } from "./components/ListingCard";
 import { SwipeDeck } from "./components/SwipeDeck";
 import { NeighbourhoodMap } from "./components/NeighbourhoodMap";
 import { FilterSheet } from "./components/FilterSheet";
+import { LoadingMessage } from "./components/LoadingMessage";
 import { useStylePreferences } from "./lib/preferences";
 import { extractPostcodeArea } from "./lib/location";
 import { listingKey } from "./lib/listingKey";
@@ -24,6 +25,7 @@ function App() {
   const [areaCentroids, setAreaCentroids] = useState<AreaCentroids>({});
   const [styleLabels, setStyleLabels] = useState<StyleLabel[]>([]);
   const [error, setError] = useState<string | null>(null);
+  const [styleFailed, setStyleFailed] = useState(false);
   const [sort, setSort] = useState<SortKey>("price-asc");
   const [agencyFilter, setAgencyFilter] = useState<string>("all");
   const [areaFilters, setAreaFilters] = useState<string[]>([]);
@@ -49,7 +51,10 @@ function App() {
     // the page-level error state.
     loadEmbeddingStore()
       .then(setStore)
-      .catch(() => setStore(null));
+      .catch((err) => {
+        console.error("style data failed to load", err);
+        setStyleFailed(true);
+      });
 
     // Same deal — the map is a nice-to-have on top of the area filter,
     // which already works without it via the chips.
@@ -200,8 +205,8 @@ function App() {
         </div>
       </header>
 
-      {error && <p className="app__error">Failed to load listings: {error}</p>}
-      {!error && !listings && <p className="app__loading">Loading…</p>}
+      {error && <p className="app__error">Couldn't load the homes just now — give it a refresh in a moment.</p>}
+      {!error && !listings && tab === "browse" && <LoadingMessage kind="listings" />}
 
       {tab === "style" && store && (
         <SwipeDeck
@@ -216,8 +221,9 @@ function App() {
           styleDescription={styleDescription}
         />
       )}
-      {tab === "style" && !store && (
-        <p className="app__loading">Loading style data… (or it hasn't been generated yet — see scraper/export_embeddings.py)</p>
+      {tab === "style" && !store && !styleFailed && <LoadingMessage kind="style" />}
+      {tab === "style" && styleFailed && (
+        <p className="app__error">Couldn't load the style cards just now — you can still browse; try a refresh in a moment.</p>
       )}
 
       {tab === "browse" && (
