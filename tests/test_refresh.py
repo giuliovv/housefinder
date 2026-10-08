@@ -163,12 +163,12 @@ def test_blocked_agency_stops_immediately_and_is_recorded(monkeypatch):
     assert export.BLOCKED == {"a"}
 
 
-def test_backoff_skips_recently_blocked_agencies_then_retries_after_a_week():
+def test_backoff_skips_recently_blocked_agencies_then_retries_after_three_days():
     from scraper.agencies import AgencyConfig
     from scraper.refresh import not_backing_off
 
     a = AgencyConfig(key="a", name="A", platform="propertyhive", search_url="x")
     b = AgencyConfig(key="b", name="B", platform="propertyhive", search_url="x")
     blocked = {"a": "2026-10-08"}
-    assert [c.key for c in not_backing_off([a, b], blocked, dt.date(2026, 10, 12))] == ["b"]
-    assert [c.key for c in not_backing_off([a, b], blocked, dt.date(2026, 10, 16))] == ["a", "b"]
+    assert [c.key for c in not_backing_off([a, b], blocked, dt.date(2026, 10, 10))] == ["b"]
+    assert [c.key for c in not_backing_off([a, b], blocked, dt.date(2026, 10, 11))] == ["a", "b"]

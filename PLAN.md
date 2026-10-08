@@ -189,7 +189,7 @@ current parser status.
 
    **Bot challenges and back-off (2026-10-08):** `http.get` raises `Blocked`
    on captcha/challenge responses; `refresh.py` records the agency in
-   `history.json -> blocked` and skips it for 7 days, then tries once more
+   `history.json -> blocked` and skips it for 3 days, then tries once more
    (steady-state runs are ~45 search-page requests per big agency, details are
    fetched for new listings only). Stirling Ackroyd got a SiteGround captcha
    after ~600 requests in a day during testing; it stays in the list under this

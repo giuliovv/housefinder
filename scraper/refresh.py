@@ -45,7 +45,7 @@ MISS_THRESHOLD = 2
 VERIFY_WINDOW_DAYS = 3
 RETENTION_DAYS = 90
 MAX_INJECT_AGE_HOURS = 36
-BLOCK_BACKOFF_DAYS = 7
+BLOCK_BACKOFF_DAYS = 3
 _UNAVAILABLE_STATUS = re.compile(r"^(let|let agreed|under offer|reserved|sstc|agreement signed)$", re.IGNORECASE)
 
 
@@ -112,7 +112,7 @@ def merge(
 def not_backing_off(agencies, blocked: dict[str, str], today: dt.date):
     """Drop agencies that challenged us within BLOCK_BACKOFF_DAYS. Trying a site
     again every day after it has put up a bot check is the opposite of polite;
-    a weekly look is enough to notice if it was lifted."""
+    a look every few days is enough to notice if it was lifted."""
     cutoff = today - dt.timedelta(days=BLOCK_BACKOFF_DAYS)
     out = []
     for cfg in agencies:

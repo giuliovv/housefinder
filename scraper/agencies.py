@@ -96,7 +96,7 @@ AGENCIES: dict[str, AgencyConfig] = {
     # began answering with a SiteGround captcha. It is kept in the list because
     # steady-state runs only read the ~45 search pages (details are fetched for
     # new listings only) — and if it challenges us again, http.Blocked + the
-    # 7-day back-off in refresh.py stop us trying. We never get past a challenge.
+    # 3-day back-off in refresh.py stop us trying. We never get past a challenge.
     "stirlingackroyd": AgencyConfig(
         key="stirlingackroyd",
         name="Stirling Ackroyd",
