@@ -17,8 +17,11 @@ What's recorded per listing (all dates are the scrape date, ISO strings):
   price_history, status_history — one entry per change, so price cuts and
       status transitions are visible.
   relisted — times it vanished and came back.
-  agency, platform, url, address, area (postcode district), bedrooms,
-      bathrooms — latest values, for slicing.
+  agency, platform, url, address, area (postcode district, e.g. SW1P),
+      bedrooms, bathrooms, photo_count — latest values, for slicing.
+  attrs — what scraper/attributes.py could extract: property_type, furnished,
+      deposit, available_from, floor_area_sqft, epc, council_tax_band, full
+      postcode, amenities, lat/lon (where the site exposes coordinates).
 Plus `runs`: for each date, how many listings each agency returned, so a gap
 caused by an agency being down (no entry) is distinguishable from a quiet day.
 
@@ -106,7 +109,13 @@ def update(history: dict, scraped: dict[str, tuple[list[dict], bool]], today: dt
                 bathrooms=s.get("bathrooms"),
             )
             m = _AREA.search(s["address"].upper())
-            rec["area"] = m.group(1) if m else None
+            attrs = row.get("attributes") or {}
+            # outward code (the "zip" district, e.g. SW1P); full postcode when the listing gives one
+            outward = (attrs.get("postcode") or "").split(" ")[0] or (m.group(1) if m else None)
+            rec["area"] = outward or None
+            if attrs:
+                rec["attrs"] = attrs
+            rec["photo_count"] = len(row.get("photo_urls") or [])
             if s.get("price_pcm") is not None:
                 _append_if_changed(rec["price_history"], day, s["price_pcm"])
             status = (s.get("status") or "available").strip()

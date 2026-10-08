@@ -31,6 +31,7 @@ from bs4 import BeautifulSoup, Tag
 
 from . import http
 from .base import PlatformScraper
+from .attributes import extract_attributes
 from .models import ListingDetail, ListingSummary
 from .price import parse_price_pcm
 
@@ -262,9 +263,11 @@ class PropertyHiveScraper(PlatformScraper):
                 bathrooms=summary.bathrooms if summary.bathrooms is not None else _count_before(description, "bath(?:room)?s?"),
             )
 
+        key_features = [f for f in key_features if f]
         return ListingDetail(
             summary=summary,
             description=description,
-            key_features=[f for f in key_features if f],
+            key_features=key_features,
             photo_urls=photo_urls,
+            attributes=extract_attributes(soup, description=description, features=key_features, address=summary.address),
         )

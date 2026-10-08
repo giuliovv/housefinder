@@ -19,6 +19,7 @@ from bs4 import BeautifulSoup, Tag
 
 from . import http
 from .base import PlatformScraper
+from .attributes import extract_attributes
 from .models import ListingDetail, ListingSummary
 from .price import parse_price_pcm
 
@@ -135,7 +136,12 @@ class StarberryScraper(PlatformScraper):
         soup = BeautifulSoup(http.get(summary.url, user_agent=self.user_agent), "html.parser")
         entry = soup.select_one(".section-entry")
         description = " ".join(t for p in entry.select("p") if (t := _text(p))) if entry else ""
-        return ListingDetail(summary=summary, description=description, photo_urls=_photos(soup, summary.source_id))
+        return ListingDetail(
+            summary=summary,
+            description=description,
+            photo_urls=_photos(soup, summary.source_id),
+            attributes=extract_attributes(soup, description=description, address=summary.address),
+        )
 
 
 def _photos(soup: BeautifulSoup, property_id: str) -> list[str]:

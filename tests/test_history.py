@@ -79,3 +79,15 @@ def test_same_day_rerun_is_idempotent_and_runs_are_logged():
     assert repr(h) == snapshot
     assert h["runs"][D[0].isoformat()] == {"a": 1}
     assert h["listings"]["p:1"]["area"] == "E1"
+
+
+def test_attributes_photo_count_and_postcode_district_are_kept():
+    h = history.empty_history(D[0])
+    r = row("1", addr="North Crescent, London")
+    r["attributes"] = {"furnished": "unfurnished", "postcode": "N3 3LL", "lat": 51.59}
+    r["photo_urls"] = ["a", "b", "c"]
+    run(h, D[0], {"a": [r]})
+    rec = h["listings"]["p:1"]
+    assert rec["attrs"]["furnished"] == "unfurnished" and rec["attrs"]["postcode"] == "N3 3LL"
+    assert rec["area"] == "N3"          # outward code taken from the full postcode when the address lacks one
+    assert rec["photo_count"] == 3

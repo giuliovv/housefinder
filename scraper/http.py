@@ -6,6 +6,7 @@ trying to sneak past) and a minimum delay between requests to the same host.
 """
 from __future__ import annotations
 
+import re
 import time
 
 import requests
@@ -25,9 +26,23 @@ def _throttle(host: str) -> None:
     _last_request_at[host] = time.monotonic()
 
 
+class Blocked(Exception):
+    """The site answered with a bot-check/challenge page instead of content.
+    We never try to get past these (see PLAN.md) — callers treat the agency
+    as unavailable for this run."""
+
+
+_CHALLENGE = re.compile(r"sgcaptcha|just a moment|cf_chl|challenge-platform|captcha-delivery|px-captcha", re.IGNORECASE)
+
+
 def get(url: str, *, timeout: float = 15.0, user_agent: str | None = None) -> str:
     host = requests.utils.urlparse(url).netloc
     _throttle(host)
     resp = requests.get(url, headers={"User-Agent": user_agent or USER_AGENT}, timeout=timeout)
+    # Some protections answer 200/202 with a tiny redirect-to-captcha page, which
+    # would otherwise parse as "a valid page with zero listings".
+    if resp.status_code in (202, 403, 429, 503) or len(resp.text) < 2000:
+        if _CHALLENGE.search(resp.text[:5000]):
+            raise Blocked(f"bot challenge at {url} (HTTP {resp.status_code})")
     resp.raise_for_status()
     return resp.text

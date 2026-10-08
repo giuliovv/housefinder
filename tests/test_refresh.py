@@ -112,3 +112,37 @@ def test_stale_injected_results_are_ignored(tmp_path):
 def test_agreement_signed_counts_as_unavailable():
     out = by_id(merge([], {"a": ([row("1", status="Agreement Signed")], False)}, D1))
     assert out["1"]["off_market"] is True
+
+
+def test_blocked_response_is_detected_not_parsed_as_empty(monkeypatch):
+    import pytest
+    import requests
+
+    from scraper import http
+
+    class Resp:
+        status_code = 202
+        text = '<html><head><meta http-equiv="refresh" content="0;/.well-known/sgcaptcha/?r=%2Fx"></head></html>'
+
+        def raise_for_status(self):
+            pass
+
+    monkeypatch.setattr(requests, "get", lambda *a, **k: Resp())
+    http._last_request_at.clear()
+    with pytest.raises(http.Blocked):
+        http.get("https://example.com/search")
+
+
+def test_zero_results_from_an_agency_with_known_listings_counts_as_failed(monkeypatch):
+    from scraper import export
+    from scraper.agencies import AgencyConfig
+
+    class Empty:
+        def search(self, *a, **k):
+            return iter(())
+
+    monkeypatch.setattr(export, "build_scraper", lambda cfg: Empty())
+    cfg = AgencyConfig(key="a", name="A", platform="propertyhive", search_url="https://x")
+    known = {"p:1": {"summary": {"agency": "a"}}}
+    assert export.scrape_agency(cfg, 10, 2, known) is None           # looks blocked
+    assert export.scrape_agency(cfg, 10, 2, {}) == ([], False)        # genuinely new/empty agency is fine

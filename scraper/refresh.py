@@ -35,6 +35,7 @@ import datetime as dt
 import json
 import pathlib
 import re
+import time
 
 from .agencies import AGENCIES
 from . import history as history_mod
@@ -107,9 +108,14 @@ def merge(
     return out
 
 
-def _scrape(agencies, per_agency: int, max_pages: int, known: dict[str, dict] | None = None) -> dict[str, tuple[list[dict], bool]]:
+def _scrape(agencies, per_agency: int, max_pages: int, known: dict[str, dict] | None = None, deadline: float | None = None) -> dict[str, tuple[list[dict], bool]]:
     scraped: dict[str, tuple[list[dict], bool]] = {}
     for cfg in agencies:
+        if deadline is not None and time.monotonic() > deadline:
+            # Agencies we don't reach are simply left untouched this run (not
+            # marked missing) and picked up by the next one.
+            print(f"[{cfg.key}] scrape time budget reached; deferring to the next run")
+            continue
         result = scrape_agency(cfg, per_agency, max_pages, known)
         if result is None:
             continue
@@ -139,6 +145,7 @@ def main() -> None:
     parser.add_argument("--platform", action="append", help="only scrape agencies on this platform (repeatable)")
     parser.add_argument("--dump", type=pathlib.Path, help="scrape and write the raw per-agency results here instead of merging")
     parser.add_argument("--history", type=pathlib.Path, help="permanent per-listing history file (see scraper/history.py), updated in place")
+    parser.add_argument("--max-minutes", type=float, default=None, help="stop starting new agencies after this long; the rest are deferred to the next run")
     parser.add_argument("--inject", type=pathlib.Path, help="pre-scraped results from --dump to merge in; agencies in it are not re-scraped")
     args = parser.parse_args()
     if not args.dump and not args.listings:
@@ -160,7 +167,8 @@ def main() -> None:
 
     existing = json.loads(args.listings.read_text()) if args.listings.exists() else []
     injected = _load_injected(args.inject, now) if args.inject else {}
-    scraped = _scrape([c for c in agencies if c.key not in injected], args.per_agency, args.max_pages, {listing_key(l): l for l in existing})
+    deadline = time.monotonic() + args.max_minutes * 60 if args.max_minutes else None
+    scraped = _scrape([c for c in agencies if c.key not in injected], args.per_agency, args.max_pages, {listing_key(l): l for l in existing}, deadline)
     scraped.update(injected)
 
     if not scraped:

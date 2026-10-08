@@ -19,6 +19,7 @@ from bs4 import BeautifulSoup, Tag
 
 from . import http
 from .base import PlatformScraper
+from .attributes import extract_attributes
 from .models import ListingDetail, ListingSummary
 from .price import parse_price_pcm
 
@@ -86,11 +87,27 @@ class EstateTrackScraper(PlatformScraper):
         item = (listing.get("offers") or {}).get("itemOffered") or {}
         photos = [u for u in item.get("image", []) if isinstance(u, str) and not re.search(r"floorplan|epc", u, re.I)]
         features = [f["name"] for f in item.get("amenityFeature", []) if isinstance(f, dict) and f.get("name")]
+        description = re.sub(r"\s+", " ", listing.get("description") or "").strip()
+        geo = item.get("geo") or {}
+        address = item.get("address") or {}
         return ListingDetail(
             summary=summary,
-            description=re.sub(r"\s+", " ", listing.get("description") or "").strip(),
+            description=description,
             key_features=features,
             photo_urls=list(dict.fromkeys(photos)),
+            attributes=extract_attributes(
+                soup,
+                description=description,
+                features=features,
+                address=summary.address,
+                extra={
+                    "type_hint": str(item.get("@type", "")),  # schema.org House / Apartment / ...
+                    "postcode": address.get("postalCode", ""),
+                    "lat": geo.get("latitude"),
+                    "lon": geo.get("longitude"),
+                    "rooms": item.get("numberOfRooms"),
+                },
+            ),
         )
 
 

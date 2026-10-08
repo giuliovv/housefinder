@@ -27,7 +27,7 @@ env:
 jobs:
   refresh-and-deploy:
     runs-on: ubuntu-latest
-    timeout-minutes: 240
+    timeout-minutes: 345
     steps:
       - uses: actions/checkout@v4
 
@@ -81,7 +81,7 @@ jobs:
 
       - name: Re-scrape agencies and merge into listings.json
         if: env.DO_SCRAPE == 'true'
-        run: python -m scraper.refresh --listings frontend/public/data/listings.json --history analytics/history.json --per-agency 800 --max-pages 90 --inject /tmp/homeflow.json
+        run: python -m scraper.refresh --listings frontend/public/data/listings.json --history analytics/history.json --per-agency 800 --max-pages 90 --max-minutes 100 --inject /tmp/homeflow.json
 
       # Right away, not at the end: history must survive a failed embed/deploy.
       - name: Save listing history

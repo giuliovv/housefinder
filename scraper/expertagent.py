@@ -23,6 +23,7 @@ from bs4 import BeautifulSoup, Tag
 
 from . import http
 from .base import PlatformScraper
+from .attributes import extract_attributes
 from .models import ListingDetail, ListingSummary
 from .price import parse_price_pcm
 
@@ -98,11 +99,13 @@ class ExpertAgentScraper(PlatformScraper):
                 and src not in photos
             ):
                 photos.append(src)
+        features = [t for li in soup.select(".eapow-star-items li") if (t := _text(li))]
         return ListingDetail(
             summary=summary,
             description=description,
-            key_features=[t for li in soup.select(".eapow-star-items li") if (t := _text(li))],
+            key_features=features,
             photo_urls=photos,
+            attributes=extract_attributes(soup, description=description, features=features, address=summary.address),
         )
 
 

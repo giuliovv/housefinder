@@ -29,6 +29,10 @@ def _listing_key(summary) -> str:
     return f"{summary.platform}:{summary.source_id}"
 
 
+def _has_known(known: dict[str, dict], cfg) -> bool:
+    return any(row.get("summary", {}).get("agency") == cfg.key for row in known.values())
+
+
 def scrape_agency(cfg, per_agency: int, max_pages: int, known: dict[str, dict] | None = None) -> tuple[list[dict], bool] | None:
     """Returns (rows, truncated), or None if the agency's search itself
     failed. `truncated` means the agency had more listings than `per_agency`
@@ -52,6 +56,13 @@ def scrape_agency(cfg, per_agency: int, max_pages: int, known: dict[str, dict] |
             # GitHub Actions annotation (plain text elsewhere) — surfaces the reason on the run page
             print(f"::warning title={cfg.key} search failed::{type(exc).__name__}: {str(exc)[:300]!r}")
             return None
+        if not summaries and _has_known(known, cfg):
+            # An agency that had listings yesterday and shows none today is far more
+            # likely blocking/failing than empty; treat it as a failed scrape so its
+            # listings aren't marked gone.
+            print(f"[{cfg.key}] returned zero listings but we know of some — treating as failed")
+            print(f"::warning title={cfg.key} returned nothing::zero listings for an agency with known ones")
+            return None
         truncated = len(summaries) > per_agency
         summaries = summaries[:per_agency]
         # some agencies list parking spaces / garages / single rooms among lettings
@@ -62,7 +73,8 @@ def scrape_agency(cfg, per_agency: int, max_pages: int, known: dict[str, dict] |
         summaries = [x for x in summaries if not (_listing_key(x) in seen or seen.add(_listing_key(x)))]
         for i, summary in enumerate(summaries, 1):
             prev = known.get(_listing_key(summary))
-            if prev is not None:
+            # rows stored before attributes existed are re-fetched once to backfill them
+            if prev is not None and "attributes" in prev:
                 row = dict(prev)
                 row["summary"] = dataclasses.asdict(summary)
                 rows.append(row)

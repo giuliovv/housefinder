@@ -88,22 +88,11 @@ AGENCIES: dict[str, AgencyConfig] = {
         search_url="https://www.aspire.co.uk/properties/lettings",
         homeflow_theme="panel",
     ),
-    # Property Hive plugin on a bespoke theme ("stirlingackroyd" preset);
-    # photos come from Reapit's CDN. Central/north London, mid-to-prime
-    # prices. robots.txt only disallows a list of named generic crawlers (not
-    # us) and has no "*" rule — but the server returns 403 to User-Agents it
-    # recognises as scrapers (ours, and anything containing e.g. "research"),
-    # so this agency uses a plain truthful UA instead. If it starts refusing
-    # that too, stop rather than escalating, and ask them for access.
-    "stirlingackroyd": AgencyConfig(
-        key="stirlingackroyd",
-        name="Stirling Ackroyd",
-        platform="propertyhive",
-        search_url="https://www.stirlingackroyd.com/property-search/?department=residential-lettings",
-        propertyhive_theme="stirlingackroyd",
-        user_agent="house-finder/0.1 (personal rental search; not for resale)",
-        london_only=True,  # ~45% of its lettings are Surrey/Berkshire
-    ),
+    # stirlingackroyd (Property Hive, "stirlingackroyd" theme in propertyhive.py)
+    # was removed 2026-10-08: after ~580 listings were scraped over a day its
+    # server started answering with a SiteGround captcha redirect. We don't get
+    # past bot checks; ask them for access instead. Its stored listings stay in
+    # the dataset, unverified.
     # --- Property Hive agencies on the plugin's stock templates (found via
     # scraper/discover.py, each live-checked: robots.txt allows us, our
     # User-Agent isn't refused, London lettings, photos + description parse).

@@ -201,10 +201,18 @@ current parser status.
    agency outages show up as gaps, not as mass disappearances). *Gone is not
    let*: disappearance can be a withdrawal, so "let agreed" status dates are
    the better time-to-let signal where an agency shows them (most do not —
-   many just delete the listing). Not yet collected, worth adding when
-   analysis starts: property type, furnished/unfurnished, available-from date,
-   deposit, floor area (parse from descriptions), EPC rating, lat/lon (Estate-
-   Track exposes it in JSON-LD), photo count, and a derived "reduced" flag.
+   many just delete the listing). Also collected now (`scraper/attributes.py`, per
+   listing under `attrs` in the history): property type (flat/house/studio/
+   room/maisonette/bungalow), furnished (furnished/unfurnished/part/optional),
+   deposit, available-from date ("now" or ISO), floor area in sq ft (parsed
+   from descriptions, either unit, sanity-bounded), EPC letter, council tax
+   band, full postcode where the listing gives one (otherwise the outward
+   code, e.g. SW1P, is always kept as `area` for weighting by district),
+   amenity flags (garden/balcony/parking/lift/concierge), lat/lon where the
+   site exposes them (Estate-Track), photo count. Every field is optional —
+   missing means the site didn't say. Existing listings are re-fetched once to
+   backfill these. Still to add if wanted: a derived "price reduced" flag
+   (computable from price_history at analysis time, so no collection needed).
    Caveats to keep in mind when reading results: listing ages are only exact
    for listings first seen after their agency's first run; all Homeflow
    listings are frozen (blocked), so they carry no market signal; Dexters/

@@ -36,3 +36,7 @@ class ListingDetail:
     description: str
     key_features: list[str] = field(default_factory=list)
     photo_urls: list[str] = field(default_factory=list)
+    # Structured extras for analytics (see scraper/attributes.py): property_type,
+    # furnished, deposit, available_from, floor_area_sqft, epc, council_tax_band,
+    # postcode, amenities, lat/lon where the site exposes them. Any may be absent.
+    attributes: dict = field(default_factory=dict)
