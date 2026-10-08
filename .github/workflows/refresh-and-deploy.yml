@@ -87,7 +87,7 @@ jobs:
         timeout-minutes: 200   # leaves time for the always() checkpoint step below
         run: |
           ( while true; do sleep 300; aws s3 cp frontend/public/data/embeddings.json "s3://$BUCKET/cache/embeddings.json" --quiet || true; done ) &
-          python -m scraper.embeddings --incremental --in frontend/public/data/listings.json --out frontend/public/data/embeddings.json
+          python -m scraper.embeddings --incremental --max-minutes 165 --in frontend/public/data/listings.json --out frontend/public/data/embeddings.json
 
       - name: Save checkpoint
         if: always() && env.DO_SCRAPE == 'true'

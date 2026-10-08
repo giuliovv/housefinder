@@ -79,7 +79,9 @@ def main() -> None:
     parser.add_argument("--limit", type=int, default=None, help="only process the first N listings (for a quick test run)")
     parser.add_argument("--incremental", action="store_true", help="reuse entries already in --out for listings that haven't changed; only embed new ones, and drop entries for listings no longer in --in")
     parser.add_argument("--checkpoint-every", type=int, default=20, help="write --out after every N newly embedded listings, so an interrupted run can be resumed with --incremental")
+    parser.add_argument("--max-minutes", type=float, default=None, help="stop cleanly after this long, keeping everything embedded so far; a later --incremental run continues (lets a huge backlog be spread over several runs, each of which still deploys)")
     args = parser.parse_args()
+    deadline = time.monotonic() + args.max_minutes * 60 if args.max_minutes else None
 
     listings = json.loads(args.infile.read_text())
     if args.limit is not None:
@@ -112,6 +114,10 @@ def main() -> None:
             key = _listing_key(listing)
             if key in result:
                 continue
+            if deadline is not None and time.monotonic() > deadline:
+                remaining = sum(1 for l in listings if _listing_key(l) not in result)
+                print(f"time budget reached; {remaining} listings left for the next run")
+                break
             photo_urls = listing["photo_urls"][:MAX_PHOTOS_PER_LISTING]
             print(f"[{i}/{len(listings)}] {key} — {listing['summary']['address']} ({len(photo_urls)} photos)")
 
