@@ -3,3 +3,5 @@ beautifulsoup4>=4.12
 playwright>=1.61
 pytest>=8.0
 fastembed>=0.8
+ijson>=3.2
+numpy>=1.26

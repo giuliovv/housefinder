@@ -40,22 +40,29 @@ jobs:
           aws-region: ${{ env.AWS_REGION }}
 
       # The data files aren't in git; the live copy in S3 is the source of truth.
+      # embeddings.json (every photo's full vectors, ~150MB) is the *working*
+      # store, kept under work/ and never shipped to the site; the site gets the
+      # compact ranking.bin / ranking-index.json / deck.json that
+      # scraper/export_embeddings.py builds from it.
       - name: Pull current data from S3
         run: |
-          mkdir -p frontend/public/data
-          aws s3 cp "s3://$BUCKET/data/" frontend/public/data/ --recursive
-          # A previous run that died part-way saved its progress here (see
-          # "Save checkpoint" below); it's a superset of data/ for the same
-          # listings, so overlay it. Cleared after every successful deploy.
-          # Only for scraping runs: a code-only push must deploy the data as it
-          # is, not a half-finished checkpoint.
+          mkdir -p frontend/public/data work
+          aws s3 cp "s3://$BUCKET/data/" frontend/public/data/ --recursive --exclude "embeddings.json"
+          aws s3 cp "s3://$BUCKET/work/embeddings.json" work/embeddings.json \
+            || aws s3 cp "s3://$BUCKET/data/embeddings.json" work/embeddings.json \
+            || echo "no embeddings yet"
+          # A previous run that died part-way saved its progress under cache/ (see
+          # "Save checkpoint" below); it's a superset of the above for the same
+          # listings, so overlay it. Only for scraping runs: a code-only push must
+          # deploy the data as it is, not a half-finished checkpoint. Cleared after
+          # every successful deploy.
           if [ "$DO_SCRAPE" = "true" ] && aws s3 ls "s3://$BUCKET/cache/" > /dev/null 2>&1; then
             echo "resuming from checkpoint"
-            aws s3 cp "s3://$BUCKET/cache/" frontend/public/data/ --recursive
+            aws s3 cp "s3://$BUCKET/cache/listings.json" frontend/public/data/listings.json || true
+            aws s3 cp "s3://$BUCKET/cache/embeddings.json" work/embeddings.json || true
           fi
 
       - uses: actions/setup-python@v5
-        if: env.DO_SCRAPE == 'true'
         with:
           python-version: "3.12"
           cache: pip
@@ -65,6 +72,12 @@ jobs:
         run: |
           pip install -r requirements.txt
           playwright install --with-deps chromium
+
+      # Code-only pushes still rebuild the compact site embeddings (the deploy
+      # replaces the whole site, so they must be part of every build).
+      - name: Install export dependencies
+        if: env.DO_SCRAPE != 'true'
+        run: pip install ijson numpy
 
       # Homeflow agencies time out from GitHub's IPs; the dev host scrapes them
       # on cron and uploads the raw result here (see scraper/refresh.py).
@@ -102,15 +115,29 @@ jobs:
         if: env.DO_SCRAPE == 'true'
         timeout-minutes: 200   # leaves time for the always() checkpoint step below
         run: |
-          ( while true; do sleep 300; aws s3 cp frontend/public/data/embeddings.json "s3://$BUCKET/cache/embeddings.json" --quiet || true; done ) &
-          python -m scraper.embeddings --incremental --max-minutes 165 --in frontend/public/data/listings.json --out frontend/public/data/embeddings.json
+          ( while true; do sleep 300; aws s3 cp work/embeddings.json "s3://$BUCKET/cache/embeddings.json" --quiet || true; done ) &
+          python -m scraper.embeddings --incremental --max-minutes 165 --in frontend/public/data/listings.json --out work/embeddings.json
 
       - name: Save checkpoint
         if: always() && env.DO_SCRAPE == 'true'
         run: |
-          for f in listings embeddings; do
-            [ -f "frontend/public/data/$f.json" ] && aws s3 cp "frontend/public/data/$f.json" "s3://$BUCKET/cache/$f.json" --quiet || true
-          done
+          [ -f frontend/public/data/listings.json ] && aws s3 cp frontend/public/data/listings.json "s3://$BUCKET/cache/listings.json" --quiet || true
+          [ -f work/embeddings.json ] && aws s3 cp work/embeddings.json "s3://$BUCKET/cache/embeddings.json" --quiet || true
+
+      # The durable copy of the working embeddings (checkpoints under cache/ are
+      # cleared after a deploy); saved before deploying so a failed deploy can't lose it.
+      - name: Save working embeddings
+        if: always() && env.DO_SCRAPE == 'true'
+        run: |
+          [ -f work/embeddings.json ] && aws s3 cp work/embeddings.json "s3://$BUCKET/work/embeddings.json" --quiet || true
+
+      - name: Build compact site embeddings
+        run: |
+          if [ -f work/embeddings.json ]; then
+            python -m scraper.export_embeddings --embeddings work/embeddings.json --listings frontend/public/data/listings.json --out-dir frontend/public/data
+          else
+            echo "no work/embeddings.json — site will have no style data"
+          fi
 
       - name: Geocode any new postcode areas
         if: env.DO_SCRAPE == 'true'

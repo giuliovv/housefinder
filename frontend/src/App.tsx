@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
-import type { AreaCentroids, EmbeddingsData, Listing, StyleLabel } from "./types";
+import type { AreaCentroids, Listing, StyleLabel } from "./types";
+import { loadEmbeddingStore, type EmbeddingStore } from "./lib/embeddingStore";
 import { ListingCard } from "./components/ListingCard";
 import { SwipeDeck } from "./components/SwipeDeck";
 import { NeighbourhoodMap } from "./components/NeighbourhoodMap";
@@ -19,7 +20,7 @@ const PAGE_SIZE = 40;
 
 function App() {
   const [allListings, setAllListings] = useState<Listing[] | null>(null);
-  const [embeddings, setEmbeddings] = useState<EmbeddingsData | null>(null);
+  const [store, setStore] = useState<EmbeddingStore | null>(null);
   const [areaCentroids, setAreaCentroids] = useState<AreaCentroids>({});
   const [styleLabels, setStyleLabels] = useState<StyleLabel[]>([]);
   const [error, setError] = useState<string | null>(null);
@@ -43,13 +44,12 @@ function App() {
       .then(setAllListings)
       .catch((err) => setError(err instanceof Error ? err.message : String(err)));
 
-    // Embeddings are optional — the app still works (minus style-matching)
-    // if this fails or hasn't been generated yet, so failures here don't
-    // set the page-level error state.
-    fetch("/data/embeddings.json")
-      .then((res) => (res.ok ? res.json() : null))
-      .then(setEmbeddings)
-      .catch(() => setEmbeddings(null));
+    // The style data is optional — the app still works (minus style-matching)
+    // if this fails or hasn't been generated yet, so failures here don't set
+    // the page-level error state.
+    loadEmbeddingStore()
+      .then(setStore)
+      .catch(() => setStore(null));
 
     // Same deal — the map is a nice-to-have on top of the area filter,
     // which already works without it via the chips.
@@ -80,7 +80,7 @@ function App() {
     setShownCount(PAGE_SIZE);
   }, [agencyFilter, areaFilters, minPrice, maxPrice, minBedrooms, minBathrooms, sort]);
 
-  const { undecided, swipes, swipe, toggleSwipe, reset, preferenceVector, matchScores, likedCount, dislikedCount } = useStylePreferences(embeddings);
+  const { undecided, swipes, swipe, toggleSwipe, reset, preferenceVector, matchScores, likedCount, dislikedCount } = useStylePreferences(store);
 
   const styleDescription = useMemo(() => {
     if (!preferenceVector || styleLabels.length === 0) return null;
@@ -203,7 +203,7 @@ function App() {
       {error && <p className="app__error">Failed to load listings: {error}</p>}
       {!error && !listings && <p className="app__loading">Loading…</p>}
 
-      {tab === "style" && embeddings && (
+      {tab === "style" && store && (
         <SwipeDeck
           undecided={undecided}
           listingsByKey={listingsByKey}
@@ -216,8 +216,8 @@ function App() {
           styleDescription={styleDescription}
         />
       )}
-      {tab === "style" && !embeddings && (
-        <p className="app__loading">Loading style data… (or it hasn't been generated yet — see scraper/embeddings.py)</p>
+      {tab === "style" && !store && (
+        <p className="app__loading">Loading style data… (or it hasn't been generated yet — see scraper/export_embeddings.py)</p>
       )}
 
       {tab === "browse" && (
@@ -264,7 +264,7 @@ function App() {
                 key={`${listing.summary.platform}-${listing.summary.source_id}`}
                 listing={listing}
                 matchScore={matchScores?.[listingKey(listing)]}
-                embeddings={embeddings}
+                store={store}
                 swipes={swipes}
                 onRate={toggleSwipe}
               />

@@ -1,7 +1,7 @@
 /** All in-browser: preference-vector math over CLIP embeddings. No backend —
  * a user's swipes never leave their device at this stage. */
 
-export function cosineSimilarity(a: number[], b: number[]): number {
+export function cosineSimilarity(a: ArrayLike<number>, b: ArrayLike<number>): number {
   let dot = 0;
   let normA = 0;
   let normB = 0;
@@ -14,9 +14,9 @@ export function cosineSimilarity(a: number[], b: number[]): number {
   return dot / (Math.sqrt(normA) * Math.sqrt(normB));
 }
 
-function mean(vectors: number[][]): number[] {
+function mean(vectors: ArrayLike<number>[]): Float32Array {
   const dim = vectors[0].length;
-  const out = new Array(dim).fill(0);
+  const out = new Float32Array(dim);
   for (const v of vectors) {
     for (let i = 0; i < dim; i++) out[i] += v[i];
   }
@@ -32,9 +32,9 @@ function mean(vectors: number[][]): number[] {
  * meaningful preference.
  */
 export function computePreferenceVector(
-  liked: number[][],
-  disliked: number[][],
-): number[] | null {
+  liked: ArrayLike<number>[],
+  disliked: ArrayLike<number>[],
+): Float32Array | null {
   if (liked.length === 0) return null;
   const likedCentroid = mean(liked);
   if (disliked.length === 0) return likedCentroid;
@@ -42,13 +42,11 @@ export function computePreferenceVector(
   return likedCentroid.map((v, i) => v - dislikedCentroid[i]);
 }
 
-/** A listing's match score is the best (max) similarity across its own
- * photos — "this flat has at least one room that matches your taste" is a
- * more useful signal for a rental search than the average, which would
- * punish an otherwise-great flat for one mediocre bathroom photo. */
-export function listingMatchScore(preference: number[], photoEmbeddings: number[][]): number {
-  return Math.max(...photoEmbeddings.map((p) => cosineSimilarity(preference, p)));
-}
+/* A listing's match score is the best (max) cosine similarity across its own
+ * photos — "this flat has at least one room that matches your taste" is a more
+ * useful signal for a rental search than the average, which would punish an
+ * otherwise-great flat for one mediocre bathroom photo. It is computed over the
+ * packed int8 matrix in embeddingStore.ts (scoreListings), not here. */
 
 /** Describes a preference vector in words: cosine-similarity it against a
  * fixed vocabulary of style phrases (same CLIP text space) and return the
@@ -57,7 +55,7 @@ export function listingMatchScore(preference: number[], photoEmbeddings: number[
  * just the same embedding-space trick the whole match-score mechanic
  * already relies on. */
 export function topStyleLabels(
-  preference: number[],
+  preference: ArrayLike<number>,
   labels: { label: string; embedding: number[] }[],
   topN = 3,
 ): string[] {

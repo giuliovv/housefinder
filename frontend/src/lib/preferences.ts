@@ -1,21 +1,34 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
-import type { EmbeddingsData, ListingKey } from "../types";
-import { computePreferenceVector, listingMatchScore } from "./similarity";
+import type { ListingKey } from "../types";
+import { computePreferenceVector } from "./similarity";
+import { decodeInt8, dequantize, encodeInt8, photoId, quantize, type DeckPhoto, type EmbeddingStore } from "./embeddingStore";
 
 export type SwipeChoice = "like" | "dislike";
 
-interface DeckPhoto {
-  id: string; // `${listingKey}::${url}` — stable across reloads, used as the swipe-state key
-  listingKey: ListingKey;
-  url: string;
-  embedding: number[];
+/** A swipe keeps its own vector. A taste profile therefore never depends on the
+ * data files: listings expire and get re-embedded, and a swipe must keep
+ * counting regardless. */
+interface StoredSwipe {
+  c: SwipeChoice;
+  v: string; // base64 int8
+  s: number; // scale: vector ≈ v * s
 }
 
-const STORAGE_KEY = "housefinder:style-swipes:v1";
+const STORAGE_KEY = "housefinder:style-swipes:v2";
+const LEGACY_KEY = "housefinder:style-swipes:v1"; // id -> choice only, vectors lived in the big embeddings file
 
-function loadStoredSwipes(): Record<string, SwipeChoice> {
+function loadStored(): Record<string, StoredSwipe> {
   try {
     const raw = localStorage.getItem(STORAGE_KEY);
+    return raw ? JSON.parse(raw) : {};
+  } catch {
+    return {};
+  }
+}
+
+function loadLegacy(): Record<string, SwipeChoice> {
+  try {
+    const raw = localStorage.getItem(LEGACY_KEY);
     return raw ? JSON.parse(raw) : {};
   } catch {
     return {};
@@ -42,63 +55,86 @@ function seededShuffle<T>(items: T[], seed: number): T[] {
   return arr;
 }
 
-export function useStylePreferences(embeddings: EmbeddingsData | null) {
-  const [swipes, setSwipes] = useState<Record<string, SwipeChoice>>(loadStoredSwipes);
+export function useStylePreferences(store: EmbeddingStore | null) {
+  const [stored, setStored] = useState<Record<string, StoredSwipe>>(loadStored);
 
   useEffect(() => {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(swipes));
-  }, [swipes]);
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(stored));
+  }, [stored]);
 
-  const deck = useMemo<DeckPhoto[]>(() => {
-    if (!embeddings) return [];
-    const all: DeckPhoto[] = [];
-    for (const [listingKey, entry] of Object.entries(embeddings)) {
-      for (const photo of entry.photos) {
-        all.push({ id: `${listingKey}::${photo.url}`, listingKey, url: photo.url, embedding: photo.embedding });
+  // One-off: carry over swipes from the old format whose photo still has a
+  // vector in the current data (older ones can't be recovered).
+  useEffect(() => {
+    if (!store || localStorage.getItem(LEGACY_KEY + ":migrated")) return;
+    const legacy = loadLegacy();
+    const migrated: Record<string, StoredSwipe> = {};
+    for (const [id, choice] of Object.entries(legacy)) {
+      const vec = store.vectorOf(id);
+      if (vec) {
+        const { q, scale } = quantize(vec);
+        migrated[id] = { c: choice, v: encodeInt8(q), s: scale };
       }
     }
-    return seededShuffle(all, 42);
-  }, [embeddings]);
+    localStorage.setItem(LEGACY_KEY + ":migrated", "1");
+    if (Object.keys(migrated).length > 0) setStored((prev) => ({ ...migrated, ...prev }));
+  }, [store]);
 
-  const undecided = useMemo(() => deck.filter((p) => !(p.id in swipes)), [deck, swipes]);
+  const swipes = useMemo<Record<string, SwipeChoice>>(
+    () => Object.fromEntries(Object.entries(stored).map(([id, sw]) => [id, sw.c])),
+    [stored],
+  );
 
-  const swipe = useCallback((id: string, choice: SwipeChoice) => {
-    setSwipes((prev) => ({ ...prev, [id]: choice }));
-  }, []);
+  const deck = useMemo<DeckPhoto[]>(() => (store ? seededShuffle(store.deck, 42) : []), [store]);
+  const undecided = useMemo(() => deck.filter((p) => !(p.id in stored)), [deck, stored]);
+
+  const record = useCallback(
+    (id: string, choice: SwipeChoice) => {
+      const vec = store?.vectorOf(id);
+      if (!vec) return; // a photo without a vector can't influence matching, so don't record it
+      const { q, scale } = quantize(vec);
+      setStored((prev) => ({ ...prev, [id]: { c: choice, v: encodeInt8(q), s: scale } }));
+    },
+    [store],
+  );
+
+  const swipe = useCallback((id: string, choice: SwipeChoice) => record(id, choice), [record]);
 
   // Clicking the same choice again clears it — lets a rating made while
   // scrolling the Browse grid (as opposed to the dedicated swipe deck, where
   // there's no way to revisit a photo) be corrected without a full reset.
-  const toggleSwipe = useCallback((id: string, choice: SwipeChoice) => {
-    setSwipes((prev) => {
-      if (prev[id] === choice) {
-        const { [id]: _removed, ...rest } = prev;
-        return rest;
+  const toggleSwipe = useCallback(
+    (id: string, choice: SwipeChoice) => {
+      if (stored[id]?.c === choice) {
+        setStored((prev) => {
+          const { [id]: _removed, ...rest } = prev;
+          return rest;
+        });
+      } else {
+        record(id, choice);
       }
-      return { ...prev, [id]: choice };
-    });
-  }, []);
+    },
+    [stored, record],
+  );
 
-  const reset = useCallback(() => setSwipes({}), []);
+  const reset = useCallback(() => setStored({}), []);
 
   const preferenceVector = useMemo(() => {
-    const liked = deck.filter((p) => swipes[p.id] === "like").map((p) => p.embedding);
-    const disliked = deck.filter((p) => swipes[p.id] === "dislike").map((p) => p.embedding);
-    return computePreferenceVector(liked, disliked);
-  }, [deck, swipes]);
+    const vectors = (choice: SwipeChoice) =>
+      Object.values(stored)
+        .filter((sw) => sw.c === choice)
+        .map((sw) => dequantize(decodeInt8(sw.v), sw.s));
+    return computePreferenceVector(vectors("like"), vectors("dislike"));
+  }, [stored]);
 
   const matchScores = useMemo<Record<ListingKey, number> | null>(() => {
-    if (!preferenceVector || !embeddings) return null;
-    const scores: Record<ListingKey, number> = {};
-    for (const [listingKey, entry] of Object.entries(embeddings)) {
-      if (entry.photos.length === 0) continue;
-      scores[listingKey] = listingMatchScore(preferenceVector, entry.photos.map((p) => p.embedding));
-    }
-    return scores;
-  }, [preferenceVector, embeddings]);
+    if (!preferenceVector || !store) return null;
+    return store.scoreListings(preferenceVector);
+  }, [preferenceVector, store]);
 
-  const likedCount = useMemo(() => Object.values(swipes).filter((c) => c === "like").length, [swipes]);
-  const dislikedCount = useMemo(() => Object.values(swipes).filter((c) => c === "dislike").length, [swipes]);
+  const likedCount = useMemo(() => Object.values(stored).filter((sw) => sw.c === "like").length, [stored]);
+  const dislikedCount = useMemo(() => Object.values(stored).filter((sw) => sw.c === "dislike").length, [stored]);
 
   return { deck, undecided, swipes, swipe, toggleSwipe, reset, preferenceVector, matchScores, likedCount, dislikedCount };
 }
+
+export { photoId };

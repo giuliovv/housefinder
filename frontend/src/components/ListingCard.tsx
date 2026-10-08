@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from "react";
-import type { EmbeddingsData, Listing } from "../types";
+import type { Listing } from "../types";
+import type { EmbeddingStore } from "../lib/embeddingStore";
 import type { SwipeChoice } from "../lib/preferences";
 import { normalizeImageUrl } from "../lib/url";
 import { listingKey } from "../lib/listingKey";
@@ -8,13 +9,13 @@ import { extractPostcodeArea } from "../lib/location";
 export function ListingCard({
   listing,
   matchScore,
-  embeddings,
+  store,
   swipes,
   onRate,
 }: {
   listing: Listing;
   matchScore?: number;
-  embeddings?: EmbeddingsData | null;
+  store?: EmbeddingStore | null;
   swipes?: Record<string, SwipeChoice>;
   onRate?: (photoId: string, choice: SwipeChoice) => void;
 }) {
@@ -27,14 +28,11 @@ export function ListingCard({
   const scrollFrame = useRef<number | null>(null);
   const rawCurrentPhoto = photos[photoIndex];
 
-  // Only photos that were actually CLIP-embedded can be rated (in practice
-  // this is every photo, up to scraper/embeddings.py's MAX_PHOTOS_PER_LISTING
-  // safety ceiling) — rating only makes sense for a photo that has an
-  // embedding to feed into the preference vector, so buttons are hidden
-  // otherwise rather than silently recording a swipe that never affects
-  // match scores.
-  const embeddedUrls = embeddings?.[listingKey(listing)]?.photos.map((p) => p.url);
-  const canRate = onRate != null && embeddedUrls != null && rawCurrentPhoto != null && embeddedUrls.includes(rawCurrentPhoto);
+  // Only photos that have a vector can be rated — rating only makes sense for
+  // a photo that can feed the preference vector, so the buttons are hidden
+  // otherwise rather than silently recording a swipe that never affects match
+  // scores.
+  const canRate = onRate != null && store != null && rawCurrentPhoto != null && store.hasPhoto(listingKey(listing), rawCurrentPhoto);
   const photoId = rawCurrentPhoto != null ? `${listingKey(listing)}::${rawCurrentPhoto}` : null;
   const currentChoice = photoId != null ? swipes?.[photoId] : undefined;
 

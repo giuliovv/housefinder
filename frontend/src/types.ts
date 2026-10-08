@@ -30,18 +30,6 @@ export interface Listing {
 /** listing key = `${platform}:${source_id}` — matches scraper/embeddings.py's _listing_key */
 export type ListingKey = string;
 
-export interface PhotoEmbedding {
-  url: string;
-  embedding: number[];
-}
-
-export interface ListingEmbeddings {
-  photos: PhotoEmbedding[];
-  text_embedding: number[] | null;
-}
-
-export type EmbeddingsData = Record<ListingKey, ListingEmbeddings>;
-
 /** area = postcode outward code, e.g. "SW4" — matches lib/location.ts's extractPostcodeArea */
 export type AreaCentroids = Record<string, { lat: number; lon: number }>;
 

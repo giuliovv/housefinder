@@ -225,6 +225,22 @@ current parser status.
    listings are frozen (blocked), so they carry no market signal; Dexters/
    Estate-Track/Expert Agent inventory skews central/west and prime.
 
+   **Style data size (2026-10-08):** `embeddings.json` (all photos' full
+   vectors) had grown to 154MB, which every visitor downloaded. It is now the
+   *working store* only (`s3://…/work/embeddings.json`, never shipped), and
+   `scraper/export_embeddings.py` builds the site files: `ranking.bin` (every
+   photo of every browseable listing as int8 + scale, 9.7MB), `ranking-index.json`
+   and `deck.json` (1,500-photo sample incl. let/unverified listings, for the
+   swipe deck); first load ~12MB instead of ~155MB. Measured on simulated
+   users before choosing: an averaged vector per listing keeps only ~15-20% of
+   today's top 20; 5 representative vectors ~40-55%; PCA-reduced vectors or
+   6-10 diverse photos per listing ~30-90% — all rejected. Full-dimension int8
+   for every photo is essentially exact (rank correlation 0.9996; the page's
+   match % differs from the unquantised calculation by <1 point, i.e. display
+   rounding). Swipes now store their own vector in localStorage (v2), so a
+   taste profile survives listings expiring; v1 swipes migrate when their photo
+   is still in the data.
+
 ## Infra
 
 - `frontend/` (Vite/React) + `infra/` (CDK: S3 + CloudFront) — done, deployed
