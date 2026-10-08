@@ -24,7 +24,10 @@ export class CiStack extends cdk.Stack {
 
     const deployRole = new iam.Role(this, 'GithubDeployRole', {
       roleName: 'housefinder-github-deploy',
-      maxSessionDuration: cdk.Duration.hours(2),
+      // Refresh runs take 2h+; credentials are issued once at the start of a job
+      // (configure-aws-credentials), so they must outlive the whole run or the
+      // checkpoint uploads and final deploy fail with expired-token errors.
+      maxSessionDuration: cdk.Duration.hours(6),
       assumedBy: new iam.FederatedPrincipal(
         providerArn,
         {

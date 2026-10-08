@@ -34,6 +34,7 @@ jobs:
       - uses: aws-actions/configure-aws-credentials@v4
         with:
           role-to-assume: arn:aws:iam::854656252703:role/housefinder-github-deploy
+          role-duration-seconds: 21600   # default is 1h; these runs take 2h+
           aws-region: ${{ env.AWS_REGION }}
 
       # The data files aren't in git; the live copy in S3 is the source of truth.
