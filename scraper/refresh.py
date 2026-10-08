@@ -39,12 +39,13 @@ import time
 
 from .agencies import AGENCIES
 from . import history as history_mod
-from .export import scrape_agency
+from .export import BLOCKED, scrape_agency
 
 MISS_THRESHOLD = 2
 VERIFY_WINDOW_DAYS = 3
 RETENTION_DAYS = 90
 MAX_INJECT_AGE_HOURS = 36
+BLOCK_BACKOFF_DAYS = 7
 _UNAVAILABLE_STATUS = re.compile(r"^(let|let agreed|under offer|reserved|sstc|agreement signed)$", re.IGNORECASE)
 
 
@@ -108,6 +109,21 @@ def merge(
     return out
 
 
+def not_backing_off(agencies, blocked: dict[str, str], today: dt.date):
+    """Drop agencies that challenged us within BLOCK_BACKOFF_DAYS. Trying a site
+    again every day after it has put up a bot check is the opposite of polite;
+    a weekly look is enough to notice if it was lifted."""
+    cutoff = today - dt.timedelta(days=BLOCK_BACKOFF_DAYS)
+    out = []
+    for cfg in agencies:
+        since = blocked.get(cfg.key)
+        if since and dt.date.fromisoformat(since) > cutoff:
+            print(f"[{cfg.key}] blocked on {since}; backing off until {dt.date.fromisoformat(since) + dt.timedelta(days=BLOCK_BACKOFF_DAYS)}")
+            continue
+        out.append(cfg)
+    return out
+
+
 def _scrape(agencies, per_agency: int, max_pages: int, known: dict[str, dict] | None = None, deadline: float | None = None) -> dict[str, tuple[list[dict], bool]]:
     scraped: dict[str, tuple[list[dict], bool]] = {}
     for cfg in agencies:
@@ -167,19 +183,27 @@ def main() -> None:
 
     existing = json.loads(args.listings.read_text()) if args.listings.exists() else []
     injected = _load_injected(args.inject, now) if args.inject else {}
+    hist = history_mod.load(args.history, now.date()) if args.history else None
+    blocked = hist.setdefault("blocked", {}) if hist is not None else {}
+
+    to_scrape = not_backing_off([c for c in agencies if c.key not in injected], blocked, now.date())
     deadline = time.monotonic() + args.max_minutes * 60 if args.max_minutes else None
-    scraped = _scrape([c for c in agencies if c.key not in injected], args.per_agency, args.max_pages, {listing_key(l): l for l in existing}, deadline)
+    scraped = _scrape(to_scrape, args.per_agency, args.max_pages, {listing_key(l): l for l in existing}, deadline)
     scraped.update(injected)
+
+    for key in BLOCKED:
+        blocked[key] = now.date().isoformat()
+    for key in scraped:  # got through, so any earlier block is over
+        blocked.pop(key, None)
 
     if not scraped:
         raise SystemExit("every agency failed — refusing to write an unchanged dataset as if it were refreshed")
 
-    if args.history:
-        hist = history_mod.load(args.history, now.date())
+    if hist is not None:
         history_mod.update(hist, scraped, now.date())
         history_mod.save(args.history, hist)
         ended = sum(1 for r in hist["listings"].values() if r.get("ended"))
-        print(f"history: {len(hist['listings'])} listings tracked, {ended} ended")
+        print(f"history: {len(hist['listings'])} listings tracked, {ended} ended; backing off from: {sorted(blocked) or 'none'}")
 
     merged = merge(existing, scraped, now.date())
     args.listings.write_text(json.dumps(merged, ensure_ascii=False, indent=2))

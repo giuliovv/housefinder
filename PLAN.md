@@ -187,6 +187,13 @@ current parser status.
    or misrepresent the user to an agency they might actually want to rent
    from.
 
+   **Bot challenges and back-off (2026-10-08):** `http.get` raises `Blocked`
+   on captcha/challenge responses; `refresh.py` records the agency in
+   `history.json -> blocked` and skips it for 7 days, then tries once more
+   (steady-state runs are ~45 search-page requests per big agency, details are
+   fetched for new listings only). Stirling Ackroyd got a SiteGround captcha
+   after ~600 requests in a day during testing; it stays in the list under this
+   policy, with the permission email still the real fix.
 9. **Market analytics — data collection started 2026-10-08.** Goal: learn
    how long different kinds of property stay on the market, how often rents
    are cut, and how supply moves, by area / bedrooms / agency. Collection

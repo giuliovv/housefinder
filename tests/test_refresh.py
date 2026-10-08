@@ -146,3 +146,29 @@ def test_zero_results_from_an_agency_with_known_listings_counts_as_failed(monkey
     known = {"p:1": {"summary": {"agency": "a"}}}
     assert export.scrape_agency(cfg, 10, 2, known) is None           # looks blocked
     assert export.scrape_agency(cfg, 10, 2, {}) == ([], False)        # genuinely new/empty agency is fine
+
+
+def test_blocked_agency_stops_immediately_and_is_recorded(monkeypatch):
+    from scraper import export, http
+    from scraper.agencies import AgencyConfig
+
+    class Blocking:
+        def search(self, *a, **k):
+            raise http.Blocked("challenge")
+
+    monkeypatch.setattr(export, "build_scraper", lambda cfg: Blocking())
+    export.BLOCKED.clear()
+    cfg = AgencyConfig(key="a", name="A", platform="propertyhive", search_url="https://x")
+    assert export.scrape_agency(cfg, 10, 2, {}) is None
+    assert export.BLOCKED == {"a"}
+
+
+def test_backoff_skips_recently_blocked_agencies_then_retries_after_a_week():
+    from scraper.agencies import AgencyConfig
+    from scraper.refresh import not_backing_off
+
+    a = AgencyConfig(key="a", name="A", platform="propertyhive", search_url="x")
+    b = AgencyConfig(key="b", name="B", platform="propertyhive", search_url="x")
+    blocked = {"a": "2026-10-08"}
+    assert [c.key for c in not_backing_off([a, b], blocked, dt.date(2026, 10, 12))] == ["b"]
+    assert [c.key for c in not_backing_off([a, b], blocked, dt.date(2026, 10, 16))] == ["a", "b"]

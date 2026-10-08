@@ -18,11 +18,16 @@ import re
 
 from .agencies import AGENCIES
 from .cli import build_scraper
+from .http import Blocked
 from .london import is_london
 
 
 # below this it's a parking space, garage or storage unit, not a home to rent
 MIN_PLAUSIBLE_RENT_PCM = 300
+
+# Agencies that answered this run with a bot challenge. refresh.py reads this to
+# back off from them for a while instead of trying again the next day.
+BLOCKED: set[str] = set()
 
 
 def _listing_key(summary) -> str:
@@ -51,6 +56,11 @@ def scrape_agency(cfg, per_agency: int, max_pages: int, known: dict[str, dict] |
         try:
             # one past the cap, purely to learn whether the cap cut anything off
             summaries = list(itertools.islice(scraper.search(cfg.key, cfg.search_url, max_pages=max_pages), per_agency + 1))
+        except Blocked as exc:
+            print(f"[{cfg.key}] {exc} — backing off from this agency")
+            print(f"::warning title={cfg.key} blocked::{exc}")
+            BLOCKED.add(cfg.key)
+            return None
         except Exception as exc:  # noqa: BLE001 - one agency being unreachable (rate-limited, down, etc.) shouldn't lose every other agency's results
             print(f"[{cfg.key}] search failed, skipping this agency entirely: {exc}")
             # GitHub Actions annotation (plain text elsewhere) — surfaces the reason on the run page
@@ -82,6 +92,12 @@ def scrape_agency(cfg, per_agency: int, max_pages: int, known: dict[str, dict] |
             print(f"[{cfg.key}] detail {i}/{len(summaries)}: {summary.address}")
             try:
                 detail = scraper.detail(cfg.key, summary)
+            except Blocked as exc:
+                # a challenge mid-run: stop at once rather than keep requesting
+                print(f"[{cfg.key}] {exc} — stopping and backing off")
+                print(f"::warning title={cfg.key} blocked::{exc}")
+                BLOCKED.add(cfg.key)
+                return None
             except Exception as exc:  # noqa: BLE001 - one flaky page shouldn't lose the whole batch
                 print(f"[{cfg.key}] skipping {summary.address!r}: {exc}")
                 continue
