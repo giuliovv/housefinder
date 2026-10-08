@@ -15,6 +15,7 @@ import json
 import sys
 
 from .agencies import AGENCIES, AgencyConfig
+from .expertagent import ExpertAgentScraper
 from .homeflow import HomeflowScraper
 from .propertyhive import HEALTHYPIXELS_THEME, STIRLINGACKROYD_THEME, STOCK_THEME, VECO_THEME, PropertyHiveScraper
 
@@ -29,6 +30,8 @@ PROPERTYHIVE_THEMES = {
 def build_scraper(cfg: AgencyConfig):
     if cfg.platform == "homeflow":
         return HomeflowScraper(theme=cfg.homeflow_theme)
+    if cfg.platform == "expertagent":
+        return ExpertAgentScraper(user_agent=cfg.user_agent)
     if cfg.platform == "propertyhive":
         return PropertyHiveScraper(theme=PROPERTYHIVE_THEMES[cfg.propertyhive_theme], user_agent=cfg.user_agent)
     raise ValueError(f"no scraper registered for platform: {cfg.platform}")

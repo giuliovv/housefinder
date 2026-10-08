@@ -18,17 +18,7 @@ import re
 
 from .agencies import AGENCIES
 from .cli import build_scraper
-
-
-_LONDON_WORD = re.compile(r"\bLondon\b", re.IGNORECASE)
-_INNER_LONDON_POSTCODE = re.compile(r"\b(?:EC|WC|NW|SE|SW|E|N|W)\d{1,2}[A-Z]?\b")
-
-
-def is_london(address: str) -> bool:
-    """Deliberately conservative: says "London" or has an inner-London postcode
-    area. Misses outer-London addresses written with only e.g. a DA/BR/CR
-    postcode, which is the right side to err on."""
-    return bool(_LONDON_WORD.search(address) or _INNER_LONDON_POSTCODE.search(address))
+from .london import is_london
 
 
 def _listing_key(summary) -> str:

@@ -74,8 +74,19 @@ current parser status.
    wdbproperty, andrewlloyd, hiltons-estates, victormichael (different markup
    — detail pages or cards don't parse with the stock theme; each would need
    its own preset). Where a card doesn't show beds/baths, `detail()` falls
-   back to the description ("a four bedroom townhouse"). Expert Agent /
-   Street / Jupix hits from discovery are still unchecked.
+   **Expert Agent (2026-10-08)** turned out to be a true shared website
+   platform (Joomla "eapow" template, `/properties-to-let`,
+   `/properties-to-let/property/<id>-slug`, offset paging via `?limitstart=N`):
+   new `scraper/expertagent.py`, 17 agencies added (~240 London listings:
+   Circa, W J Meade, Frost, Sales & Lettings, Messila, Houghton, White
+   Estates, David Harris, Elegant, Park Heath, Mile Estates, Pollard Machin,
+   Elite & Co, Brian Thomas, HJC, Amanda Roberts, May & Co). Skipped
+   jamesneave.co.uk and grantallen.com (essentially no London stock); four
+   more Expert Agent hits (squiresestates, collins-sarwar, griffingroup,
+   homeviewestates) use a different template. London detection moved to
+   `scraper/london.py` (district/borough names + postcodes), since these
+   sites often write just "Mile End" or "Maida Vale". Street / Jupix hits
+   from discovery are still unchecked.
 3. **Image feature extraction — not started.** Room-type classification +
    cheap object-detection proxy for "big windows"/"large sink"-type
    attributes, reserving a VLM pass for a pre-filtered shortlist rather than

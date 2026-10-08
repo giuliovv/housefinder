@@ -148,4 +148,77 @@ AGENCIES: dict[str, AgencyConfig] = {
         search_url="https://www.spencermunson.co.uk/propertysearch/?department=residential-lettings",
         propertyhive_theme="stock", london_only=True,
     ),
+    # --- Expert Agent platform agencies (found via scraper/discover.py, each
+    # live-checked: robots.txt allows us, our User-Agent isn't refused, listings
+    # + photos + description parse). london_only because several also cover
+    # Surrey/Essex/Herts. Skipped: jamesneave.co.uk, grantallen.com (essentially
+    # no London listings).
+    "circaproperty": AgencyConfig(
+        key="circaproperty", name="Circa Property", platform="expertagent",
+        search_url="https://www.circaproperty.co.uk/properties-to-let", london_only=True,
+    ),
+    "wjmeade": AgencyConfig(
+        key="wjmeade", name="W J Meade", platform="expertagent",
+        search_url="https://wjmeade.co.uk/properties-to-let", london_only=True,
+    ),
+    "frostproperty": AgencyConfig(
+        key="frostproperty", name="Frost Property", platform="expertagent",
+        search_url="https://www.frostproperty.co.uk/lettings/properties-to-let", london_only=True,
+    ),
+    "salesandlettingsltd": AgencyConfig(
+        key="salesandlettingsltd", name="Sales & Lettings Ltd", platform="expertagent",
+        search_url="https://www.salesandlettingsltd.com/properties-to-let", london_only=True,
+    ),
+    "messilaresidential": AgencyConfig(
+        key="messilaresidential", name="Messila Residential", platform="expertagent",
+        search_url="https://www.messilaresidential.com/properties-to-let", london_only=True,
+    ),
+    "houghtonestates": AgencyConfig(
+        key="houghtonestates", name="Houghton Estates", platform="expertagent",
+        search_url="https://www.houghtonestates.com/properties-to-let", london_only=True,
+    ),
+    "whiteestates": AgencyConfig(
+        key="whiteestates", name="White Estates", platform="expertagent",
+        search_url="https://www.white-estates.co.uk/properties-to-let", london_only=True,
+    ),
+    "davidharris": AgencyConfig(
+        key="davidharris", name="David Harris", platform="expertagent",
+        search_url="https://www.davidharris.co.uk/properties-to-let", london_only=True,
+    ),
+    "elegantpropertygroup": AgencyConfig(
+        key="elegantpropertygroup", name="Elegant Property Group", platform="expertagent",
+        search_url="https://www.elegantpropertygroup.co.uk/properties-to-let", london_only=True,
+    ),
+    "parkheath": AgencyConfig(
+        key="parkheath", name="Park Heath", platform="expertagent",
+        search_url="https://www.parkheath.com/lettings/properties-to-let", london_only=True,
+    ),
+    "mileestates": AgencyConfig(
+        key="mileestates", name="Mile Estates", platform="expertagent",
+        search_url="https://www.mileestates.co.uk/properties-to-let", london_only=True,
+    ),
+    "pollardmachin": AgencyConfig(
+        key="pollardmachin", name="Pollard Machin", platform="expertagent",
+        search_url="https://www.pollardmachin.co.uk/properties-to-let", london_only=True,
+    ),
+    "eliteandco": AgencyConfig(
+        key="eliteandco", name="Elite & Co", platform="expertagent",
+        search_url="https://www.eliteandco.co.uk/properties-to-let", london_only=True,
+    ),
+    "brianthomasestates": AgencyConfig(
+        key="brianthomasestates", name="Brian Thomas Estates", platform="expertagent",
+        search_url="https://www.brianthomasestates.com/properties-to-let", london_only=True,
+    ),
+    "hjc": AgencyConfig(
+        key="hjc", name="HJC", platform="expertagent",
+        search_url="https://www.hjc.co.uk/properties-to-let", london_only=True,
+    ),
+    "amandaroberts": AgencyConfig(
+        key="amandaroberts", name="Amanda Roberts", platform="expertagent",
+        search_url="https://www.amandaroberts.co.uk/properties-to-let", london_only=True,
+    ),
+    "mayandco": AgencyConfig(
+        key="mayandco", name="May & Co", platform="expertagent",
+        search_url="https://www.mayandco.co.uk/properties-to-let", london_only=True,
+    ),
 }

@@ -4,7 +4,7 @@ import pathlib
 
 from bs4 import BeautifulSoup
 
-from scraper.export import is_london
+from scraper.london import is_london
 from scraper.propertyhive import STIRLINGACKROYD_THEME, PropertyHiveScraper
 
 FIXTURES = pathlib.Path(__file__).parent / "fixtures"
@@ -92,3 +92,12 @@ def test_bedrooms_fall_back_to_description_when_card_has_none(monkeypatch) -> No
     detail = scraper.detail("x", summary)
 
     assert detail.summary.bedrooms == 4
+
+
+def test_is_london_district_names_and_outer_postcodes() -> None:
+    for yes in ["Coborn Road, Mile End", "Portnall Road, Maida Vale", "The Green, Chingford", "Romford Road, Stratford",
+                "Stag Lane, Edgware", "Foxley Lane, Purley", "High St, Bromley, BR1 1AA", "Heath Road, Romford RM1 2AB"]:
+        assert is_london(yes), yes
+    for no in ["Churchfield Road, Walton-On-Thames", "Bonham Drive, Orsett, Grays", "Westville Road, Thames Ditton",
+               "High Street, Richmond, North Yorkshire", "Kingston Road, Epsom, KT17 4AB", "Egham, Surrey, TW20 9PN"]:
+        assert not is_london(no), no

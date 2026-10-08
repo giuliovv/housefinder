@@ -43,7 +43,7 @@ MISS_THRESHOLD = 2
 VERIFY_WINDOW_DAYS = 3
 RETENTION_DAYS = 90
 MAX_INJECT_AGE_HOURS = 36
-_UNAVAILABLE_STATUS = re.compile(r"^(let|let agreed|under offer|reserved|sstc)$", re.IGNORECASE)
+_UNAVAILABLE_STATUS = re.compile(r"^(let|let agreed|under offer|reserved|sstc|agreement signed)$", re.IGNORECASE)
 
 
 def listing_key(listing: dict) -> str:

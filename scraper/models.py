@@ -15,7 +15,7 @@ class ListingSummary:
     """One row from a search/results page — cheap to get, one per property."""
     source_id: str          # platform-assigned id, unique within that platform
     agency: str              # registry key, e.g. "innercityestates"
-    platform: str            # "homeflow" | "propertyhive"
+    platform: str            # "homeflow" | "propertyhive" | "expertagent"
     url: str                 # absolute URL to the detail page
     address: str
     price_text: str          # as displayed, e.g. "£3,200 pcm"
