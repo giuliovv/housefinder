@@ -107,3 +107,8 @@ def test_stale_injected_results_are_ignored(tmp_path):
     write(now - dt.timedelta(hours=40))
     assert _load_injected(path, now) == {}
     assert _load_injected(tmp_path / "missing.json", now) == {}
+
+
+def test_agreement_signed_counts_as_unavailable():
+    out = by_id(merge([], {"a": ([row("1", status="Agreement Signed")], False)}, D1))
+    assert out["1"]["off_market"] is True

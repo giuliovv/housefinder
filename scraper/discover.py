@@ -25,6 +25,11 @@ import requests
 from .http import USER_AGENT
 
 # Greater London bounding box (south, west, north, east)
+OVERPASS_ENDPOINTS = [
+    "https://overpass-api.de/api/interpreter",
+    "https://overpass.kumi.systems/api/interpreter",
+    "https://overpass.private.coffee/api/interpreter",
+]
 LONDON_BBOX = "51.28,-0.51,51.69,0.33"
 PLATFORM_PATTERNS = {
     "propertyhive": r"plugins/propertyhive|propertyhive",
@@ -37,18 +42,28 @@ PLATFORM_PATTERNS = {
     "vebra": r"vebra",
     "reapit": r"reapit",
     "gnomen": r"gnomen",
+    "estatetrack": r"estate-track\.co\.uk",
 }
 
 
-def osm_agency_sites() -> dict[str, str]:
-    """host -> agency name, for estate agents in London that list a website."""
+def osm_agency_sites() -> dict[str, dict]:
+    """host -> {name, lat, lon}, for estate agents in London that list a website."""
     q = (
         f'[out:json][timeout:90];(node["office"="estate_agent"]({LONDON_BBOX});'
         f'way["office"="estate_agent"]({LONDON_BBOX});node["shop"="estate_agent"]({LONDON_BBOX}););out tags center;'
     )
-    r = requests.post("https://overpass-api.de/api/interpreter", data={"data": q}, headers={"User-Agent": USER_AGENT}, timeout=120)
-    r.raise_for_status()
-    sites: dict[str, str] = {}
+    # the public Overpass servers are often overloaded; try the mirrors in turn
+    last: Exception | None = None
+    for endpoint in OVERPASS_ENDPOINTS:
+        try:
+            r = requests.post(endpoint, data={"data": q}, headers={"User-Agent": USER_AGENT}, timeout=120)
+            r.raise_for_status()
+            break
+        except requests.RequestException as exc:
+            last = exc
+    else:
+        raise RuntimeError(f"all Overpass endpoints failed: {last}")
+    sites: dict[str, dict] = {}
     for e in r.json()["elements"]:
         tags = e.get("tags", {})
         site = tags.get("website") or tags.get("contact:website") or tags.get("url")
@@ -57,7 +72,8 @@ def osm_agency_sites() -> dict[str, str]:
         if not site.startswith("http"):
             site = "http://" + site
         host = urllib.parse.urlparse(site).netloc.lower().removeprefix("www.")
-        sites.setdefault(host, tags.get("name", ""))
+        centre = e.get("center") or e
+        sites.setdefault(host, {"name": tags.get("name", ""), "lat": centre.get("lat"), "lon": centre.get("lon")})
     return sites
 
 
@@ -87,7 +103,7 @@ def main() -> None:
     with ThreadPoolExecutor(16) as pool:  # one request per host, so still polite
         results = list(pool.map(fingerprint, sites))
     for r in results:
-        r["name"] = sites[r["host"]]
+        r.update(sites[r["host"]])
     args.out.write_text(json.dumps(results, indent=1))
     print(f"wrote {len(results)} fingerprints to {args.out}")
 

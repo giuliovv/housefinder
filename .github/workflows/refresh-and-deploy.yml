@@ -72,7 +72,7 @@ jobs:
 
       - name: Re-scrape agencies and merge into listings.json
         if: env.DO_SCRAPE == 'true'
-        run: python -m scraper.refresh --listings frontend/public/data/listings.json --per-agency 400 --max-pages 60 --inject /tmp/homeflow.json
+        run: python -m scraper.refresh --listings frontend/public/data/listings.json --per-agency 800 --max-pages 90 --inject /tmp/homeflow.json
 
       # Save the merged listings right away: if embedding dies, the next run
       # won't have to redo the scrape.

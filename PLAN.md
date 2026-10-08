@@ -92,12 +92,15 @@ current parser status.
    bespoke parser for ~3-4 London-ish agencies; *Street* ("Spectre"/WordPress
    plugin sites: portland, payne, davies, birchills, bourne, ...) differ site
    by site, so no shared parser, and only ~1-2 are London (portland: Kensal Rise
-   / Queen's Park). **Open lead:** a Next.js "Estate-Track" template
-   (squiresestates.co.uk, collins-sarwar.com, homeviewestates.com; results at
-   `/properties/to-rent/page/N`, detail at `/property-to-rent/<slug>`, photos
-   from `<agency>.estate-track.co.uk/wp-content/uploads`, robots allows `/`
-   except `/api/`) — server-rendered, one shared template, Squires covers
-   Finchley/Hendon/Mill Hill. Worth a parser next; not yet built.
+   / Queen's Park). **Estate-Track (built 2026-10-08):** a Next.js template with
+   schema.org JSON-LD on every detail page (`scraper/estatetrack.py`).
+   16 agencies, ~900 London listings: Squires, Woodward, Charles Eden, Nathan
+   K, Hot Black Desiato, EJPR, Compton Reeback, Parkes Estates, Edmund, GoView
+   London, Glen Hall, Daniels, Collins Sarwar, Homeview, AJR Property, James
+   Anderson. Rents under £300 pcm are dropped (parking spaces/garages are
+   listed among lettings). Central coverage from this batch is thin (Parkes:
+   Belgravia/Marylebone, Compton Reeback: St John's Wood/Maida Vale) — a
+   separate hunt for Pimlico/Chelsea/City agencies is needed.
 3. **Image feature extraction — not started.** Room-type classification +
    cheap object-detection proxy for "big windows"/"large sink"-type
    attributes, reserving a VLM pass for a pre-filtered shortlist rather than

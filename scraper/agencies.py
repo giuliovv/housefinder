@@ -221,4 +221,69 @@ AGENCIES: dict[str, AgencyConfig] = {
         key="mayandco", name="May & Co", platform="expertagent",
         search_url="https://www.mayandco.co.uk/properties-to-let", london_only=True,
     ),
+    # --- Estate-Track (Next.js template) agencies; see scraper/estatetrack.py.
+    "squires": AgencyConfig(
+        key="squires", name="Squires", platform="estatetrack",
+        search_url="https://squiresestates.co.uk/properties/to-rent", london_only=True,
+    ),
+    "woodward": AgencyConfig(
+        key="woodward", name="Woodward", platform="estatetrack",
+        search_url="https://woodward.co.uk/properties/to-rent", london_only=True,
+    ),
+    "charleseden": AgencyConfig(
+        key="charleseden", name="Charles Eden", platform="estatetrack",
+        search_url="https://charleseden.co.uk/properties/to-rent", london_only=True,
+    ),
+    "nathankrealestate": AgencyConfig(
+        key="nathankrealestate", name="Nathan K Real Estate", platform="estatetrack",
+        search_url="https://nathankrealestate.com/properties/to-rent", london_only=True,
+    ),
+    "hotblackdesiato": AgencyConfig(
+        key="hotblackdesiato", name="Hot Black Desiato", platform="estatetrack",
+        search_url="https://hotblackdesiato.co.uk/properties/to-rent", london_only=True,
+    ),
+    "ejpr": AgencyConfig(
+        key="ejpr", name="EJPR", platform="estatetrack",
+        search_url="https://ejpr.co.uk/properties/to-rent", london_only=True,
+    ),
+    "comptonreeback": AgencyConfig(
+        key="comptonreeback", name="Compton Reeback", platform="estatetrack",
+        search_url="https://comptonreeback.co.uk/properties/to-rent", london_only=True,
+    ),
+    "parkesestates": AgencyConfig(
+        key="parkesestates", name="Parkes Estates", platform="estatetrack",
+        search_url="https://parkesestates.com/properties/to-rent", london_only=True,
+    ),
+    "edmund": AgencyConfig(
+        key="edmund", name="Edmund", platform="estatetrack",
+        search_url="https://edmund.co.uk/properties/to-rent", london_only=True,
+    ),
+    "goviewlondon": AgencyConfig(
+        key="goviewlondon", name="GoView London", platform="estatetrack",
+        search_url="https://goviewlondon.co.uk/properties/to-rent", london_only=True,
+    ),
+    "glenhall": AgencyConfig(
+        key="glenhall", name="Glen Hall", platform="estatetrack",
+        search_url="https://glenhall.co.uk/properties/to-rent", london_only=True,
+    ),
+    "danielsestateagents": AgencyConfig(
+        key="danielsestateagents", name="Daniels Estate Agents", platform="estatetrack",
+        search_url="https://danielsestateagents.co.uk/properties/to-rent", london_only=True,
+    ),
+    "collinssarwar": AgencyConfig(
+        key="collinssarwar", name="Collins Sarwar", platform="estatetrack",
+        search_url="https://www.collins-sarwar.com/properties/to-rent", london_only=True,
+    ),
+    "homeviewestates": AgencyConfig(
+        key="homeviewestates", name="Homeview Estates", platform="estatetrack",
+        search_url="https://www.homeviewestates.com/properties/to-rent", london_only=True,
+    ),
+    "ajrproperty": AgencyConfig(
+        key="ajrproperty", name="AJR Property", platform="estatetrack",
+        search_url="https://ajrproperty.com/properties/to-rent", london_only=True,
+    ),
+    "jamesanderson": AgencyConfig(
+        key="jamesanderson", name="James Anderson", platform="estatetrack",
+        search_url="https://jamesanderson.co.uk/properties/to-rent", london_only=True,
+    ),
 }

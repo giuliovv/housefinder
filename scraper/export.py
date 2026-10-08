@@ -21,6 +21,10 @@ from .cli import build_scraper
 from .london import is_london
 
 
+# below this it's a parking space, garage or storage unit, not a home to rent
+MIN_PLAUSIBLE_RENT_PCM = 300
+
+
 def _listing_key(summary) -> str:
     return f"{summary.platform}:{summary.source_id}"
 
@@ -50,6 +54,8 @@ def scrape_agency(cfg, per_agency: int, max_pages: int, known: dict[str, dict] |
             return None
         truncated = len(summaries) > per_agency
         summaries = summaries[:per_agency]
+        # some agencies list parking spaces / garages / single rooms among lettings
+        summaries = [x for x in summaries if x.price_pcm is None or x.price_pcm >= MIN_PLAUSIBLE_RENT_PCM]
         if cfg.london_only:
             summaries = [x for x in summaries if is_london(x.address)]
         seen: set[str] = set()

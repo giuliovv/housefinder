@@ -133,8 +133,8 @@ def _load_injected(path: pathlib.Path, now: dt.datetime) -> dict[str, tuple[list
 def main() -> None:
     parser = argparse.ArgumentParser()
     parser.add_argument("--listings", type=pathlib.Path, help="existing listings.json, updated in place (may not exist yet)")
-    parser.add_argument("--per-agency", type=int, default=400)
-    parser.add_argument("--max-pages", type=int, default=60)
+    parser.add_argument("--per-agency", type=int, default=800)
+    parser.add_argument("--max-pages", type=int, default=90)
     parser.add_argument("--platform", action="append", help="only scrape agencies on this platform (repeatable)")
     parser.add_argument("--dump", type=pathlib.Path, help="scrape and write the raw per-agency results here instead of merging")
     parser.add_argument("--inject", type=pathlib.Path, help="pre-scraped results from --dump to merge in; agencies in it are not re-scraped")
