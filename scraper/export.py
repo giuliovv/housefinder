@@ -19,6 +19,7 @@ import re
 from .agencies import AGENCIES
 from .cli import build_scraper
 from .http import Blocked
+from .price import implausible_reason
 from .london import is_london
 
 
@@ -32,6 +33,14 @@ BLOCKED: set[str] = set()
 
 def _listing_key(summary) -> str:
     return f"{summary.platform}:{summary.source_id}"
+
+
+def _flag_implausible_price(summary):
+    reason = implausible_reason(summary.price_pcm, summary.bedrooms)
+    if reason is None:
+        return summary
+    print(f"  ! implausible price {summary.price_text!r} ({summary.bedrooms} bed) at {summary.address!r}: {reason}")
+    return dataclasses.replace(summary, price_pcm=None, price_flag=reason)
 
 
 def _has_known(known: dict[str, dict], cfg) -> bool:
@@ -79,6 +88,7 @@ def scrape_agency(cfg, per_agency: int, max_pages: int, known: dict[str, dict] |
         summaries = [x for x in summaries if x.price_pcm is None or x.price_pcm >= MIN_PLAUSIBLE_RENT_PCM]
         if cfg.london_only:
             summaries = [x for x in summaries if is_london(x.address)]
+        summaries = [_flag_implausible_price(x) for x in summaries]
         seen: set[str] = set()
         summaries = [x for x in summaries if not (_listing_key(x) in seen or seen.add(_listing_key(x)))]
         for i, summary in enumerate(summaries, 1):

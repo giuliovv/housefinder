@@ -158,6 +158,9 @@ export function ListingCard({
             <p className="listing-card__area">{extractPostcodeArea(summary.address)}</p>
           )}
         </div>
+        {summary.price_flag && (
+          <p className="listing-card__price-flag">Price looks off — check with the agency</p>
+        )}
         <p className="listing-card__address">{summary.address}</p>
         <p className="listing-card__rooms">
           {summary.bedrooms != null && <span>{summary.bedrooms} bed</span>}

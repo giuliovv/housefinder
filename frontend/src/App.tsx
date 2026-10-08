@@ -157,8 +157,12 @@ function App() {
         const sb = matchScores[listingKey(b)] ?? -Infinity;
         return sb - sa;
       }
-      const pa = a.summary.price_pcm ?? Infinity;
-      const pb = b.summary.price_pcm ?? Infinity;
+      // listings without a (trustworthy) price go last whichever way we sort
+      const pa = a.summary.price_pcm;
+      const pb = b.summary.price_pcm;
+      if (pa === null && pb === null) return 0;
+      if (pa === null) return 1;
+      if (pb === null) return -1;
       return sort === "price-asc" ? pa - pb : pb - pa;
     });
   }, [preAreaFiltered, sort, areaFilters, matchScores]);

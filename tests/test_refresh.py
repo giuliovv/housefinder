@@ -249,3 +249,54 @@ def test_main_still_fails_when_every_agency_genuinely_fails(monkeypatch, tmp_pat
     a = AgencyConfig(key="a", name="A", platform="propertyhive", search_url="x")
     code, _, _ = _run_main(monkeypatch, tmp_path, {"version": 1, "started": "x", "runs": {}, "listings": {}}, [a], lambda cfg: None)
     assert code not in (0, None)
+
+
+def test_implausible_prices_are_caught_but_real_prime_rents_are_not():
+    from scraper.price import implausible_reason as bad
+
+    assert bad(273832, 3)                      # the annual-rent-labelled-per-week case (~£21k per bedroom per week)
+    assert bad(200_000, 8) and bad(100, 1)     # absolute limits
+    assert bad(91000, 7) is None               # Dexters, Addison Road: £21,000 pw for 7 beds
+    assert bad(65000, 4) is None               # Mayfair: £15,000 pw for 4 beds
+    assert bad(34996, 11) is None
+    assert bad(1600, 1) is None and bad(None, 2) is None
+    assert bad(60000, None) is None            # unknown bedrooms: only the absolute caps apply
+
+
+def test_scrape_agency_clears_and_flags_an_implausible_price(monkeypatch):
+    from scraper import export
+    from scraper.agencies import AgencyConfig
+    from scraper.models import ListingDetail, ListingSummary
+
+    def summ(sid, pcm):
+        return ListingSummary(source_id=sid, agency="a", platform="p", url=f"https://x/{sid}", address="Young Street, London, W8",
+                              price_text="£63,192 per week", price_pcm=pcm, bedrooms=3, bathrooms=2, receptions=None, thumbnail_url=None)
+
+    class Fake:
+        def search(self, *a, **k):
+            return iter([summ("1", 273832.0), summ("2", 3000.0)])
+
+        def detail(self, agency, summary):
+            return ListingDetail(summary=summary, description="")
+
+    monkeypatch.setattr(export, "build_scraper", lambda cfg: Fake())
+    rows, _ = export.scrape_agency(AgencyConfig(key="a", name="A", platform="propertyhive", search_url="x"), 10, 1, {})
+    by_id = {r["summary"]["source_id"]: r["summary"] for r in rows}
+    assert by_id["1"]["price_pcm"] is None and by_id["1"]["price_flag"]
+    assert by_id["1"]["price_text"] == "£63,192 per week"      # the advertised text is kept for display
+    assert by_id["2"]["price_pcm"] == 3000.0 and by_id["2"]["price_flag"] is None
+
+
+def test_stored_rows_get_the_price_check_without_any_scrape():
+    from scraper.refresh import apply_price_checks
+
+    def priced(sid, pcm, beds):
+        r = row(sid)
+        r["summary"].update(price_pcm=pcm, bedrooms=beds)
+        return r
+
+    bad, fine = priced("1", 273832, 3), priced("2", 3000, 3)
+    assert apply_price_checks([bad, fine]) == 1
+    assert bad["summary"]["price_pcm"] is None and bad["summary"]["price_flag"]
+    assert fine["summary"]["price_pcm"] == 3000
+    assert apply_price_checks([bad, fine]) == 0          # idempotent

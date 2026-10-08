@@ -40,6 +40,7 @@ import time
 from .agencies import AGENCIES
 from . import history as history_mod
 from .export import BLOCKED, scrape_agency
+from .price import implausible_reason
 
 MISS_THRESHOLD = 2
 VERIFY_WINDOW_DAYS = 3
@@ -107,6 +108,20 @@ def merge(
             continue
         out.append(l)
     return out
+
+
+def apply_price_checks(existing: list[dict]) -> int:
+    """Run the price sanity check over stored rows (new scrapes already do it), so
+    a fix to the rules reaches the dataset without re-requesting anything."""
+    flagged = 0
+    for row in existing:
+        s = row["summary"]
+        reason = implausible_reason(s.get("price_pcm"), s.get("bedrooms"))
+        if reason and not s.get("price_flag"):
+            s["price_pcm"] = None
+            s["price_flag"] = reason
+            flagged += 1
+    return flagged
 
 
 def not_backing_off(agencies, blocked: dict[str, str], today: dt.date):
@@ -221,11 +236,18 @@ def main() -> None:
     hist = history_mod.load(args.history, now.date()) if args.history else None
     blocked = hist.setdefault("blocked", {}) if hist is not None else {}
 
+    changed = False
     if hist is not None:
         restored = restore_attributes(existing, hist)
         if restored:
             print(f"restored attributes for {restored} listings from history (no requests made)")
-            args.listings.write_text(json.dumps(existing, ensure_ascii=False, indent=2))
+            changed = True
+    flagged = apply_price_checks(existing)
+    if flagged:
+        print(f"flagged {flagged} stored listings with implausible prices (no requests made)")
+        changed = True
+    if changed:
+        args.listings.write_text(json.dumps(existing, ensure_ascii=False, indent=2))
 
     candidates = [c for c in agencies if c.key not in injected]
     waiting = not_backing_off(candidates, blocked, now.date())

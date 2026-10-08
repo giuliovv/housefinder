@@ -25,6 +25,9 @@ class ListingSummary:
     receptions: int | None
     thumbnail_url: str | None
     status: str | None = None  # e.g. "Let Agreed", "Available" — None if not shown
+    # Set (and price_pcm cleared) when the advertised price fails scraper/price.py's
+    # sanity check — e.g. an annual rent labelled "per week". price_text is kept.
+    price_flag: str | None = None
 
 
 @dataclass

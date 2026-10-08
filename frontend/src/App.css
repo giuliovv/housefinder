@@ -765,3 +765,10 @@
   background: var(--rust);
   color: #fff;
 }
+
+.listing-card__price-flag {
+  margin: -2px 0 4px;
+  font-size: 11.5px;
+  color: var(--rust-dark);
+  font-style: italic;
+}

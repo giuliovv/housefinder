@@ -11,6 +11,8 @@ export interface ListingSummary {
   receptions: number | null;
   thumbnail_url: string | null;
   status: string | null;
+  /** set when the advertised price failed a sanity check; price_pcm is then null */
+  price_flag?: string | null;
 }
 
 export interface Listing {
