@@ -37,6 +37,18 @@ export class InfraStack extends cdk.Stack {
       blockPublicAccess: s3.BlockPublicAccess.BLOCK_ALL,
       removalPolicy: cdk.RemovalPolicy.DESTROY,
       autoDeleteObjects: true,
+      // Versioning: an overwritten or pruned object is recoverable instead of gone
+      // (a deploy from stale local data once overwrote a finished refresh). Old
+      // versions are kept 14 days, which bounds the cost — the ~150MB working
+      // embeddings are rewritten daily.
+      versioned: true,
+      lifecycleRules: [
+        {
+          noncurrentVersionExpiration: cdk.Duration.days(14),
+          abortIncompleteMultipartUploadAfter: cdk.Duration.days(2),
+          expiredObjectDeleteMarker: true,
+        },
+      ],
     });
 
     const distribution = new cloudfront.Distribution(this, 'Distribution', {

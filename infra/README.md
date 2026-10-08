@@ -71,6 +71,25 @@ This skips type-checking during the CDK bootstrap step (the CLI still
 synthesizes and deploys correctly) — same workaround as the ERP
 infra project on this same host.
 
+## Rolling back (bucket versioning)
+
+The bucket is versioned (since 2026-10-08), and old versions are kept 14 days. If a
+deploy or a job overwrites good data, restore the previous version of an object:
+
+```bash
+B=housefinder-frontend-854656252703
+# list versions (newest first), find the one from before the bad write
+aws s3api list-object-versions --bucket $B --prefix data/listings.json \
+  --query 'Versions[].[VersionId,LastModified,IsLatest,Size]' --output table
+# make that version the current one again
+aws s3api copy-object --bucket $B --key data/listings.json \
+  --copy-source "$B/data/listings.json?versionId=<VersionId>"
+```
+
+Objects deleted by a deploy's prune are recoverable the same way (remove the delete
+marker with `aws s3api delete-object --version-id <marker id>`). Note the CloudFront
+cache may serve the old file for a while; `aws cloudfront create-invalidation` fixes that.
+
 ## Live
 
 - CloudFront: see stack output `CloudFrontDomain` (`cdk deploy` prints it, or

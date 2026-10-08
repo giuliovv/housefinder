@@ -172,3 +172,27 @@ def test_backoff_skips_recently_blocked_agencies_then_retries_after_three_days()
     blocked = {"a": "2026-10-08"}
     assert [c.key for c in not_backing_off([a, b], blocked, dt.date(2026, 10, 10))] == ["b"]
     assert [c.key for c in not_backing_off([a, b], blocked, dt.date(2026, 10, 11))] == ["a", "b"]
+
+
+def test_restore_attributes_from_history_without_requests():
+    from scraper.refresh import restore_attributes
+
+    rows = [row("1"), row("2"), {**row("3"), "attributes": {}}]
+    hist = {"listings": {"p:1": {"attrs": {"furnished": "unfurnished"}}, "p:3": {"attrs": {"epc": "C"}}}}
+    assert restore_attributes(rows, hist) == 1
+    assert rows[0]["attributes"] == {"furnished": "unfurnished"}
+    assert "attributes" not in rows[1]                 # unknown to history: left for a normal fetch
+    assert rows[2]["attributes"] == {}                 # already has the key (even if empty): untouched
+
+
+def test_agency_scraped_today_is_skipped_unless_forced(capsys):
+    from scraper.agencies import AgencyConfig
+    from scraper.refresh import not_done_today
+
+    a = AgencyConfig(key="a", name="A", platform="propertyhive", search_url="x")
+    b = AgencyConfig(key="b", name="B", platform="propertyhive", search_url="x")
+    hist = {"runs": {"2026-10-08": {"a": 12}, "2026-10-07": {"b": 5}}}
+    today = dt.date(2026, 10, 8)
+    assert [c.key for c in not_done_today([a, b], hist, today, force=False)] == ["b"]
+    assert [c.key for c in not_done_today([a, b], hist, today, force=True)] == ["a", "b"]
+    assert [c.key for c in not_done_today([a, b], None, today, force=False)] == ["a", "b"]

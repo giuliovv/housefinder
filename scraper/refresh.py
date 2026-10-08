@@ -124,6 +124,37 @@ def not_backing_off(agencies, blocked: dict[str, str], today: dt.date):
     return out
 
 
+def restore_attributes(existing: list[dict], hist: dict) -> int:
+    """Fill `attributes` on stored rows that lack them from the permanent history,
+    so a lost/overwritten listings.json never forces re-fetching thousands of
+    detail pages from the agencies just to recreate data we already have."""
+    restored = 0
+    for row in existing:
+        if "attributes" in row:
+            continue
+        attrs = (hist["listings"].get(listing_key(row)) or {}).get("attrs")
+        if attrs:
+            row["attributes"] = dict(attrs)
+            restored += 1
+    return restored
+
+
+def not_done_today(agencies, hist: dict | None, today: dt.date, force: bool):
+    """An agency successfully scraped earlier today is left alone: extra runs
+    (code pushes, retries after a failed deploy) must never mean extra requests
+    to the same sites. Dates only, so this is "at most once per UTC day"."""
+    if hist is None or force:
+        return list(agencies)
+    done = set(hist["runs"].get(today.isoformat(), {}))
+    out = []
+    for cfg in agencies:
+        if cfg.key in done:
+            print(f"[{cfg.key}] already scraped today; skipping (use --force to override)")
+        else:
+            out.append(cfg)
+    return out
+
+
 def _scrape(agencies, per_agency: int, max_pages: int, known: dict[str, dict] | None = None, deadline: float | None = None) -> dict[str, tuple[list[dict], bool]]:
     scraped: dict[str, tuple[list[dict], bool]] = {}
     for cfg in agencies:
@@ -161,6 +192,7 @@ def main() -> None:
     parser.add_argument("--platform", action="append", help="only scrape agencies on this platform (repeatable)")
     parser.add_argument("--dump", type=pathlib.Path, help="scrape and write the raw per-agency results here instead of merging")
     parser.add_argument("--history", type=pathlib.Path, help="permanent per-listing history file (see scraper/history.py), updated in place")
+    parser.add_argument("--force", action="store_true", help="scrape agencies even if they were already scraped today")
     parser.add_argument("--max-minutes", type=float, default=None, help="stop starting new agencies after this long; the rest are deferred to the next run")
     parser.add_argument("--inject", type=pathlib.Path, help="pre-scraped results from --dump to merge in; agencies in it are not re-scraped")
     args = parser.parse_args()
@@ -186,7 +218,17 @@ def main() -> None:
     hist = history_mod.load(args.history, now.date()) if args.history else None
     blocked = hist.setdefault("blocked", {}) if hist is not None else {}
 
-    to_scrape = not_backing_off([c for c in agencies if c.key not in injected], blocked, now.date())
+    if hist is not None:
+        restored = restore_attributes(existing, hist)
+        if restored:
+            print(f"restored attributes for {restored} listings from history (no requests made)")
+            args.listings.write_text(json.dumps(existing, ensure_ascii=False, indent=2))
+
+    candidates = [c for c in agencies if c.key not in injected]
+    to_scrape = not_done_today(not_backing_off(candidates, blocked, now.date()), hist, now.date(), args.force)
+    if not to_scrape and not injected:
+        print("nothing to scrape: every agency was already scraped today or is backing off")
+        return
     deadline = time.monotonic() + args.max_minutes * 60 if args.max_minutes else None
     scraped = _scrape(to_scrape, args.per_agency, args.max_pages, {listing_key(l): l for l in existing}, deadline)
     scraped.update(injected)
