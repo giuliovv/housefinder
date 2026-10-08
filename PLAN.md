@@ -112,7 +112,9 @@ current parser status.
    Griffins, Metropole, Michael Charles, FMJ), Acquaint CRM (3: Home
    Fullstop, Astberrys, Ashdown Marks), The Property Jungle (3: Faradays,
    Alexander Lewis, McKee), EstatesIT (3: Londonwide, City Rooms, Lyons) —
-   all unchecked. Remaining central Property Hive agencies with unusual
+   all unchecked — **next up (agreed 2026-10-08):** check these four vendors
+   (GNB Property, Acquaint CRM, The Property Jungle, EstatesIT) for a shared
+   lettings template and build parsers fixture-first. Remaining central Property Hive agencies with unusual
    markup: Kay & Co, Pomp, Bargets, Aston Chase (all prime, weekly rents).
    Embedding is now 12 photos/listing for new listings, 4 parallel downloads.
 3. **Image feature extraction — not started.** Room-type classification +
