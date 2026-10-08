@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import type { AreaCentroids, Listing, StyleLabel } from "./types";
 import { loadEmbeddingStore, type EmbeddingStore } from "./lib/embeddingStore";
 import { ListingCard } from "./components/ListingCard";
@@ -36,6 +36,7 @@ function App() {
   const [tab, setTab] = useState<Tab>("style");
   const [filterSheetOpen, setFilterSheetOpen] = useState(false);
   const [shownCount, setShownCount] = useState(PAGE_SIZE);
+  const resultsRef = useRef<HTMLParagraphElement>(null);
 
   useEffect(() => {
     fetch("/data/listings.json")
@@ -178,6 +179,26 @@ function App() {
     if (hasPreference) setSort("match");
   }, [hasPreference]);
 
+  function clearFilters() {
+    setAreaFilters([]);
+    setAgencyFilter("all");
+    setMinPrice("");
+    setMaxPrice("");
+    setMinBedrooms("any");
+    setMinBathrooms("any");
+  }
+
+  // Closing the filter sheet brings the results into view: the map and area
+  // chips sit above the list, so otherwise the list changes out of sight and
+  // nothing visibly happens.
+  function closeFilterSheet() {
+    setFilterSheetOpen(false);
+    requestAnimationFrame(() => resultsRef.current?.scrollIntoView({ behavior: "smooth", block: "start" }));
+  }
+
+  // what `visible` actually does: "match" only sorts by match once there is a preference
+  const effectiveSort: SortKey = sort === "match" && !matchScores ? "price-asc" : sort;
+
   const activeFilterCount =
     (areaFilters.length > 0 ? 1 : 0) +
     (agencyFilter !== "all" ? 1 : 0) +
@@ -242,6 +263,14 @@ function App() {
             <button className="app__filter-btn" onClick={() => setFilterSheetOpen(true)}>
               Filters{activeFilterCount > 0 ? ` (${activeFilterCount})` : ""}
             </button>
+            <span className="app__result-count" role="status" aria-live="polite">
+              {visible.length} {visible.length === 1 ? "home" : "homes"}
+            </span>
+            {activeFilterCount > 0 && (
+              <button className="app__clear-btn" onClick={clearFilters}>
+                Clear
+              </button>
+            )}
           </div>
 
           <div className="app__chip-row">
@@ -256,9 +285,13 @@ function App() {
             ))}
           </div>
 
-          <p className="app__sort-note">
+          <p className="app__sort-note" ref={resultsRef}>
             Showing {visible.length} of {listings?.length ?? 0} listings
-            {matchScores ? ` — sorted by your style preference from ${likedCount} liked / ${dislikedCount} disliked photos.` : "."}
+            {effectiveSort === "match"
+              ? ` — sorted by your style preference from ${likedCount} liked / ${dislikedCount} disliked photos.`
+              : effectiveSort === "price-asc"
+                ? " — cheapest first."
+                : " — most expensive first."}
           </p>
           {styleDescription && (
             <p className="app__style-note">Your style so far: {styleDescription.join(" · ")}</p>
@@ -286,7 +319,7 @@ function App() {
 
       <FilterSheet
         open={filterSheetOpen}
-        onClose={() => setFilterSheetOpen(false)}
+        onClose={closeFilterSheet}
         agencies={agencies}
         agencyFilter={agencyFilter}
         setAgencyFilter={setAgencyFilter}

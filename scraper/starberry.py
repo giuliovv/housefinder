@@ -80,7 +80,8 @@ class StarberryScraper(PlatformScraper):
             address = ""
 
         price_el = card.select_one(".price, .meta-price")
-        price_text = re.sub(r"\s+", " ", _text(price_el) or "")
+        # the card appends the "(Tenant Info)" link text to the price; drop it
+        price_text = re.sub(r"\s*\(Tenant Info\)", "", re.sub(r"\s+", " ", _text(price_el) or "")).strip()
         monthly = self._monthly_price(card, price_text)
 
         def count(label: str, icon: str) -> int | None:

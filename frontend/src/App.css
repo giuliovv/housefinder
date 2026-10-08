@@ -149,11 +149,40 @@
 }
 
 .app__filter-row {
-  margin-bottom: 12px;
+  /* stays on screen while scrolling the browse area, so the filter button and
+     the live result count are always in reach and a change is always visible */
+  position: sticky;
+  top: 0;
+  z-index: 20;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 0;
+  margin-bottom: 8px;
+  background: var(--cream);
+}
+
+.app__result-count {
+  flex: 1;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--ink);
+}
+
+.app__clear-btn {
+  flex: none;
+  padding: 8px 14px;
+  border-radius: 10px;
+  font-size: 12.5px;
+  border: 1px solid var(--rust);
+  background: transparent;
+  color: var(--rust);
+  cursor: pointer;
 }
 
 .app__filter-btn {
-  width: 100%;
+  flex: none;
+  min-width: 110px;
   padding: 9px 15px;
   border-radius: 10px;
   font-size: 13px;
@@ -165,6 +194,7 @@
 }
 
 .app__sort-note {
+  scroll-margin-top: 64px; /* clear the sticky filter bar when scrolled to */
   font-size: 12px;
   color: var(--muted);
   margin: 0 0 16px;

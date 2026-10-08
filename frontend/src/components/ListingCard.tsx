@@ -153,7 +153,7 @@ export function ListingCard({
 
       <div className="listing-card__body">
         <div className="listing-card__price-row">
-          <p className="listing-card__price">{summary.price_text}</p>
+          <p className="listing-card__price">{summary.price_text.replace(/\s*\(Tenant Info\)/i, "")}</p>
           {extractPostcodeArea(summary.address) && (
             <p className="listing-card__area">{extractPostcodeArea(summary.address)}</p>
           )}
