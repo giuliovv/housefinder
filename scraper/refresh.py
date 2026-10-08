@@ -37,6 +37,7 @@ import pathlib
 import re
 
 from .agencies import AGENCIES
+from . import history as history_mod
 from .export import scrape_agency
 
 MISS_THRESHOLD = 2
@@ -137,6 +138,7 @@ def main() -> None:
     parser.add_argument("--max-pages", type=int, default=90)
     parser.add_argument("--platform", action="append", help="only scrape agencies on this platform (repeatable)")
     parser.add_argument("--dump", type=pathlib.Path, help="scrape and write the raw per-agency results here instead of merging")
+    parser.add_argument("--history", type=pathlib.Path, help="permanent per-listing history file (see scraper/history.py), updated in place")
     parser.add_argument("--inject", type=pathlib.Path, help="pre-scraped results from --dump to merge in; agencies in it are not re-scraped")
     args = parser.parse_args()
     if not args.dump and not args.listings:
@@ -163,6 +165,13 @@ def main() -> None:
 
     if not scraped:
         raise SystemExit("every agency failed — refusing to write an unchanged dataset as if it were refreshed")
+
+    if args.history:
+        hist = history_mod.load(args.history, now.date())
+        history_mod.update(hist, scraped, now.date())
+        history_mod.save(args.history, hist)
+        ended = sum(1 for r in hist["listings"].values() if r.get("ended"))
+        print(f"history: {len(hist['listings'])} listings tracked, {ended} ended")
 
     merged = merge(existing, scraped, now.date())
     args.listings.write_text(json.dumps(merged, ensure_ascii=False, indent=2))

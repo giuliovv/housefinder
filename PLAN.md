@@ -187,6 +187,29 @@ current parser status.
    or misrepresent the user to an agency they might actually want to rent
    from.
 
+9. **Market analytics — data collection started 2026-10-08.** Goal: learn
+   how long different kinds of property stay on the market, how often rents
+   are cut, and how supply moves, by area / bedrooms / agency. Collection
+   can't be back-filled, so it comes first; analysis later. `scraper/history.py`
+   keeps a permanent per-listing record in `s3://…/analytics/history.json`
+   (separate from the pruned `listings.json`): first/last seen (flagged
+   *exact* only if the agency had been scraped before, so a new agency's
+   inventory doesn't fake "listed today"), every price and status change, the
+   date the agency first showed it let/under offer, the date it vanished (two
+   consecutive misses from a successfully scraped agency), relist count,
+   area/beds/baths, plus a per-day count of what each agency returned (so
+   agency outages show up as gaps, not as mass disappearances). *Gone is not
+   let*: disappearance can be a withdrawal, so "let agreed" status dates are
+   the better time-to-let signal where an agency shows them (most do not —
+   many just delete the listing). Not yet collected, worth adding when
+   analysis starts: property type, furnished/unfurnished, available-from date,
+   deposit, floor area (parse from descriptions), EPC rating, lat/lon (Estate-
+   Track exposes it in JSON-LD), photo count, and a derived "reduced" flag.
+   Caveats to keep in mind when reading results: listing ages are only exact
+   for listings first seen after their agency's first run; all Homeflow
+   listings are frozen (blocked), so they carry no market signal; Dexters/
+   Estate-Track/Expert Agent inventory skews central/west and prime.
+
 ## Infra
 
 - `frontend/` (Vite/React) + `infra/` (CDK: S3 + CloudFront) — done, deployed

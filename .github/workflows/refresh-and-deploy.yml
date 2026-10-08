@@ -70,9 +70,23 @@ jobs:
         if: env.DO_SCRAPE == 'true'
         run: aws s3 cp "s3://$BUCKET/inbox/homeflow.json" /tmp/homeflow.json || echo "no inbox file"
 
+      # Permanent per-listing history (first/last seen, price + status
+      # changes, disappearances) for analytics — lives outside the site data
+      # so the 90-day pruning of listings.json never erases it.
+      - name: Pull listing history
+        if: env.DO_SCRAPE == 'true'
+        run: |
+          mkdir -p analytics
+          aws s3 cp "s3://$BUCKET/analytics/history.json" analytics/history.json || echo "no history yet"
+
       - name: Re-scrape agencies and merge into listings.json
         if: env.DO_SCRAPE == 'true'
-        run: python -m scraper.refresh --listings frontend/public/data/listings.json --per-agency 800 --max-pages 90 --inject /tmp/homeflow.json
+        run: python -m scraper.refresh --listings frontend/public/data/listings.json --history analytics/history.json --per-agency 800 --max-pages 90 --inject /tmp/homeflow.json
+
+      # Right away, not at the end: history must survive a failed embed/deploy.
+      - name: Save listing history
+        if: env.DO_SCRAPE == 'true'
+        run: aws s3 cp analytics/history.json "s3://$BUCKET/analytics/history.json"
 
       # Save the merged listings right away: if embedding dies, the next run
       # won't have to redo the scrape.
