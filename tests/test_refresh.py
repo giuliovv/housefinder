@@ -196,3 +196,56 @@ def test_agency_scraped_today_is_skipped_unless_forced(capsys):
     assert [c.key for c in not_done_today([a, b], hist, today, force=False)] == ["b"]
     assert [c.key for c in not_done_today([a, b], hist, today, force=True)] == ["a", "b"]
     assert [c.key for c in not_done_today([a, b], None, today, force=False)] == ["a", "b"]
+
+
+def test_failed_agency_counts_as_attempted_today():
+    from scraper.agencies import AgencyConfig
+    from scraper.refresh import not_done_today
+
+    a = AgencyConfig(key="a", name="A", platform="propertyhive", search_url="x")
+    b = AgencyConfig(key="b", name="B", platform="propertyhive", search_url="x")
+    hist = {"runs": {}, "failed": {"a": "2026-10-08", "b": "2026-10-07"}}
+    assert [c.key for c in not_done_today([a, b], hist, dt.date(2026, 10, 8), force=False)] == ["b"]
+
+
+def _run_main(monkeypatch, tmp_path, hist, agencies, scrape_result):
+    """Drive refresh.main() with a fake scraper; returns (exit, listings text, history)."""
+    import json
+    import sys
+
+    from scraper import export, refresh
+
+    listings = tmp_path / "listings.json"
+    listings.write_text(json.dumps([row("1", agency="a")]))
+    hp = tmp_path / "history.json"
+    hp.write_text(json.dumps(hist))
+    monkeypatch.setattr(refresh, "AGENCIES", {c.key: c for c in agencies})
+    monkeypatch.setattr(refresh, "scrape_agency", lambda cfg, *a, **k: scrape_result(cfg))
+    monkeypatch.setattr(sys, "argv", ["refresh", "--listings", str(listings), "--history", str(hp)])
+    export.BLOCKED.clear()
+    try:
+        refresh.main()
+        code = 0
+    except SystemExit as e:
+        code = e.code
+    return code, listings.read_text(), json.loads(hp.read_text())
+
+
+def test_main_succeeds_quietly_when_only_failures_remain_after_skipping_done_agencies(monkeypatch, tmp_path):
+    from scraper.agencies import AgencyConfig
+
+    today = dt.datetime.now(dt.timezone.utc).date().isoformat()
+    done = AgencyConfig(key="done", name="D", platform="propertyhive", search_url="x")
+    flaky = AgencyConfig(key="flaky", name="F", platform="propertyhive", search_url="x")
+    hist = {"version": 1, "started": today, "runs": {today: {"done": 5}}, "listings": {}}
+    code, _, saved = _run_main(monkeypatch, tmp_path, hist, [done, flaky], lambda cfg: None)   # flaky fails
+    assert code == 0                                  # not "every agency failed": `done` was merely skipped
+    assert saved["failed"] == {"flaky": today}        # and the failure is remembered so it isn't retried today
+
+
+def test_main_still_fails_when_every_agency_genuinely_fails(monkeypatch, tmp_path):
+    from scraper.agencies import AgencyConfig
+
+    a = AgencyConfig(key="a", name="A", platform="propertyhive", search_url="x")
+    code, _, _ = _run_main(monkeypatch, tmp_path, {"version": 1, "started": "x", "runs": {}, "listings": {}}, [a], lambda cfg: None)
+    assert code not in (0, None)

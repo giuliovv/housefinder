@@ -38,12 +38,22 @@ from playwright.sync_api import Browser, sync_playwright
 from playwright.sync_api import TimeoutError as PlaywrightTimeoutError
 
 from .base import PlatformScraper
+from .http import Blocked
 from .models import ListingDetail, ListingSummary
 from .price import parse_price_pcm
 
 _NEXT_PAGE_RE = re.compile(r"/page-(\d+)$")
 _PANEL_ID_RE = re.compile(r"/properties/(\d+)/")
 _PANEL_BEDROOMS_RE = re.compile(r"(\d+)\s*bedroom", re.IGNORECASE)
+
+
+def _is_challenge_page(page) -> bool:
+    try:
+        title = (page.title() or "").lower()
+        html = page.content()[:6000].lower()
+    except Exception:  # noqa: BLE001 - if we can't even read the page, treat it as an ordinary failure
+        return False
+    return "just a moment" in title or "cf_chl" in html or "challenge-platform" in html
 
 
 class HomeflowScraper(PlatformScraper):
@@ -102,6 +112,10 @@ class HomeflowScraper(PlatformScraper):
                         page.wait_for_selector(card_selector, timeout=15_000 * attempt)
                         break
                     except PlaywrightTimeoutError:
+                        # A bot-check page is not a slow render: stop at once (no
+                        # retry) and let the caller back off from this agency.
+                        if _is_challenge_page(page):
+                            raise Blocked(f"bot challenge at {url}")
                         if attempt == 2:
                             raise
                 page.wait_for_timeout(800)

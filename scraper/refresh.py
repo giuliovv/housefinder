@@ -140,12 +140,15 @@ def restore_attributes(existing: list[dict], hist: dict) -> int:
 
 
 def not_done_today(agencies, hist: dict | None, today: dt.date, force: bool):
-    """An agency successfully scraped earlier today is left alone: extra runs
-    (code pushes, retries after a failed deploy) must never mean extra requests
-    to the same sites. Dates only, so this is "at most once per UTC day"."""
+    """An agency already attempted today — scraped successfully, or tried and
+    failed — is left alone: extra runs (code pushes, retries after a failed
+    deploy) must never mean extra requests to the same sites. Dates only, so
+    this is "at most once per UTC day"."""
     if hist is None or force:
         return list(agencies)
-    done = set(hist["runs"].get(today.isoformat(), {}))
+    done = set(hist["runs"].get(today.isoformat(), {})) | {
+        k for k, d in hist.get("failed", {}).items() if d == today.isoformat()
+    }
     out = []
     for cfg in agencies:
         if cfg.key in done:
@@ -225,13 +228,20 @@ def main() -> None:
             args.listings.write_text(json.dumps(existing, ensure_ascii=False, indent=2))
 
     candidates = [c for c in agencies if c.key not in injected]
-    to_scrape = not_done_today(not_backing_off(candidates, blocked, now.date()), hist, now.date(), args.force)
-    if not to_scrape and not injected:
-        print("nothing to scrape: every agency was already scraped today or is backing off")
-        return
+    waiting = not_backing_off(candidates, blocked, now.date())
+    to_scrape = not_done_today(waiting, hist, now.date(), args.force)
+    skipped_done = len(waiting) - len(to_scrape)
     deadline = time.monotonic() + args.max_minutes * 60 if args.max_minutes else None
-    scraped = _scrape(to_scrape, args.per_agency, args.max_pages, {listing_key(l): l for l in existing}, deadline)
+    scraped = _scrape(to_scrape, args.per_agency, args.max_pages, {listing_key(l): l for l in existing}, deadline) if to_scrape else {}
     scraped.update(injected)
+
+    if hist is not None:
+        failed = hist.setdefault("failed", {})
+        for cfg in to_scrape:
+            if cfg.key not in scraped and cfg.key not in BLOCKED:
+                failed[cfg.key] = now.date().isoformat()   # tried today, didn't get through
+        for key in scraped:
+            failed.pop(key, None)
 
     for key in BLOCKED:
         blocked[key] = now.date().isoformat()
@@ -239,6 +249,11 @@ def main() -> None:
         blocked.pop(key, None)
 
     if not scraped:
+        if hist is not None:
+            history_mod.save(args.history, hist)       # keep the block/failure records
+        if skipped_done:
+            print("nothing new to scrape (the rest were already done today or are backing off); data left as is")
+            return
         raise SystemExit("every agency failed — refusing to write an unchanged dataset as if it were refreshed")
 
     if hist is not None:
