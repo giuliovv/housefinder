@@ -91,7 +91,8 @@ jobs:
 
       # The kill switch (see scraper/killswitch.py) lives at the bucket root, outside the deployed data.
       - name: Pull the kill switch
-        run: aws s3 cp "s3://$BUCKET/killswitch.json" killswitch.json || echo '{"disabled": []}' > killswitch.json
+        run: |
+          aws s3 cp "s3://$BUCKET/killswitch.json" killswitch.json || echo '{"disabled": []}' > killswitch.json
 
       - uses: actions/setup-python@v5
         with:
