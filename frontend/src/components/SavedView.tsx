@@ -3,6 +3,7 @@ import type { Listing } from "../types";
 import type { BoardStatus } from "../lib/useShortlist";
 import { listingKey } from "../lib/listingKey";
 import { boardPeople, joinNames, shareUrl, whatsappLink, type BoardItem, type Me } from "../lib/shortlist";
+import { CheckIcon, CopyIcon, WhatsAppIcon } from "./icons";
 import { ListingCard } from "./ListingCard";
 import type { EmbeddingStore } from "../lib/embeddingStore";
 
@@ -87,7 +88,7 @@ function ShareSheet({
         ) : (
           <div className="saved__sheet-actions">
             <a className="app__draw-btn app__draw-btn--on saved__wa" href={whatsappLink(url, me.name)} target="_blank" rel="noreferrer">
-              Send on WhatsApp
+              <WhatsAppIcon /> Send on WhatsApp
             </a>
             <button
               className="app__draw-btn"
@@ -95,7 +96,7 @@ function ShareSheet({
                 void navigator.clipboard?.writeText(url).then(() => setCopied(true));
               }}
             >
-              {copied ? "Link copied" : "Copy link"}
+              {copied ? <CheckIcon /> : <CopyIcon />} {copied ? "Link copied" : "Copy link"}
             </button>
             {confirmStop ? (
               <p className="saved__confirm">

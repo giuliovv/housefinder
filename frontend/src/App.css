@@ -1012,3 +1012,39 @@
 .saved__sheet-actions .app__draw-btn { text-align: center; padding: 13px 16px; }
 .saved__stop { background: none; border: none; color: var(--muted); font-size: 13px; text-decoration: underline; padding: 8px; cursor: pointer; }
 .saved__confirm { font-size: 13px; color: var(--muted); margin: 4px 0 0; }
+
+/* ── Question cards between photos ────────────────────────────────────── */
+.question {
+  background: #fff;
+  border: 1px solid var(--border);
+  border-top: 4px solid var(--rust);
+  border-radius: 20px;
+  padding: 22px 20px 16px;
+  margin: 0 auto 14px;
+  max-width: 420px;
+  box-shadow: 0 8px 24px rgba(20, 14, 10, 0.08);
+  text-align: center;
+}
+.question__label { font-size: 11px; letter-spacing: 0.12em; text-transform: uppercase; color: var(--rust); margin: 0 0 10px; font-weight: 700; }
+.question__title { font-family: var(--serif); font-size: 1.45rem; line-height: 1.25; margin: 0 0 6px; color: var(--ink); }
+.question__hint { font-size: 13px; color: var(--muted); margin: 0 0 16px; }
+.question__options { display: flex; flex-wrap: wrap; justify-content: center; gap: 10px; margin-bottom: 18px; }
+.question__opt {
+  min-width: 64px;
+  padding: 12px 16px;
+  border-radius: 14px;
+  border: 1px solid var(--border);
+  background: var(--cream);
+  color: var(--ink);
+  font-size: 15px;
+  font-weight: 600;
+  cursor: pointer;
+}
+.question__opt--on { background: var(--rust); border-color: var(--rust); color: #fff; }
+.question__map { position: relative; margin-bottom: 14px; }
+.question__map .neighbourhood-map { height: 250px; margin-bottom: 0; }
+.question__clean { position: absolute; top: 10px; right: 10px; z-index: 500; padding: 6px 12px; border-radius: 14px; border: 1px solid var(--rust); background: #fff; color: var(--rust); font-size: 12.5px; cursor: pointer; }
+.question__continue { width: 100%; padding: 14px; border-radius: 14px; border: none; background: var(--rust); color: #fff; font-size: 15px; font-weight: 700; cursor: pointer; }
+.question__continue:disabled { opacity: 0.4; cursor: default; }
+.question__skip { display: block; margin: 10px auto 0; background: none; border: none; color: var(--muted); font-size: 13px; text-decoration: underline; cursor: pointer; padding: 6px; }
+.app__draw-btn svg, .saved__wa svg { vertical-align: -4px; margin-right: 4px; }

@@ -7,6 +7,16 @@ import { SavedView } from "./components/SavedView";
 import { useShortlist } from "./lib/useShortlist";
 import { DrawMap } from "./components/DrawMap";
 import { inAnyShape, type LatLon, type ListingGeo } from "./lib/geo";
+import { QuestionCard } from "./components/QuestionCard";
+import {
+  loadFilters,
+  loadQuestionState,
+  nextQuestion,
+  recordAnswered,
+  recordSkipped,
+  saveFilters,
+  saveQuestionState,
+} from "./lib/questions";
 import { FilterSheet } from "./components/FilterSheet";
 import { LoadingMessage } from "./components/LoadingMessage";
 import { useStylePreferences } from "./lib/preferences";
@@ -31,11 +41,12 @@ function App() {
   const [deadPhotos, setDeadPhotos] = useState<ReadonlySet<string>>(new Set());
   const [sort, setSort] = useState<SortKey>("price-asc");
   const [agencyFilter, setAgencyFilter] = useState<string>("all");
-  const [shapes, setShapes] = useState<LatLon[][]>([]);
-  const [minPrice, setMinPrice] = useState<string>("");
-  const [maxPrice, setMaxPrice] = useState<string>("");
-  const [minBedrooms, setMinBedrooms] = useState<string>("any");
-  const [minBathrooms, setMinBathrooms] = useState<string>("any");
+  const [stored] = useState(loadFilters);
+  const [shapes, setShapes] = useState<LatLon[][]>(() => stored.shapes ?? []);
+  const [minPrice, setMinPrice] = useState<string>(stored.minPrice ?? "");
+  const [maxPrice, setMaxPrice] = useState<string>(stored.maxPrice ?? "");
+  const [minBedrooms, setMinBedrooms] = useState<string>(stored.minBedrooms ?? "any");
+  const [minBathrooms, setMinBathrooms] = useState<string>(stored.minBathrooms ?? "any");
   const [tab, setTab] = useState<Tab>(() => (new URLSearchParams(window.location.search).has("board") ? "saved" : "style"));
   const [filterSheetOpen, setFilterSheetOpen] = useState(false);
   const [areaPanelOpen, setAreaPanelOpen] = useState(false);
@@ -215,6 +226,27 @@ function App() {
     (minBedrooms !== "any" ? 1 : 0) +
     (minBathrooms !== "any" ? 1 : 0);
 
+  // the filters (set here, in the filter sheet or through a question card) survive a reload
+  useEffect(() => {
+    saveFilters({ minPrice, maxPrice, minBedrooms, minBathrooms, shapes });
+  }, [minPrice, maxPrice, minBedrooms, minBathrooms, shapes]);
+
+  // Practical questions between photos. Photo swipes only train taste; a question's answer just sets
+  // the ordinary filters above, which stay editable in Browse.
+  const [questionState, setQuestionState] = useState(loadQuestionState);
+  const swipeTotal = likedCount + dislikedCount;
+  const question = nextQuestion(questionState, swipeTotal, {
+    bedrooms: minBedrooms !== "any",
+    budget: maxPrice !== "" || minPrice !== "",
+    location: shapes.length > 0,
+  });
+  function finishQuestion(answered: boolean) {
+    if (!question) return;
+    const next = answered ? recordAnswered(questionState, question, swipeTotal) : recordSkipped(questionState, question, swipeTotal);
+    setQuestionState(next);
+    saveQuestionState(next);
+  }
+
   return (
     <div className="app">
       <header className="app__header">
@@ -254,6 +286,28 @@ function App() {
           tasteRead={tasteRead}
           onBroken={markBroken}
           onHide={hidePhoto}
+          interlude={
+            question ? (
+              <QuestionCard
+                key={question}
+                id={question}
+                mapPoints={mapPoints}
+                onBedrooms={(v) => {
+                  setMinBedrooms(v);
+                  finishQuestion(true);
+                }}
+                onBudget={(v) => {
+                  setMaxPrice(v);
+                  finishQuestion(true);
+                }}
+                onShapes={(drawn) => {
+                  setShapes((cur) => [...cur, ...drawn]);
+                  finishQuestion(true);
+                }}
+                onSkip={() => finishQuestion(false)}
+              />
+            ) : undefined
+          }
         />
       )}
       {tab === "style" && !store && !styleFailed && <LoadingMessage kind="style" />}

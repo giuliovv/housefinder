@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, type ReactNode } from "react";
 import type { Listing, ListingKey } from "../types";
 import { normalizeImageUrl } from "../lib/url";
 import { TasteMeter } from "./TasteMeter";
@@ -44,6 +44,7 @@ export function SwipeDeck({
   tasteRead,
   onBroken,
   onHide,
+  interlude,
 }: {
   undecided: DeckPhoto[];
   listingsByKey: Record<ListingKey, Listing>;
@@ -59,6 +60,8 @@ export function SwipeDeck({
   onBroken: (id: string) => void;
   /** the person says this photo isn't a room (a view, a plan, ...): hide it for them for good */
   onHide: (id: string) => void;
+  /** a question card shown instead of the next photo; while it is up nothing can be swiped */
+  interlude?: ReactNode;
 }) {
   const current = undecided[0];
   // One-time explanation for people who haven't swiped yet. Gone for good once dismissed
@@ -83,13 +86,13 @@ export function SwipeDeck({
 
   useEffect(() => {
     function onKey(e: KeyboardEvent) {
-      if (!current) return;
+      if (!current || interlude) return;
       if (e.key === "ArrowRight") onSwipe(current.id, "like");
       if (e.key === "ArrowLeft") onSwipe(current.id, "dislike");
     }
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
-  }, [current, onSwipe]);
+  }, [current, onSwipe, interlude]);
 
   function commit(choice: "like" | "dislike") {
     if (!current) return;
@@ -98,7 +101,7 @@ export function SwipeDeck({
   }
 
   function onPointerDown(e: React.PointerEvent) {
-    if (!current) return;
+    if (!current || interlude) return;
     setStart({ x: e.clientX, y: e.clientY });
     setDrag({ active: true, dx: 0, dy: 0 });
   }
@@ -134,7 +137,14 @@ export function SwipeDeck({
           </button>
         </div>
       )}
-      {current ? (
+      {current && interlude ? (
+        <>
+          {interlude}
+          <p className="swipe__progress">
+            {decided} of {totalCount} rated · {likedCount} liked · {dislikedCount} disliked
+          </p>
+        </>
+      ) : current ? (
         <>
           <div className="swipe__stack">
             {visibleCards.map((card, i) => {
