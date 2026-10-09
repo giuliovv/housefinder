@@ -1,6 +1,8 @@
 import { useEffect, useState } from "react";
 import type { Listing, ListingKey } from "../types";
 import { normalizeImageUrl } from "../lib/url";
+import { TasteMeter } from "./TasteMeter";
+import type { TasteRead } from "../lib/tasteRead";
 
 interface DeckPhoto {
   id: string;
@@ -30,6 +32,7 @@ export function SwipeDeck({
   onReset,
   onGoBrowse,
   styleDescription,
+  tasteRead,
 }: {
   undecided: DeckPhoto[];
   listingsByKey: Record<ListingKey, Listing>;
@@ -40,6 +43,7 @@ export function SwipeDeck({
   onReset: () => void;
   onGoBrowse: () => void;
   styleDescription: string[] | null;
+  tasteRead: TasteRead | null;
 }) {
   const current = undecided[0];
   const [drag, setDrag] = useState<Drag>({ active: false, dx: 0, dy: 0 });
@@ -137,6 +141,7 @@ export function SwipeDeck({
           <p className="swipe__progress">
             {decided} of {totalCount} rated · {likedCount} liked · {dislikedCount} disliked
           </p>
+          <TasteMeter read={tasteRead} />
           {styleDescription && (
             <p className="swipe__style-note">Your style so far: {styleDescription.join(" · ")}</p>
           )}

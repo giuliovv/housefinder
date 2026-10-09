@@ -772,3 +772,92 @@
   color: var(--rust-dark);
   font-style: italic;
 }
+
+/* ── Taste meter ──────────────────────────────────────────────────────── */
+
+.taste {
+  width: 100%;
+  max-width: 340px;
+  margin: 14px auto 6px;
+  text-align: left;
+}
+
+.taste--compact {
+  margin: -6px 0 16px;
+  max-width: none;
+}
+
+.taste__head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 6px;
+}
+
+.taste__label {
+  font-size: 12.5px;
+  font-weight: 600;
+  color: var(--ink);
+}
+
+.taste__info {
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  border: 1px solid var(--border);
+  background: #fff;
+  color: var(--muted);
+  font-size: 11px;
+  line-height: 1;
+  cursor: pointer;
+  padding: 0;
+}
+
+.taste__bar {
+  position: relative;
+  height: 8px;
+  border-radius: 4px;
+  background: #e9e2d3;
+  overflow: hidden;
+}
+
+.taste__fill {
+  height: 100%;
+  border-radius: 4px;
+  background: var(--rust);
+  transition: width 0.5s cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+
+.taste__fill--l0 {
+  opacity: 0.55;
+}
+
+.taste__fill--l1 {
+  opacity: 0.75;
+}
+
+.taste__tick {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  width: 2px;
+  background: var(--cream);
+}
+
+.taste__hint,
+.taste__why {
+  margin: 7px 0 0;
+  font-size: 12px;
+  color: var(--muted);
+  line-height: 1.4;
+}
+
+.taste__why {
+  font-style: italic;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .taste__fill {
+    transition: none;
+  }
+}

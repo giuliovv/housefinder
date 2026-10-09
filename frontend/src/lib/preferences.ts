@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import type { ListingKey } from "../types";
 import { computePreferenceVector } from "./similarity";
+import { computeTasteRead } from "./tasteRead";
 import { decodeInt8, dequantize, encodeInt8, photoId, quantize, type DeckPhoto, type EmbeddingStore } from "./embeddingStore";
 
 export type SwipeChoice = "like" | "dislike";
@@ -118,12 +119,14 @@ export function useStylePreferences(store: EmbeddingStore | null) {
 
   const reset = useCallback(() => setStored({}), []);
 
-  const preferenceVector = useMemo(() => {
+  const { preferenceVector, tasteRead } = useMemo(() => {
     const vectors = (choice: SwipeChoice) =>
       Object.values(stored)
         .filter((sw) => sw.c === choice)
         .map((sw) => dequantize(decodeInt8(sw.v), sw.s));
-    return computePreferenceVector(vectors("like"), vectors("dislike"));
+    const liked = vectors("like");
+    const disliked = vectors("dislike");
+    return { preferenceVector: computePreferenceVector(liked, disliked), tasteRead: computeTasteRead(liked, disliked) };
   }, [stored]);
 
   const matchScores = useMemo<Record<ListingKey, number> | null>(() => {
@@ -134,7 +137,7 @@ export function useStylePreferences(store: EmbeddingStore | null) {
   const likedCount = useMemo(() => Object.values(stored).filter((sw) => sw.c === "like").length, [stored]);
   const dislikedCount = useMemo(() => Object.values(stored).filter((sw) => sw.c === "dislike").length, [stored]);
 
-  return { deck, undecided, swipes, swipe, toggleSwipe, reset, preferenceVector, matchScores, likedCount, dislikedCount };
+  return { deck, undecided, swipes, swipe, toggleSwipe, reset, preferenceVector, tasteRead, matchScores, likedCount, dislikedCount };
 }
 
 export { photoId };

@@ -6,6 +6,7 @@ import { SwipeDeck } from "./components/SwipeDeck";
 import { NeighbourhoodMap } from "./components/NeighbourhoodMap";
 import { FilterSheet } from "./components/FilterSheet";
 import { LoadingMessage } from "./components/LoadingMessage";
+import { TasteMeter } from "./components/TasteMeter";
 import { useStylePreferences } from "./lib/preferences";
 import { extractPostcodeArea } from "./lib/location";
 import { listingKey } from "./lib/listingKey";
@@ -86,7 +87,7 @@ function App() {
     setShownCount(PAGE_SIZE);
   }, [agencyFilter, areaFilters, minPrice, maxPrice, minBedrooms, minBathrooms, sort]);
 
-  const { undecided, swipes, swipe, toggleSwipe, reset, preferenceVector, matchScores, likedCount, dislikedCount } = useStylePreferences(store);
+  const { undecided, swipes, swipe, toggleSwipe, reset, preferenceVector, tasteRead, matchScores, likedCount, dislikedCount } = useStylePreferences(store);
 
   const styleDescription = useMemo(() => {
     if (!preferenceVector || styleLabels.length === 0) return null;
@@ -244,6 +245,7 @@ function App() {
           onReset={reset}
           onGoBrowse={() => setTab("browse")}
           styleDescription={styleDescription}
+          tasteRead={tasteRead}
         />
       )}
       {tab === "style" && !store && !styleFailed && <LoadingMessage kind="style" />}
@@ -300,6 +302,7 @@ function App() {
           {styleDescription && (
             <p className="app__style-note">Your style so far: {styleDescription.join(" · ")}</p>
           )}
+          <TasteMeter read={tasteRead} compact />
 
           <main className="listing-grid">
             {visible.slice(0, shownCount).map((listing) => (
