@@ -51,31 +51,79 @@ function NameForm({ initial, cta, note, onSubmit }: { initial: string; cta: stri
   );
 }
 
-function SharePanel({ boardId, name, onLeave }: { boardId: string; name: string | null; onLeave: () => void }) {
+function ShareSheet({
+  boardId,
+  me,
+  onCreate,
+  onLeave,
+  onClose,
+}: {
+  boardId: string | null;
+  me: Me;
+  onCreate: (name: string) => void;
+  onLeave: () => void;
+  onClose: () => void;
+}) {
   const [copied, setCopied] = useState(false);
-  const url = shareUrl(window.location.origin, boardId);
+  const [confirmStop, setConfirmStop] = useState(false);
+  const url = boardId ? shareUrl(window.location.origin, boardId) : "";
   return (
-    <div className="saved__share">
-      <a className="app__draw-btn app__draw-btn--on saved__wa" href={whatsappLink(url, name)} target="_blank" rel="noreferrer">
-        Send on WhatsApp
-      </a>
-      <button
-        className="app__draw-btn"
-        onClick={() => {
-          void navigator.clipboard?.writeText(url).then(() => setCopied(true));
-        }}
-      >
-        {copied ? "Link copied" : "Copy link"}
-      </button>
-      <button className="app__clear-btn" onClick={onLeave}>
-        Stop sharing
-      </button>
+    <div className="sheet__overlay" onClick={onClose}>
+      <div className="sheet__panel" onClick={(e) => e.stopPropagation()}>
+        <div className="sheet__header">
+          <p className="sheet__title">{boardId ? "Share this list" : "Share with a friend"}</p>
+          <button className="sheet__close" onClick={onClose}>
+            Close
+          </button>
+        </div>
+
+        {!boardId ? (
+          <NameForm
+            initial={me.name ?? ""}
+            cta="Create share link"
+            note="Anyone with the link can see and add to the list. Only home IDs and first names are shared, never your swipes or taste."
+            onSubmit={onCreate}
+          />
+        ) : (
+          <div className="saved__sheet-actions">
+            <a className="app__draw-btn app__draw-btn--on saved__wa" href={whatsappLink(url, me.name)} target="_blank" rel="noreferrer">
+              Send on WhatsApp
+            </a>
+            <button
+              className="app__draw-btn"
+              onClick={() => {
+                void navigator.clipboard?.writeText(url).then(() => setCopied(true));
+              }}
+            >
+              {copied ? "Link copied" : "Copy link"}
+            </button>
+            {confirmStop ? (
+              <p className="saved__confirm">
+                Stop sharing on this device? Your saved homes stay; the list stays available to anyone who has the link.{" "}
+                <button
+                  className="app__link-btn"
+                  onClick={() => {
+                    onLeave();
+                    onClose();
+                  }}
+                >
+                  Yes, stop sharing
+                </button>
+              </p>
+            ) : (
+              <button className="saved__stop" onClick={() => setConfirmStop(true)}>
+                Stop sharing
+              </button>
+            )}
+          </div>
+        )}
+      </div>
     </div>
   );
 }
 
 export function SavedView(p: Props) {
-  const [starting, setStarting] = useState(false);
+  const [sheetOpen, setSheetOpen] = useState(false);
   const inBoard = p.boardId !== null;
   const live = inBoard && p.status === "live"; // until it connects (or if it can't), show my own saves
   const cardProps = { store: p.store, deadPhotos: p.deadPhotos };
@@ -111,27 +159,9 @@ export function SavedView(p: Props) {
           {joinNames(boardPeople(p.board, p.me))} · {p.board.length} {p.board.length === 1 ? "home" : "homes"}
         </p>
       )}
-      {inBoard && p.boardId && <SharePanel boardId={p.boardId} name={p.me.name} onLeave={p.onLeave} />}
       {inBoard && p.status === "connecting" && <p className="app__map-hint">Connecting to the shared list…</p>}
       {inBoard && p.status === "error" && (
         <p className="app__error">Couldn't reach the shared list just now. Your saved homes are safe on this device.</p>
-      )}
-
-      {!inBoard && p.sharingAvailable && p.saved.length > 0 && !starting && (
-        <button className="app__draw-btn" onClick={() => setStarting(true)}>
-          Share this list with a friend
-        </button>
-      )}
-      {!inBoard && starting && (
-        <NameForm
-          initial={p.me.name ?? ""}
-          cta="Create share link"
-          note="Anyone with the link can see and add to the list. Only home IDs and first names are shared, never your swipes or taste."
-          onSubmit={(name) => {
-            p.onStartBoard(name);
-            setStarting(false);
-          }}
-        />
       )}
 
       {p.saved.length === 0 && !inBoard && (
@@ -187,6 +217,23 @@ export function SavedView(p: Props) {
               />
             ))}
       </main>
+
+      {(inBoard || (p.sharingAvailable && p.saved.length > 0)) && (
+        <button className="saved__fab" onClick={() => setSheetOpen(true)}>
+          {inBoard ? "Share" : "Share list"}
+        </button>
+      )}
+      {sheetOpen && (
+        <ShareSheet
+          boardId={p.boardId}
+          me={p.me}
+          onCreate={(name) => {
+            p.onStartBoard(name);
+          }}
+          onLeave={p.onLeave}
+          onClose={() => setSheetOpen(false)}
+        />
+      )}
     </div>
   );
 }
