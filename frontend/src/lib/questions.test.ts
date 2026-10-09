@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { EMPTY_STATE, gapAfter, nextQuestion, recordAnswered, recordDismissed } from "./questions";
+import { deckWarmedUp, EMPTY_STATE, gapAfter, nextQuestion, recordAnswered, recordDismissed } from "./questions";
 
 describe("when a question card appears", () => {
   it("never before 8 photo swipes, and not at 7", () => {
@@ -45,5 +45,14 @@ describe("start over", () => {
     const s = { ...recordAnswered(EMPTY_STATE, "location", 80), lastAt: 80 };
     expect(nextQuestion(s, 3, {})).toBeNull();
     expect(nextQuestion(s, 8, {})).toBe("bedrooms");
+  });
+});
+
+describe("never the first thing on the deck", () => {
+  it("needs a few photo swipes in this visit, however many were swiped before", () => {
+    expect(deckWarmedUp(null, 50)).toBe(false); // deck not shown yet
+    expect(deckWarmedUp(50, 50)).toBe(false);
+    expect(deckWarmedUp(50, 52)).toBe(false);
+    expect(deckWarmedUp(50, 53)).toBe(true);
   });
 });

@@ -11,6 +11,7 @@ import { QuestionCard } from "./components/QuestionCard";
 import {
   loadFilters,
   loadQuestionState,
+  deckWarmedUp,
   nextQuestion,
   recordAnswered,
   recordDismissed,
@@ -235,11 +236,20 @@ function App() {
   // the ordinary filters above, which stay editable in Browse.
   const [questionState, setQuestionState] = useState(loadQuestionState);
   const swipeTotal = likedCount + dislikedCount;
-  const question = nextQuestion(questionState, swipeTotal, {
-    bedrooms: minBedrooms !== "any",
-    budget: maxPrice !== "" || minPrice !== "",
-    location: shapes.length > 0,
-  });
+  // Each time the deck is shown it starts with photos: a question can only appear after a few swipes
+  // in this visit, even for someone returning with plenty of swipes already (or a question left unanswered).
+  const [visitStart, setVisitStart] = useState<number | null>(null);
+  useEffect(() => {
+    if (tab !== "style") setVisitStart(null);
+    else if (store && visitStart === null) setVisitStart(swipeTotal);
+  }, [tab, store, visitStart, swipeTotal]);
+  const question = deckWarmedUp(visitStart, swipeTotal)
+    ? nextQuestion(questionState, swipeTotal, {
+        bedrooms: minBedrooms !== "any",
+        budget: maxPrice !== "" || minPrice !== "",
+        location: shapes.length > 0,
+      })
+    : null;
   const [skipTip, setSkipTip] = useState(false);
   function finishQuestion(answered: boolean) {
     if (!question) return;

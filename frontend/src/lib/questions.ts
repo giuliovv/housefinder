@@ -47,6 +47,15 @@ export function nextQuestion(
   );
 }
 
+/** A question card is never the first thing on the deck: each time the deck is opened (first visit, reload, back
+ * from another tab) at least this many photos must be swiped before one can appear. */
+export const MIN_SWIPES_PER_VISIT = 3;
+
+/** `visitStart` is the swipe total when the deck was shown, or null until it has been shown */
+export function deckWarmedUp(visitStart: number | null, swipeTotal: number): boolean {
+  return visitStart !== null && swipeTotal - visitStart >= MIN_SWIPES_PER_VISIT;
+}
+
 export function recordAnswered(state: QuestionState, id: QuestionId, swipeTotal: number): QuestionState {
   return { ...state, answered: { ...state.answered, [id]: true }, lastAt: swipeTotal };
 }
