@@ -985,3 +985,4 @@
 .saved__gone img { width: 90px; height: 70px; object-fit: cover; border-radius: 8px; }
 .saved__gone p { margin: 2px 0; font-size: 13px; }
 .app__link-btn { background: none; border: none; color: var(--rust); text-decoration: underline; cursor: pointer; font-size: inherit; padding: 0; }
+.saved__people { margin: -4px 0 12px; font-size: 13px; color: var(--muted); }

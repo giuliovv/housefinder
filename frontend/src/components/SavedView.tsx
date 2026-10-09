@@ -2,7 +2,7 @@ import { useState } from "react";
 import type { Listing } from "../types";
 import type { BoardStatus } from "../lib/useShortlist";
 import { listingKey } from "../lib/listingKey";
-import { shareUrl, whatsappLink, type BoardItem, type Me } from "../lib/shortlist";
+import { boardPeople, joinNames, shareUrl, whatsappLink, type BoardItem, type Me } from "../lib/shortlist";
 import { ListingCard } from "./ListingCard";
 import type { EmbeddingStore } from "../lib/embeddingStore";
 
@@ -77,6 +77,7 @@ function SharePanel({ boardId, name, onLeave }: { boardId: string; name: string 
 export function SavedView(p: Props) {
   const [starting, setStarting] = useState(false);
   const inBoard = p.boardId !== null;
+  const live = inBoard && p.status === "live"; // until it connects (or if it can't), show my own saves
   const cardProps = { store: p.store, deadPhotos: p.deadPhotos };
 
   if (p.invite) {
@@ -98,7 +99,6 @@ export function SavedView(p: Props) {
   }
 
   // what to show: the shared list (everyone's) when on a board, else just mine
-  const live = inBoard && p.status === "live"; // until it connects (or if it can't), show my own saves
   const shared = live ? p.board : [];
   const mine = p.saved.map((k) => p.listingsByKey[k]).filter((l): l is Listing => Boolean(l));
 
@@ -106,6 +106,11 @@ export function SavedView(p: Props) {
     <div className="app__browse saved">
       <h2 className="saved__title">{inBoard ? "Our shared list" : "Saved homes"}</h2>
 
+      {live && (
+        <p className="saved__people">
+          {joinNames(boardPeople(p.board, p.me))} · {p.board.length} {p.board.length === 1 ? "home" : "homes"}
+        </p>
+      )}
       {inBoard && p.boardId && <SharePanel boardId={p.boardId} name={p.me.name} onLeave={p.onLeave} />}
       {inBoard && p.status === "connecting" && <p className="app__map-hint">Connecting to the shared list…</p>}
       {inBoard && p.status === "error" && (

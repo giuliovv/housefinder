@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { boardIdFromSearch, cleanName, docId, randomId, shareUrl, sortBoard, whatsappLink, type BoardItem } from "./shortlist";
+import { boardIdFromSearch, boardPeople, joinNames, cleanName, docId, randomId, shareUrl, sortBoard, whatsappLink, type BoardItem } from "./shortlist";
 
 const item = (key: string, ...names: string[]): BoardItem => ({
   key,
@@ -36,5 +36,20 @@ describe("board contents", () => {
     expect(docId("propertyhive:a/b")).toBe("propertyhive:a|b");
     expect(cleanName("  Anna   Maria  ")).toBe("Anna Maria");
     expect(cleanName("x".repeat(80))).toHaveLength(30);
+  });
+});
+
+describe("people on the board", () => {
+  it("lists me first, then everyone else once", () => {
+    const items = [item("a", "Ann", "Bo"), item("b", "Bo")]; // ids id0 = Ann/Bo, id1 = Bo
+    items[0].savers = { me1: "Giulio", p1: "Ann" };
+    items[1].savers = { p1: "Ann", p2: "Bo" };
+    expect(boardPeople(items, { id: "me1", name: "Giulio" })).toEqual(["You", "Ann", "Bo"]);
+    expect(boardPeople([], { id: "me1", name: "G" })).toEqual(["You"]);
+  });
+  it("joins names naturally", () => {
+    expect(joinNames(["You"])).toBe("You");
+    expect(joinNames(["You", "Ann"])).toBe("You & Ann");
+    expect(joinNames(["You", "Ann", "Bo"])).toBe("You, Ann & Bo");
   });
 });

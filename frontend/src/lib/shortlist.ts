@@ -62,6 +62,19 @@ export function sortBoard(items: BoardItem[]): BoardItem[] {
     .map((x) => x.item);
 }
 
+/** Everyone who has saved something on the board, with me first as "You". */
+export function boardPeople(items: BoardItem[], me: Me): string[] {
+  const others = new Map<string, string>();
+  for (const item of items) {
+    for (const [id, name] of Object.entries(item.savers)) if (id !== me.id) others.set(id, name);
+  }
+  return ["You", ...[...others.values()].sort((a, b) => a.localeCompare(b))];
+}
+
+export function joinNames(names: string[]): string {
+  return names.length <= 1 ? names.join("") : `${names.slice(0, -1).join(", ")} & ${names[names.length - 1]}`;
+}
+
 export function readJson<T>(key: string, fallback: T): T {
   try {
     const raw = localStorage.getItem(key);

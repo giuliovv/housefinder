@@ -113,6 +113,9 @@ function App() {
 
   const shortlist = useShortlist(listingsByKey);
 
+  // on a shared list the tab counts the whole list, not just what I saved
+  const savedCount = shortlist.boardId && shortlist.status === "live" ? shortlist.board.length : shortlist.saved.length;
+
   const agencies = useMemo(() => {
     if (!listings) return [];
     return [...new Set(listings.map((l) => l.agency_name))];
@@ -230,7 +233,7 @@ function App() {
             Browse {listings ? `(${listings.length})` : ""}
           </button>
           <button className={`app__tab ${tab === "saved" ? "app__tab--active" : ""}`} onClick={() => setTab("saved")}>
-            Saved{shortlist.saved.length > 0 ? ` (${shortlist.saved.length})` : ""}
+            Saved{savedCount > 0 ? ` (${savedCount})` : ""}
           </button>
         </div>
       </header>
