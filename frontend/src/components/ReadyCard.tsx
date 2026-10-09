@@ -11,7 +11,7 @@ const COPY: Record<2 | 3, { title: string; text: string }> = {
   },
 };
 
-/** Shown between photos when the taste read first reaches "good" (and again at "strong"): points to Browse. */
+/** Shown between photos when the taste read first reaches "good" : points to Browse. */
 export function ReadyCard({ level, onGo, onKeep }: { level: TasteLevel; onGo: () => void; onKeep: () => void }) {
   const copy = COPY[level === 3 ? 3 : 2];
   return (

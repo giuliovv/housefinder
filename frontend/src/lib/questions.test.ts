@@ -58,13 +58,12 @@ describe("never the first thing on the deck", () => {
 });
 
 describe("the ready-for-Browse nudge", () => {
-  it("is announced once at 'good' and once at 'strong', never before", () => {
+  it("is announced once, at the first 'good' read, and never again", () => {
     expect(readyToAnnounce(null, 0)).toBeNull();
     expect(readyToAnnounce(1, 0)).toBeNull();
     expect(readyToAnnounce(2, 0)).toBe(2);
     expect(readyToAnnounce(2, 2)).toBeNull();
-    expect(readyToAnnounce(3, 2)).toBe(3);
-    expect(readyToAnnounce(3, 3)).toBeNull();
-    expect(readyToAnnounce(2, 3)).toBeNull(); // dipping back down never repeats it
+    expect(readyToAnnounce(3, 2)).toBeNull(); // reaching "strong" later does not repeat it
+    expect(readyToAnnounce(3, 0)).toBe(3); // a first read that is already strong still gets the one announcement
   });
 });

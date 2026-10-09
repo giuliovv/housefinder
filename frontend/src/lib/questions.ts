@@ -129,7 +129,8 @@ export function saveReady(state: ReadyState): void {
   writeJson(READY_KEY, state);
 }
 
-/** the level to announce, or null: good and strong are each announced once */
+/** The level to announce, or null. Announced exactly once: the first time the read is "good" (about 20 swipes), when
+ * matches are already worth looking at. Later levels never repeat it. */
 export function readyToAnnounce(level: number | null, shownLevel: number): number | null {
-  return level !== null && level >= READY_FROM_LEVEL && level > shownLevel ? level : null;
+  return level !== null && level >= READY_FROM_LEVEL && shownLevel < READY_FROM_LEVEL ? level : null;
 }

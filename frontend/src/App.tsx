@@ -254,7 +254,7 @@ function App() {
         location: shapes.length > 0,
       })
     : null;
-  // "You're ready, check Browse": announced when the taste read reaches good, and again at strong
+  // "You're ready, check Browse": announced once, when the taste read first reaches "good"
   const [ready, setReady] = useState(loadReady);
   const announce = deckWarmedUp(visitStart, swipeTotal) ? readyToAnnounce(tasteRead?.level ?? null, ready.shownLevel) : null;
   function dismissReady(goBrowse: boolean) {
