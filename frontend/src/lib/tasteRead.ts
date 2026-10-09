@@ -41,6 +41,9 @@ const LABELS = [
 const BAR_FROM = 0.3;
 const BAR_TO = 0.72;
 const MIN_LIKES_FOR_ANYTHING = 3;
+/** Likes alone look "clear" (the likes centroid is far from nothing), which is not a read of taste: a good or strong
+ * read needs some passes too. */
+const MIN_DISLIKES_FOR_GOOD = 3;
 
 function meanVector(vectors: ArrayLike<number>[]): Float32Array {
   const out = new Float32Array(vectors[0].length);
@@ -62,7 +65,7 @@ export function predictedAgreement(likes: number, dislikes: number, separation: 
 function hintFor(level: TasteLevel, likes: number, dislikes: number): string {
   if (likes === 0) return "Tap ♥ on interiors you'd happily live in.";
   if (likes < MIN_LIKES_FOR_ANYTHING) return `Like at least ${MIN_LIKES_FOR_ANYTHING} photos so we have something to go on.`;
-  if (dislikes === 0 && likes + dislikes >= 6) return "Pass on a few too — knowing what you don't like helps a lot.";
+  if (dislikes < MIN_DISLIKES_FOR_GOOD && likes + dislikes >= 6) return "Pass on a few too — knowing what you don't like helps a lot.";
   if (level === 0) return "Keep going — every swipe sharpens your matches.";
   if (level === 1) return "A few more likes and passes will sharpen your matches.";
   if (level === 2) return "Your matches are shaping up. A few more swipes will fine-tune them.";
@@ -85,6 +88,10 @@ export function computeTasteRead(liked: ArrayLike<number>[], disliked: ArrayLike
   let level: TasteLevel = 0;
   for (let l = 1; l < LEVEL_MIN.length; l++) if (predicted >= LEVEL_MIN[l]) level = l as TasteLevel;
   if (liked.length < MIN_LIKES_FOR_ANYTHING) level = 0; // too little to say anything, whatever the separation
-  const score = Math.max(0, Math.min(1, (predicted - BAR_FROM) / (BAR_TO - BAR_FROM)));
+  let score = Math.max(0, Math.min(1, (predicted - BAR_FROM) / (BAR_TO - BAR_FROM)));
+  if (disliked.length < MIN_DISLIKES_FOR_GOOD) {
+    level = Math.min(level, 1) as TasteLevel;
+    score = Math.min(score, (LEVEL_MIN[2] - BAR_FROM) / (BAR_TO - BAR_FROM) - 0.02); // the bar stops short of "good"
+  }
   return { score, level, label: LABELS[level], hint: hintFor(level, liked.length, disliked.length), likes: liked.length, dislikes: disliked.length };
 }

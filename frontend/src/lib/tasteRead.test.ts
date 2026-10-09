@@ -49,4 +49,11 @@ describe("computeTasteRead", () => {
     expect(predictedAgreement(10, 10, 0.3)).toBeGreaterThan(predictedAgreement(5, 10, 0.3));
     expect(predictedAgreement(10, 10, 0.4)).toBeGreaterThan(predictedAgreement(10, 10, 0.2));
   });
+
+  it("never reads as good or strong from likes alone, however many", () => {
+    const r = computeTasteRead(many(A, 40), many(B, 2))!;
+    expect(r.level).toBeLessThanOrEqual(1);
+    expect(r.hint).toMatch(/Pass on a few/);
+    expect(computeTasteRead(many(A, 40), many(B, 3))!.level).toBeGreaterThanOrEqual(2);
+  });
 });

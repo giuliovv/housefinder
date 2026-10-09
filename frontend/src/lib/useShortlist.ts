@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import type { Listing } from "../types";
+import { trackMilestone } from "./stats";
 import { fetchConfig, loadBackend, type BoardBackend } from "./boardBackend";
 import { listingKey } from "./listingKey";
 import {
@@ -122,6 +123,7 @@ export function useShortlist(listingsByKey: Record<string, Listing>) {
       setMe(next);
       setBoardId(id);
       pushAll(id, next);
+      trackMilestone("m_share_created");
       return id;
     },
     [me, pushAll],
@@ -134,6 +136,7 @@ export function useShortlist(listingsByKey: Record<string, Listing>) {
       setMe(next);
       setBoardId(invite);
       pushAll(invite, next);
+      trackMilestone("m_share_joined");
       setInvite(null);
       window.history.replaceState(null, "", window.location.pathname);
     },

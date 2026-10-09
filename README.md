@@ -300,3 +300,12 @@ Telegram conversation's session (`claude -p --resume`, exactly as the bridge doe
 investigates and messages the user. It waits while a user turn is in flight and wakes at
 most every 2h unless critical. `python ops/housefinder_watch.py --dry-run` shows what it
 would do; `--test` injects a harmless test alert.
+
+## Usage counters (no external analytics)
+
+The site counts anonymous usage in its own Firestore: one `stats/<UTC day>` document of plain counters (visitors, new visitors,
+mobile visitors, and funnel milestones such as first swipe, "ready" card, Browse opened, saved a home, shared a list).
+No ids, IPs, cookies or content are stored (see `frontend/src/lib/stats.ts`). Not counted: Do Not Track, localhost, and any
+browser opened once with `?notrack`. Clients can only add to a fixed list of counters (`firebase/firestore.rules`) and cannot read them.
+
+    python3 scripts/analytics_report.py --days 14   # needs AWS access to SSM /housefinder/firebase-admin

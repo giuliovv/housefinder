@@ -3,6 +3,7 @@ import type { Listing } from "../types";
 import type { EmbeddingStore } from "../lib/embeddingStore";
 import type { SwipeChoice } from "../lib/preferences";
 import { normalizeImageUrl } from "../lib/url";
+import { trackMilestone } from "../lib/stats";
 import { listingKey } from "../lib/listingKey";
 
 /** Agencies leak their own wording into the price cell ("To Let: £4,616 per week",
@@ -93,7 +94,7 @@ export function ListingCard({
   }
 
   return (
-    <a className="listing-card" href={summary.url} target="_blank" rel="noreferrer">
+    <a className="listing-card" href={summary.url} target="_blank" rel="noreferrer" onClick={() => trackMilestone("m_agency_click")}>
       <div className="listing-card__photo-wrap">
         {photos.length > 0 ? (
           <div className="listing-card__strip" ref={stripRef} onScroll={onStripScroll}>

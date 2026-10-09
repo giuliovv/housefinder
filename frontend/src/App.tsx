@@ -7,6 +7,7 @@ import { SavedView } from "./components/SavedView";
 import { useShortlist } from "./lib/useShortlist";
 import { DrawMap } from "./components/DrawMap";
 import { inAnyShape, type LatLon, type ListingGeo } from "./lib/geo";
+import { trackMilestone, trackVisit } from "./lib/stats";
 import { ReadyCard } from "./components/ReadyCard";
 import { QuestionCard } from "./components/QuestionCard";
 import {
@@ -262,7 +263,10 @@ function App() {
     const next = { shownLevel: announce, browseOpened: goBrowse };
     setReady(next);
     saveReady(next);
-    if (goBrowse) setTab("browse");
+    if (goBrowse) {
+      trackMilestone("m_ready_go");
+      setTab("browse");
+    }
   }
   // the Browse tab stays marked until the person opens it after being told they're ready
   useEffect(() => {
@@ -279,8 +283,42 @@ function App() {
     const next = answered ? recordAnswered(questionState, question, swipeTotal) : recordDismissed(questionState, swipeTotal);
     setQuestionState(next);
     saveQuestionState(next);
+    trackMilestone(answered ? "m_q_answered" : "m_q_skipped");
     if (!answered) setSkipTip(true); // skipping one skips all: tell them where the same settings live
   }
+
+  // anonymous usage counters (see lib/stats.ts)
+  useEffect(() => {
+    const t = window.setTimeout(trackVisit, 1500); // after the first paint, never competing with loading
+    return () => window.clearTimeout(t);
+  }, []);
+  useEffect(() => {
+    if (swipeTotal >= 1) trackMilestone("m_first_swipe");
+    if (swipeTotal >= 10) trackMilestone("m_swipes_10");
+    if (swipeTotal >= 25) trackMilestone("m_swipes_25");
+    if (swipeTotal >= 50) trackMilestone("m_swipes_50");
+  }, [swipeTotal]);
+  useEffect(() => {
+    if (tab === "browse") trackMilestone("m_browse_opened");
+  }, [tab]);
+  useEffect(() => {
+    if (shownCount > PAGE_SIZE) trackMilestone("m_browse_deep");
+  }, [shownCount]);
+  useEffect(() => {
+    if (activeFilterCount > 0) trackMilestone("m_filter_used");
+  }, [activeFilterCount]);
+  useEffect(() => {
+    if (areaPanelOpen) trackMilestone("m_map_used");
+  }, [areaPanelOpen]);
+  useEffect(() => {
+    if (shapes.length > 0) trackMilestone("m_area_drawn");
+  }, [shapes.length]);
+  useEffect(() => {
+    if (shortlist.saved.length > 0) trackMilestone("m_saved");
+  }, [shortlist.saved.length]);
+  useEffect(() => {
+    if (announce !== null) trackMilestone("m_ready_shown");
+  }, [announce]);
 
   return (
     <div className="app">
