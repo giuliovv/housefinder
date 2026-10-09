@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { EMPTY_STATE, gapAfter, nextQuestion, recordAnswered, recordSkipped } from "./questions";
+import { EMPTY_STATE, gapAfter, nextQuestion, recordAnswered, recordDismissed } from "./questions";
 
 describe("when a question card appears", () => {
   it("never before 8 photo swipes, and not at 7", () => {
@@ -27,23 +27,23 @@ describe("when a question card appears", () => {
 });
 
 describe("skipping", () => {
-  it("is snoozed, offered once more much later, then left alone", () => {
-    let s = recordSkipped(EMPTY_STATE, "bedrooms", 8);
-    // budget is next while bedrooms rests
-    expect(nextQuestion(s, 8 + gapAfter(8), {})).toBe("budget");
-    s = recordAnswered(s, "budget", 17);
-    s = recordAnswered(s, "location", 27);
-    expect(nextQuestion(s, 37, {})).toBeNull(); // too soon after the skip
-    expect(nextQuestion(s, 40, {})).toBe("bedrooms"); // 30+ swipes after the skip
-    s = recordSkipped(s, "bedrooms", 40);
-    expect(nextQuestion(s, 500, {})).toBeNull(); // second skip: stays quiet
+  it("one skip switches every question off for good", () => {
+    const s = recordDismissed(EMPTY_STATE, 8);
+    expect(s.dismissed).toBe(true);
+    expect(nextQuestion(s, 8, {})).toBeNull();
+    expect(nextQuestion(s, 5000, {})).toBeNull();
+  });
+  it("also holds after an earlier answer", () => {
+    let s = recordAnswered(EMPTY_STATE, "bedrooms", 8);
+    s = recordDismissed(s, 17);
+    expect(nextQuestion(s, 400, {})).toBeNull();
   });
 });
 
 describe("start over", () => {
   it("resets the pacing when the swipe count drops below the marker", () => {
-    const s = recordSkipped(EMPTY_STATE, "location", 80);
-    expect(nextQuestion({ ...s, lastAt: 80 }, 3, {})).toBeNull();
-    expect(nextQuestion({ ...s, lastAt: 80 }, 8, {})).toBe("bedrooms");
+    const s = { ...recordAnswered(EMPTY_STATE, "location", 80), lastAt: 80 };
+    expect(nextQuestion(s, 3, {})).toBeNull();
+    expect(nextQuestion(s, 8, {})).toBe("bedrooms");
   });
 });

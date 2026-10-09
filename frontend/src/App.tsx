@@ -13,7 +13,7 @@ import {
   loadQuestionState,
   nextQuestion,
   recordAnswered,
-  recordSkipped,
+  recordDismissed,
   saveFilters,
   saveQuestionState,
 } from "./lib/questions";
@@ -240,11 +240,13 @@ function App() {
     budget: maxPrice !== "" || minPrice !== "",
     location: shapes.length > 0,
   });
+  const [skipTip, setSkipTip] = useState(false);
   function finishQuestion(answered: boolean) {
     if (!question) return;
-    const next = answered ? recordAnswered(questionState, question, swipeTotal) : recordSkipped(questionState, question, swipeTotal);
+    const next = answered ? recordAnswered(questionState, question, swipeTotal) : recordDismissed(questionState, swipeTotal);
     setQuestionState(next);
     saveQuestionState(next);
+    if (!answered) setSkipTip(true); // skipping one skips all: tell them where the same settings live
   }
 
   return (
@@ -286,6 +288,7 @@ function App() {
           tasteRead={tasteRead}
           onBroken={markBroken}
           onHide={hidePhoto}
+          paused={skipTip}
           interlude={
             question ? (
               <QuestionCard
@@ -309,6 +312,20 @@ function App() {
             ) : undefined
           }
         />
+      )}
+      {skipTip && (
+        <div className="sheet__overlay sheet__overlay--center" onClick={() => setSkipTip(false)}>
+          <div className="tip" role="dialog" aria-label="Filters tip" onClick={(e) => e.stopPropagation()}>
+            <p className="tip__title">No problem</p>
+            <p className="tip__text">
+              We won't ask these again. You can set bedrooms, budget and area any time in <strong>Browse</strong>, under{" "}
+              <strong>Filters</strong> and <strong>Map</strong>.
+            </p>
+            <button className="tip__btn" onClick={() => setSkipTip(false)}>
+              Got it
+            </button>
+          </div>
+        </div>
       )}
       {tab === "style" && !store && !styleFailed && <LoadingMessage kind="style" />}
       {tab === "style" && styleFailed && (

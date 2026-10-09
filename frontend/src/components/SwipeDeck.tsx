@@ -45,6 +45,7 @@ export function SwipeDeck({
   onBroken,
   onHide,
   interlude,
+  paused,
 }: {
   undecided: DeckPhoto[];
   listingsByKey: Record<ListingKey, Listing>;
@@ -62,6 +63,8 @@ export function SwipeDeck({
   onHide: (id: string) => void;
   /** a question card shown instead of the next photo; while it is up nothing can be swiped */
   interlude?: ReactNode;
+  /** a popup is open over the deck: ignore the keyboard so it can't swipe photos behind it */
+  paused?: boolean;
 }) {
   const current = undecided[0];
   // One-time explanation for people who haven't swiped yet. Gone for good once dismissed
@@ -86,13 +89,13 @@ export function SwipeDeck({
 
   useEffect(() => {
     function onKey(e: KeyboardEvent) {
-      if (!current || interlude) return;
+      if (!current || interlude || paused) return;
       if (e.key === "ArrowRight") onSwipe(current.id, "like");
       if (e.key === "ArrowLeft") onSwipe(current.id, "dislike");
     }
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
-  }, [current, onSwipe, interlude]);
+  }, [current, onSwipe, interlude, paused]);
 
   function commit(choice: "like" | "dislike") {
     if (!current) return;

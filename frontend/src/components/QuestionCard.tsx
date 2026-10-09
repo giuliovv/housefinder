@@ -87,7 +87,7 @@ export function QuestionCard(p: Props) {
         Continue swiping
       </button>
       <button className="question__skip" onClick={p.onSkip}>
-        Skip for now
+        Skip these questions
       </button>
     </div>
   );

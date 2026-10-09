@@ -1048,3 +1048,9 @@
 .question__continue:disabled { opacity: 0.4; cursor: default; }
 .question__skip { display: block; margin: 10px auto 0; background: none; border: none; color: var(--muted); font-size: 13px; text-decoration: underline; cursor: pointer; padding: 6px; }
 .app__draw-btn svg, .saved__wa svg { vertical-align: -4px; margin-right: 4px; }
+
+.sheet__overlay--center { align-items: center; padding: 20px; }
+.tip { background: var(--cream); border-radius: 20px; padding: 22px 22px 18px; max-width: 340px; width: 100%; text-align: center; box-shadow: 0 12px 40px rgba(20, 14, 10, 0.35); }
+.tip__title { font-family: var(--serif); font-size: 1.3rem; margin: 0 0 8px; color: var(--ink); }
+.tip__text { font-size: 14px; line-height: 1.5; color: var(--ink); margin: 0 0 16px; }
+.tip__btn { width: 100%; padding: 13px; border-radius: 14px; border: none; background: var(--rust); color: #fff; font-size: 15px; font-weight: 700; cursor: pointer; }

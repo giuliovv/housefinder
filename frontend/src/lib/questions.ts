@@ -13,20 +13,15 @@ export const QUESTION_ORDER: QuestionId[] = ["bedrooms", "budget", "location"];
 export interface QuestionState {
   /** answered ones are never asked again */
   answered: Partial<Record<QuestionId, true>>;
-  /** how many times each was skipped, and at which swipe count the last skip happened */
-  skips: Partial<Record<QuestionId, number>>;
-  skippedAt: Partial<Record<QuestionId, number>>;
+  /** set by the first skip: the person doesn't want these, so none of them ever appear again */
+  dismissed: boolean;
   /** swipe total when a question card last appeared (answered or skipped) */
   lastAt: number;
 }
 
-export const EMPTY_STATE: QuestionState = { answered: {}, skips: {}, skippedAt: {}, lastAt: 0 };
+export const EMPTY_STATE: QuestionState = { answered: {}, dismissed: false, lastAt: 0 };
 
 const KEY = "housefinder:questions:v1";
-/** a question that was skipped once gets one more chance, a good while later; after a second skip it stays quiet */
-const MAX_SKIPS = 2;
-const RETRY_AFTER_SWIPES = 30;
-
 /** swipes between question cards: 8, 9 or 10, varying a little so it doesn't feel mechanical */
 export function gapAfter(lastAt: number): number {
   return 8 + (lastAt % 3);
@@ -41,16 +36,13 @@ export function nextQuestion(
   swipeTotal: number,
   alreadySet: Partial<Record<QuestionId, boolean>>,
 ): QuestionId | null {
+  if (state.dismissed) return null;
   // "start over" resets the swipe count below the stored marker; treat that as a fresh start
   const lastAt = state.lastAt > swipeTotal ? 0 : state.lastAt;
   if (swipeTotal - lastAt < gapAfter(lastAt)) return null;
   return (
     QUESTION_ORDER.find((id) => {
-      if (state.answered[id] || alreadySet[id]) return false;
-      const skips = state.skips[id] ?? 0;
-      if (skips >= MAX_SKIPS) return false;
-      if (skips > 0 && swipeTotal - (state.skippedAt[id] ?? 0) < RETRY_AFTER_SWIPES) return false;
-      return true;
+      return !state.answered[id] && !alreadySet[id];
     }) ?? null
   );
 }
@@ -59,13 +51,9 @@ export function recordAnswered(state: QuestionState, id: QuestionId, swipeTotal:
   return { ...state, answered: { ...state.answered, [id]: true }, lastAt: swipeTotal };
 }
 
-export function recordSkipped(state: QuestionState, id: QuestionId, swipeTotal: number): QuestionState {
-  return {
-    ...state,
-    skips: { ...state.skips, [id]: (state.skips[id] ?? 0) + 1 },
-    skippedAt: { ...state.skippedAt, [id]: swipeTotal },
-    lastAt: swipeTotal,
-  };
+/** skipping one means skipping all: no question card is shown again */
+export function recordDismissed(state: QuestionState, swipeTotal: number): QuestionState {
+  return { ...state, dismissed: true, lastAt: swipeTotal };
 }
 
 export function loadQuestionState(): QuestionState {
