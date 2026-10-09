@@ -41,7 +41,7 @@ from .agencies import AGENCIES
 from . import history as history_mod
 from . import keys
 from .export import BLOCKED, scrape_agency
-from .price import implausible_reason
+from .price import clean_price_text, implausible_reason
 
 MISS_THRESHOLD = 2
 VERIFY_WINDOW_DAYS = 3
@@ -115,6 +115,7 @@ def apply_price_checks(existing: list[dict]) -> int:
     flagged = 0
     for row in existing:
         s = row["summary"]
+        s["price_text"] = clean_price_text(s.get("price_text"))
         reason = implausible_reason(s.get("price_pcm"), s.get("bedrooms"))
         if reason and not s.get("price_flag"):
             s["price_pcm"] = None

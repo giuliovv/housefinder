@@ -6,6 +6,16 @@ import { normalizeImageUrl } from "../lib/url";
 import { listingKey } from "../lib/listingKey";
 import { extractPostcodeArea } from "../lib/location";
 
+/** Agencies leak their own wording into the price cell ("To Let: £4,616 per week",
+ * "… (Tenant Info)"); show just the price. The pipeline cleans it too, this covers
+ * data that hasn't been refreshed yet. */
+function displayPrice(text: string): string {
+  return text
+    .replace(/\s*\((?:tenant info|tenancy info)\)/gi, "")
+    .replace(/^\s*(?:to\s+let|to\s+rent|for\s+rent|available|let)\s*[:\-–]\s*/i, "")
+    .trim();
+}
+
 export function ListingCard({
   listing,
   matchScore,
@@ -126,8 +136,10 @@ export function ListingCard({
           </>
         )}
 
-        {summary.status && <span className="listing-card__status">{summary.status}</span>}
-        <span className="listing-card__agency">{listing.agency_name}</span>
+        <div className="listing-card__tags">
+          <span className="listing-card__agency">{listing.agency_name}</span>
+          {summary.status && <span className="listing-card__status">{summary.status}</span>}
+        </div>
         {matchScore != null && (
           <span className="listing-card__match" title="Relative match to your swiped style — higher is better, compare listings to each other rather than reading it as an absolute percentage">
             {Math.round(matchScore * 100)}% match
@@ -157,7 +169,7 @@ export function ListingCard({
 
       <div className="listing-card__body">
         <div className="listing-card__price-row">
-          <p className="listing-card__price">{summary.price_text.replace(/\s*\(Tenant Info\)/i, "")}</p>
+          <p className="listing-card__price">{displayPrice(summary.price_text)}</p>
           {extractPostcodeArea(summary.address) && (
             <p className="listing-card__area">{extractPostcodeArea(summary.address)}</p>
           )}

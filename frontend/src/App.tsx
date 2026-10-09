@@ -3,7 +3,7 @@ import type { AreaCentroids, Listing, StyleLabel } from "./types";
 import { loadEmbeddingStore, type EmbeddingStore } from "./lib/embeddingStore";
 import { ListingCard } from "./components/ListingCard";
 import { SwipeDeck } from "./components/SwipeDeck";
-import { NeighbourhoodMap } from "./components/NeighbourhoodMap";
+import { AreaMap } from "./components/AreaMap";
 import { FilterSheet } from "./components/FilterSheet";
 import { LoadingMessage } from "./components/LoadingMessage";
 import { TasteMeter } from "./components/TasteMeter";
@@ -37,6 +37,9 @@ function App() {
   const [minBathrooms, setMinBathrooms] = useState<string>("any");
   const [tab, setTab] = useState<Tab>("style");
   const [filterSheetOpen, setFilterSheetOpen] = useState(false);
+  const [areaPanelOpen, setAreaPanelOpen] = useState(false);
+  const [areaQuery, setAreaQuery] = useState("");
+  const [areaFocus, setAreaFocus] = useState<string | null>(null);
   const [shownCount, setShownCount] = useState(PAGE_SIZE);
   const resultsRef = useRef<HTMLParagraphElement>(null);
 
@@ -265,19 +268,16 @@ function App() {
 
       {tab === "browse" && (
         <div className="app__browse">
-          {Object.keys(areaCentroids).length > 0 && (
-            <NeighbourhoodMap
-              centroids={areaCentroids}
-              counts={areaCounts}
-              selected={areaFilters}
-              onToggle={toggleArea}
-            />
-          )}
-          <p className="app__map-hint">Tap a neighbourhood on the map or a chip below to filter by area.</p>
-
           <div className="app__filter-row">
             <button className="app__filter-btn" onClick={() => setFilterSheetOpen(true)}>
               Filters{activeFilterCount > 0 ? ` (${activeFilterCount})` : ""}
+            </button>
+            <button
+              className={`app__filter-btn ${areaPanelOpen ? "app__filter-btn--on" : ""}`}
+              onClick={() => setAreaPanelOpen((open) => !open)}
+              aria-expanded={areaPanelOpen}
+            >
+              Areas{areaFilters.length > 0 ? ` (${areaFilters.length})` : ""}
             </button>
             <span className="app__result-count" role="status" aria-live="polite">
               {visible.length} {visible.length === 1 ? "home" : "homes"}
@@ -289,17 +289,40 @@ function App() {
             )}
           </div>
 
-          <div className="app__chip-row">
-            {areas.map((area) => (
-              <button
-                key={area}
-                className={`app__chip ${areaFilters.includes(area) ? "app__chip--active" : ""}`}
-                onClick={() => toggleArea(area)}
-              >
-                {area}
-              </button>
-            ))}
-          </div>
+          {areaPanelOpen && (
+            <div className="app__area-panel">
+              <input
+                className="app__area-search"
+                type="search"
+                placeholder="Find a postcode, e.g. SW1V"
+                value={areaQuery}
+                onChange={(e) => {
+                  const q = e.target.value.toUpperCase().replace(/\s+/g, "");
+                  setAreaQuery(e.target.value);
+                  const hit = areas.find((a) => a === q) ?? Object.keys(areaCentroids).find((a) => a === q);
+                  setAreaFocus(hit ?? null);
+                }}
+              />
+              <p className="app__map-hint">Tap neighbourhoods to add or remove them. Darker = more homes.</p>
+              <AreaMap
+                centroids={areaCentroids}
+                counts={areaCounts}
+                selected={areaFilters}
+                onToggle={toggleArea}
+                focus={areaFocus}
+              />
+            </div>
+          )}
+
+          {areaFilters.length > 0 && (
+            <div className="app__chip-row">
+              {areaFilters.map((area) => (
+                <button key={area} className="app__chip app__chip--active" onClick={() => toggleArea(area)}>
+                  {area} ✕
+                </button>
+              ))}
+            </div>
+          )}
 
           <p className="app__sort-note" ref={resultsRef}>
             Showing {visible.length} of {listings?.length ?? 0} listings

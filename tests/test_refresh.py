@@ -300,3 +300,15 @@ def test_stored_rows_get_the_price_check_without_any_scrape():
     assert bad["summary"]["price_pcm"] is None and bad["summary"]["price_flag"]
     assert fine["summary"]["price_pcm"] == 3000
     assert apply_price_checks([bad, fine]) == 0          # idempotent
+
+
+def test_price_text_is_tidied_but_never_changes_the_amount():
+    from scraper.price import clean_price_text, parse_price_pcm
+
+    assert clean_price_text("To Let: £4,616 per week") == "£4,616 per week"
+    assert clean_price_text("To Rent - £2,000 pcm") == "£2,000 pcm"
+    assert clean_price_text("£21,000 Pw / £91,000 Pcm (Tenant Info)") == "£21,000 Pw / £91,000 Pcm"
+    assert clean_price_text("Guide Price £5,500 pcm") == "Guide Price £5,500 pcm"      # real wording kept
+    assert clean_price_text(clean_price_text("Let: £1,000 pcm")) == "£1,000 pcm"        # idempotent
+    assert clean_price_text(None) == ""
+    assert parse_price_pcm(clean_price_text("To Let: £4,616 per week")) == parse_price_pcm("To Let: £4,616 per week")

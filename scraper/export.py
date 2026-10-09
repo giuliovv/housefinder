@@ -20,7 +20,7 @@ from .agencies import AGENCIES
 from .cli import build_scraper
 from .http import Blocked
 from .keys import key_for, namespaced_source_id
-from .price import implausible_reason
+from .price import clean_price_text, implausible_reason
 from .london import is_london
 
 
@@ -45,6 +45,7 @@ def _namespace(row: dict) -> dict:
 
 
 def _flag_implausible_price(summary):
+    summary = dataclasses.replace(summary, price_text=clean_price_text(summary.price_text))
     reason = implausible_reason(summary.price_pcm, summary.bedrooms)
     if reason is None:
         return summary

@@ -108,7 +108,7 @@
 }
 
 .neighbourhood-map {
-  height: 210px;
+  height: 340px;
   width: 100%;
   margin-bottom: 12px;
   border-radius: 14px;
@@ -426,8 +426,9 @@
 }
 
 .listing-card__photo-count {
+  /* top-right, so it never sits under the like / pass buttons at the bottom */
   position: absolute;
-  bottom: 10px;
+  top: 10px;
   right: 10px;
   background: rgba(20, 14, 10, 0.55);
   color: #fff;
@@ -436,10 +437,18 @@
   border-radius: 4px;
 }
 
-.listing-card__status {
+.listing-card__tags {
   position: absolute;
   top: 10px;
-  right: 10px;
+  left: 10px;
+  right: 64px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  pointer-events: none;
+}
+
+.listing-card__status {
   background: var(--rust);
   color: #fff;
   font-size: 0.7rem;
@@ -450,9 +459,6 @@
 }
 
 .listing-card__agency {
-  position: absolute;
-  top: 10px;
-  left: 10px;
   background: rgba(255, 255, 255, 0.92);
   color: var(--muted-dark);
   font-size: 10.5px;
@@ -915,3 +921,25 @@
 .swipe__skip:hover {
   color: var(--ink);
 }
+
+.app__area-panel { margin-bottom: 8px; }
+.app__area-search {
+  width: 100%;
+  box-sizing: border-box;
+  padding: 9px 12px;
+  margin-bottom: 6px;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  font-size: 14px;
+  background: #fff;
+}
+.app__filter-btn--on { border-color: var(--rust); color: var(--rust); }
+.area-map__label {
+  font-size: 10px;
+  font-weight: 600;
+  color: #3a2f26;
+  text-align: center;
+  text-shadow: 0 0 3px #fff, 0 0 3px #fff;
+  pointer-events: none;
+}
+.area-map__tiles { filter: grayscale(1) brightness(1.12) contrast(0.8); }

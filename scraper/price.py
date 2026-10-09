@@ -13,6 +13,17 @@ _NUMBER_RE = re.compile(r"[\d,]+(?:\.\d+)?")
 _WEEKS_PER_MONTH = 52 / 12  # standard convention for pw -> pcm conversion
 
 
+_STATUS_PREFIX = re.compile(r"^\s*(?:to\s+let|to\s+rent|for\s+rent|available|let)\s*[:\-–]\s*", re.IGNORECASE)
+
+
+def clean_price_text(text: str | None) -> str:
+    """The price as a person should read it: agencies leak their own wording into the
+    price cell ("To Let: £4,616 per week", "£1,750 pw (Tenant Info)"). Idempotent."""
+    t = re.sub(r"\s+", " ", text or "").strip()
+    t = re.sub(r"\s*\((?:tenant info|tenancy info)\)", "", t, flags=re.IGNORECASE)
+    return _STATUS_PREFIX.sub("", t).strip()
+
+
 def parse_price_pcm(text: str | None) -> float | None:
     if not text:
         return None
