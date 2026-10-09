@@ -156,7 +156,7 @@
   z-index: 20;
   display: flex;
   align-items: center;
-  gap: 10px;
+  gap: 8px;
   padding: 8px 0;
   margin-bottom: 8px;
   background: var(--cream);
@@ -164,7 +164,10 @@
 
 .app__result-count {
   flex: 1;
+  min-width: 0;
   white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
   font-size: 13px;
   font-weight: 600;
   color: var(--ink);
@@ -172,7 +175,7 @@
 
 .app__clear-btn {
   flex: none;
-  padding: 8px 14px;
+  padding: 8px 12px;
   border-radius: 10px;
   font-size: 12.5px;
   border: 1px solid var(--rust);
@@ -183,8 +186,7 @@
 
 .app__filter-btn {
   flex: none;
-  min-width: 110px;
-  padding: 9px 15px;
+  padding: 9px 13px;
   border-radius: 10px;
   font-size: 13px;
   font-weight: 600;
