@@ -195,7 +195,6 @@ export function SwipeDeck({
             <button className="swipe__btn swipe__btn--dislike" onClick={() => commit("dislike")} aria-label="Not for me">✕</button>
             <button className="swipe__btn swipe__btn--like" onClick={() => commit("like")} aria-label="Like this">♥</button>
           </div>
-          <p className="swipe__note">Style photos teach us your taste. They're not a shortlist: your matches are in Browse.</p>
           <button className="swipe__skip" onClick={() => onHide(current.id)}>
             Not a room? Skip this photo
           </button>
