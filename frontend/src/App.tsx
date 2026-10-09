@@ -9,7 +9,6 @@ import { DrawMap } from "./components/DrawMap";
 import { inAnyShape, type LatLon, type ListingGeo } from "./lib/geo";
 import { FilterSheet } from "./components/FilterSheet";
 import { LoadingMessage } from "./components/LoadingMessage";
-import { TasteMeter } from "./components/TasteMeter";
 import { useStylePreferences } from "./lib/preferences";
 import { listingKey } from "./lib/listingKey";
 import { topStyleLabels } from "./lib/similarity";
@@ -42,7 +41,7 @@ function App() {
   const [areaPanelOpen, setAreaPanelOpen] = useState(false);
   const [drawing, setDrawing] = useState(false);
   const [shownCount, setShownCount] = useState(PAGE_SIZE);
-  const resultsRef = useRef<HTMLParagraphElement>(null);
+  const resultsRef = useRef<HTMLElement>(null);
 
   useEffect(() => {
     fetch("/data/listings.json")
@@ -230,7 +229,7 @@ function App() {
             Find your style
           </button>
           <button className={`app__tab ${tab === "browse" ? "app__tab--active" : ""}`} onClick={() => setTab("browse")}>
-            Browse {listings ? `(${listings.length})` : ""}
+            Browse
           </button>
           <button className={`app__tab ${tab === "saved" ? "app__tab--active" : ""}`} onClick={() => setTab("saved")}>
             Saved{savedCount > 0 ? ` (${savedCount})` : ""}
@@ -298,14 +297,20 @@ function App() {
                 Map{shapes.length > 0 ? ` (${shapes.length})` : ""}
               </button>
             )}
+            <select
+              className="app__sort-select"
+              value={effectiveSort}
+              onChange={(e) => setSort(e.target.value as SortKey)}
+              aria-label="Sort homes"
+            >
+              {matchScores && <option value="match">Best match</option>}
+              <option value="price-asc">Price ↑</option>
+              <option value="price-desc">Price ↓</option>
+            </select>
             <span className="app__result-count" role="status" aria-live="polite">
-              {visible.length} {visible.length === 1 ? "home" : "homes"}
+              {visible.length}
+              <span className="app__result-word"> {visible.length === 1 ? "home" : "homes"}</span>
             </span>
-            {activeFilterCount > 0 && (
-              <button className="app__clear-btn" onClick={clearFilters}>
-                Clear
-              </button>
-            )}
           </div>
 
           {areaPanelOpen && (
@@ -337,20 +342,7 @@ function App() {
             </div>
           )}
 
-          <p className="app__sort-note" ref={resultsRef}>
-            Showing {visible.length} of {listings?.length ?? 0} listings
-            {effectiveSort === "match"
-              ? ` — sorted by your style preference from ${likedCount} liked / ${dislikedCount} disliked photos.`
-              : effectiveSort === "price-asc"
-                ? " — cheapest first."
-                : " — most expensive first."}
-          </p>
-          {styleDescription && (
-            <p className="app__style-note">Your style so far: {styleDescription.join(" · ")}</p>
-          )}
-          <TasteMeter read={tasteRead} compact />
-
-          <main className="listing-grid">
+          <main className="listing-grid app__results" ref={resultsRef}>
             {visible.slice(0, shownCount).map((listing) => (
               <ListingCard
                 key={`${listing.summary.platform}-${listing.summary.source_id}`}
@@ -370,6 +362,11 @@ function App() {
               Show {Math.min(PAGE_SIZE, visible.length - shownCount)} more ({visible.length - shownCount} left)
             </button>
           )}
+          <p className="app__debug">
+            Showing {Math.min(shownCount, visible.length)} of {visible.length} · {listings?.length ?? 0} browseable ·{" "}
+            {allListings?.length ?? 0} in database
+            {effectiveSort === "match" ? ` · ranked from ${likedCount} liked / ${dislikedCount} disliked photos` : ""}
+          </p>
         </div>
       )}
 
@@ -387,9 +384,8 @@ function App() {
         setMinBedrooms={setMinBedrooms}
         minBathrooms={minBathrooms}
         setMinBathrooms={setMinBathrooms}
-        sort={sort}
-        setSort={setSort}
-        hasMatchScores={matchScores !== null}
+        onClear={clearFilters}
+        canClear={activeFilterCount > 0}
       />
     </div>
   );

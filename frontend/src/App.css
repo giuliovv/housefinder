@@ -186,7 +186,7 @@
 
 .app__filter-btn {
   flex: none;
-  padding: 9px 13px;
+  padding: 9px 11px;
   border-radius: 10px;
   font-size: 13px;
   font-weight: 600;
@@ -194,20 +194,6 @@
   cursor: pointer;
   background: #fff;
   color: var(--ink);
-}
-
-.app__sort-note {
-  scroll-margin-top: 64px; /* clear the sticky filter bar when scrolled to */
-  font-size: 12px;
-  color: var(--muted);
-  margin: 0 0 16px;
-}
-
-.app__style-note {
-  font-size: 12px;
-  color: var(--rust-dark);
-  margin: -10px 0 16px;
-  font-style: italic;
 }
 
 /* ── Filter sheet ─────────────────────────────────────────────────────── */
@@ -986,3 +972,20 @@
 .saved__gone p { margin: 2px 0; font-size: 13px; }
 .app__link-btn { background: none; border: none; color: var(--rust); text-decoration: underline; cursor: pointer; font-size: inherit; padding: 0; }
 .saved__people { margin: -4px 0 12px; font-size: 13px; color: var(--muted); }
+
+/* ── Browse bar ───────────────────────────────────────────────────────── */
+.app__sort-select {
+  flex: none;
+  max-width: 104px;
+  padding: 9px 4px;
+  border-radius: 10px;
+  border: 1px solid var(--border);
+  background: #fff;
+  color: var(--ink);
+  font-size: 13px;
+  font-weight: 600;
+}
+.app__results { scroll-margin-top: 64px; }
+.app__debug { margin: 18px 0 8px; text-align: center; font-size: 11px; color: var(--muted); }
+.sheet__clear { display: block; width: 100%; margin: 14px 0 0; padding: 10px; background: none; border: none; color: var(--rust); font-size: 14px; text-decoration: underline; cursor: pointer; }
+@media (max-width: 380px) { .app__result-word { display: none; } }
