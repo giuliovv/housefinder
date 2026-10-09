@@ -15,14 +15,17 @@ USER_AGENT = "london-rentals-research-bot/0.1 (+contact: research project, not f
 MIN_DELAY_SECONDS = 1.5
 
 _last_request_at: dict[str, float] = {}
+# hosts that get a longer gap between requests than MIN_DELAY_SECONDS
+HOST_DELAY: dict[str, float] = {}
 
 
 def _throttle(host: str) -> None:
     last = _last_request_at.get(host)
     if last is not None:
         elapsed = time.monotonic() - last
-        if elapsed < MIN_DELAY_SECONDS:
-            time.sleep(MIN_DELAY_SECONDS - elapsed)
+        delay = HOST_DELAY.get(host, MIN_DELAY_SECONDS)
+        if elapsed < delay:
+            time.sleep(delay - elapsed)
     _last_request_at[host] = time.monotonic()
 
 

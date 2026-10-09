@@ -361,6 +361,19 @@ shows ~10-17 featured cards and 17 of 22 sites have no `.fe_price` markup — so
 **Scheduler:** GitHub dropped the 2026-10-09 05:23 UTC cron (the only scheduled run ever seen was 2026-10-08 11:40). Added fallback crons at
 11:47 and 17:13 UTC behind a `check` job that exits if today's scrape is already recorded in analytics/history.json.
 
+## Foxtons, central London only (2026-10-09) — owner-accepted risk, with a kill switch
+
+Foxtons' search pages are Next.js server-rendered (`__NEXT_DATA__` carries up to 20 results with photos, price, beds, baths, lat/lon,
+floor area), so no detail pages are needed. Their robots.txt allows `/properties-to-rent/<area>` and `?page=N` but disallows `/api/` and
+`?order_by=/?prop_type=/...`; we never touch those. Their website terms prohibit reuse of content for commercial purposes and incorporation
+in other websites: **the owner decided (2026-10-09) to accept that risk for this non-commercial project, limited to central London.**
+Safeguards, all in code: central areas only (30 Foxtons area slugs, central postcode districts only); robots.txt re-fetched and every URL
+checked (wildcards included) each run, stop if disallowed; one request per 3 s, ~100 page requests/day, no detail requests, identifying UA,
+stop at the first challenge; recently-let rows skipped (about 3 of 4 rows on their pages). **Kill switch:** `python3 ops/killswitch.py off foxtons "reason"`
+writes `s3://…/killswitch.json` (outside the deploy's prune) and invalidates it on CloudFront: the website hides the agency's listings and swipe
+photos within seconds without a deploy, the next workflow run (scrape or deploy-only) removes its rows from listings.json, and the scraper skips it.
+`on` re-enables. If Foxtons ever objects or blocks us: `off`, and consider emailing them for permission/a feed.
+
 ## Match scoring: centred Rocchio (2026-10)
 
 Observation: scores read ~90% while only likes existed, then fell to ~20% once dislikes arrived ("stronger results with fewer swipes").

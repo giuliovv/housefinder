@@ -381,4 +381,9 @@ AGENCIES: dict[str, AgencyConfig] = {
         key="rlmorris", name="R L Morris", platform="propertyhive", propertyhive_theme="stock",
         search_url="https://www.rlmorrisproperty.co.uk/?post_type=property&department=residential-lettings", london_only=True,
     ),
+    # --- Foxtons, central London only, behind the kill switch (scraper/foxtons.py, ops/killswitch.py).
+    "foxtons": AgencyConfig(
+        key="foxtons", name="Foxtons", platform="foxtons",
+        search_url="https://www.foxtons.co.uk/properties-to-rent", london_only=True,
+    ),
 }

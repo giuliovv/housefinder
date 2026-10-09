@@ -89,6 +89,10 @@ jobs:
             aws s3 cp "s3://$BUCKET/cache/embeddings.json" work/embeddings.json || true
           fi
 
+      # The kill switch (see scraper/killswitch.py) lives at the bucket root, outside the deployed data.
+      - name: Pull the kill switch
+        run: aws s3 cp "s3://$BUCKET/killswitch.json" killswitch.json || echo '{"disabled": []}' > killswitch.json
+
       - uses: actions/setup-python@v5
         with:
           python-version: "3.12"
@@ -123,7 +127,7 @@ jobs:
 
       - name: Re-scrape agencies and merge into listings.json
         if: env.DO_SCRAPE == 'true'
-        run: python -m scraper.refresh --listings frontend/public/data/listings.json --history analytics/history.json --per-agency 800 --max-pages 90 --max-minutes 100 --inject /tmp/homeflow.json
+        run: python -m scraper.refresh --listings frontend/public/data/listings.json --history analytics/history.json --per-agency 800 --max-pages 90 --max-minutes 100 --inject /tmp/homeflow.json --killswitch killswitch.json
 
       # Right away, not at the end: history must survive a failed embed/deploy.
       - name: Save listing history
@@ -164,6 +168,10 @@ jobs:
         run: |
           mkdir -p analytics
           aws s3 cp "s3://$BUCKET/analytics/photo-health.json" analytics/photo-health.json || echo "no photo health cache yet"
+
+      # Disabled agencies' listings must not reach the site even on a deploy-only run.
+      - name: Apply the kill switch
+        run: python -m scraper.killswitch apply --listings frontend/public/data/listings.json --file killswitch.json
 
       - name: Build compact site embeddings
         run: |

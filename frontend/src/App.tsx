@@ -40,8 +40,20 @@ type Tab = "browse" | "style" | "saved";
 const PAGE_SIZE = 40;
 
 function App() {
-  const [allListings, setAllListings] = useState<Listing[] | null>(null);
-  const [store, setStore] = useState<EmbeddingStore | null>(null);
+  const [rawStore, setStore] = useState<EmbeddingStore | null>(null);
+  const [rawListings, setAllListings] = useState<Listing[] | null>(null);
+  // agencies switched off (killswitch.json at the site root; see scraper/killswitch.py): hidden at once, no deploy needed
+  const [killed, setKilled] = useState<string[]>([]);
+  // the swipe deck also holds photos of let / unverified listings: drop a disabled agency's photos from it as well
+  const store = useMemo(() => {
+    if (!rawStore || killed.length === 0 || !rawListings) return rawStore;
+    const hidden = new Set(rawListings.filter((l) => killed.includes(l.summary.agency)).map((l) => `${l.summary.platform}:${l.summary.source_id}`));
+    return { ...rawStore, deck: rawStore.deck.filter((p) => !hidden.has(p.listingKey)) };
+  }, [rawStore, rawListings, killed]);
+  const allListings = useMemo(
+    () => (rawListings && killed.length > 0 ? rawListings.filter((l) => !killed.includes(l.summary.agency)) : rawListings),
+    [rawListings, killed],
+  );
   const [geo, setGeo] = useState<ListingGeo>({});
   const [styleLabels, setStyleLabels] = useState<StyleLabel[]>([]);
   const [error, setError] = useState<string | null>(null);
@@ -70,6 +82,11 @@ function App() {
       })
       .then(setAllListings)
       .catch((err) => setError(err instanceof Error ? err.message : String(err)));
+
+    fetch("/killswitch.json", { cache: "no-cache" })
+      .then((res) => (res.ok ? res.json() : { disabled: [] }))
+      .then((k) => setKilled(Array.isArray(k?.disabled) ? k.disabled.map(String) : []))
+      .catch(() => setKilled([]));
 
     // The style data is optional — the app still works (minus style-matching)
     // if this fails or hasn't been generated yet, so failures here don't set

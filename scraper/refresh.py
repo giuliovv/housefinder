@@ -38,7 +38,7 @@ import re
 import time
 
 from .agencies import AGENCIES
-from . import history as history_mod
+from . import killswitch, history as history_mod
 from . import keys
 from .export import BLOCKED, scrape_agency
 from .price import clean_price_text, implausible_reason
@@ -210,6 +210,7 @@ def main() -> None:
     parser.add_argument("--platform", action="append", help="only scrape agencies on this platform (repeatable)")
     parser.add_argument("--dump", type=pathlib.Path, help="scrape and write the raw per-agency results here instead of merging")
     parser.add_argument("--history", type=pathlib.Path, help="permanent per-listing history file (see scraper/history.py), updated in place")
+    parser.add_argument("--killswitch", type=pathlib.Path, help="killswitch.json: agencies listed there are neither scraped nor kept (scraper/killswitch.py)")
     parser.add_argument("--force", action="store_true", help="scrape agencies even if they were already scraped today")
     parser.add_argument("--max-minutes", type=float, default=None, help="stop starting new agencies after this long; the rest are deferred to the next run")
     parser.add_argument("--inject", type=pathlib.Path, help="pre-scraped results from --dump to merge in; agencies in it are not re-scraped")
@@ -218,7 +219,10 @@ def main() -> None:
         parser.error("--listings is required unless --dump is used")
 
     now = dt.datetime.now(dt.timezone.utc).replace(tzinfo=None)
-    agencies = [c for c in AGENCIES.values() if not args.platform or c.platform in args.platform]
+    disabled = killswitch.load(args.killswitch)
+    if disabled:
+        print(f"kill switch: not scraping {sorted(disabled)}")
+    agencies = [c for c in AGENCIES.values() if (not args.platform or c.platform in args.platform) and c.key not in disabled]
 
     if args.dump:
         scraped = _scrape(agencies, args.per_agency, args.max_pages)
@@ -237,6 +241,11 @@ def main() -> None:
     blocked = hist.setdefault("blocked", {}) if hist is not None else {}
 
     changed = False
+    kept = killswitch.purge(existing, disabled)
+    if len(kept) != len(existing):
+        print(f"kill switch: removed {len(existing) - len(kept)} stored listings of disabled agencies")
+        existing = kept
+        changed = True
     migrated = keys.migrate_rows(existing)
     if migrated:
         print(f"namespaced {migrated} stored listing ids by agency (one-off migration, no requests)")

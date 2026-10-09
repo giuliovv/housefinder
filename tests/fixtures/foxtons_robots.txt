@@ -1,0 +1,30 @@
+User-agent: *
+Disallow: /account/
+Disallow: /json/
+Disallow: /api/
+Disallow: /pre_qualification
+
+Disallow: *travel_1*
+
+Disallow: /*?prop_type=
+Disallow: /*?expand=
+Disallow: /*?order_by=
+Disallow: /*?radius=
+Disallow: /*?sold=
+
+Disallow: /flats-for-sale/*/bedroom/*
+Disallow: /houses-for-sale/*/bedroom/*
+Disallow: /properties-for-sale/*/bedroom/*
+Disallow: /flats-to-rent/*/bedroom/*
+Disallow: /houses-to-rent/*/bedroom/*
+Disallow: /properties-to-rent/*/bedroom/*
+Disallow: /short-let-flats/*/bedroom/*
+Disallow: /short-let-houses/*/bedroom/*
+Disallow: /short-let-properties/*/bedroom/*
+Disallow: /properties-for-auction/*/bedroom/*
+
+Sitemap: https://www.foxtons.co.uk/sitemap-index.xml
+
+# Something crawling that shouldn't be
+User-agent: Nutch
+Disallow: /
