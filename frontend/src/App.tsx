@@ -1,14 +1,14 @@
 import { useEffect, useMemo, useRef, useState } from "react";
-import type { AreaCentroids, Listing, StyleLabel } from "./types";
+import type { Listing, StyleLabel } from "./types";
 import { loadEmbeddingStore, type EmbeddingStore } from "./lib/embeddingStore";
 import { ListingCard } from "./components/ListingCard";
 import { SwipeDeck } from "./components/SwipeDeck";
-import { AreaMap } from "./components/AreaMap";
+import { DrawMap } from "./components/DrawMap";
+import { inAnyShape, type LatLon, type ListingGeo } from "./lib/geo";
 import { FilterSheet } from "./components/FilterSheet";
 import { LoadingMessage } from "./components/LoadingMessage";
 import { TasteMeter } from "./components/TasteMeter";
 import { useStylePreferences } from "./lib/preferences";
-import { extractPostcodeArea } from "./lib/location";
 import { listingKey } from "./lib/listingKey";
 import { topStyleLabels } from "./lib/similarity";
 import "./App.css";
@@ -23,14 +23,14 @@ const PAGE_SIZE = 40;
 function App() {
   const [allListings, setAllListings] = useState<Listing[] | null>(null);
   const [store, setStore] = useState<EmbeddingStore | null>(null);
-  const [areaCentroids, setAreaCentroids] = useState<AreaCentroids>({});
+  const [geo, setGeo] = useState<ListingGeo>({});
   const [styleLabels, setStyleLabels] = useState<StyleLabel[]>([]);
   const [error, setError] = useState<string | null>(null);
   const [styleFailed, setStyleFailed] = useState(false);
   const [deadPhotos, setDeadPhotos] = useState<ReadonlySet<string>>(new Set());
   const [sort, setSort] = useState<SortKey>("price-asc");
   const [agencyFilter, setAgencyFilter] = useState<string>("all");
-  const [areaFilters, setAreaFilters] = useState<string[]>([]);
+  const [shapes, setShapes] = useState<LatLon[][]>([]);
   const [minPrice, setMinPrice] = useState<string>("");
   const [maxPrice, setMaxPrice] = useState<string>("");
   const [minBedrooms, setMinBedrooms] = useState<string>("any");
@@ -38,8 +38,7 @@ function App() {
   const [tab, setTab] = useState<Tab>("style");
   const [filterSheetOpen, setFilterSheetOpen] = useState(false);
   const [areaPanelOpen, setAreaPanelOpen] = useState(false);
-  const [areaQuery, setAreaQuery] = useState("");
-  const [areaFocus, setAreaFocus] = useState<string | null>(null);
+  const [drawing, setDrawing] = useState(false);
   const [shownCount, setShownCount] = useState(PAGE_SIZE);
   const resultsRef = useRef<HTMLParagraphElement>(null);
 
@@ -69,12 +68,11 @@ function App() {
       .then((urls: string[]) => setDeadPhotos(new Set(urls)))
       .catch(() => setDeadPhotos(new Set()));
 
-    // Same deal — the map is a nice-to-have on top of the area filter,
-    // which already works without it via the chips.
-    fetch("/data/area-centroids.json")
+    // Where each home is — without it there is simply no draw-an-area filter.
+    fetch("/data/listing-geo.json")
       .then((res) => (res.ok ? res.json() : {}))
-      .then(setAreaCentroids)
-      .catch(() => setAreaCentroids({}));
+      .then(setGeo)
+      .catch(() => setGeo({}));
 
     // Also optional — without it the preference vector still works for
     // ranking, it just can't be described in words.
@@ -96,7 +94,7 @@ function App() {
   // rating re-ranks the list — that would yank the user back up mid-scroll)
   useEffect(() => {
     setShownCount(PAGE_SIZE);
-  }, [agencyFilter, areaFilters, minPrice, maxPrice, minBedrooms, minBathrooms, sort]);
+  }, [agencyFilter, shapes, minPrice, maxPrice, minBedrooms, minBathrooms, sort]);
 
   const { undecided, markBroken, hidePhoto, swipes, swipe, toggleSwipe, reset, preferenceVector, tasteRead, matchScores, likedCount, dislikedCount } = useStylePreferences(store);
 
@@ -114,12 +112,6 @@ function App() {
   const agencies = useMemo(() => {
     if (!listings) return [];
     return [...new Set(listings.map((l) => l.agency_name))];
-  }, [listings]);
-
-  const areas = useMemo(() => {
-    if (!listings) return [];
-    const found = listings.map((l) => extractPostcodeArea(l.summary.address)).filter((a): a is string => a !== null);
-    return [...new Set(found)].sort();
   }, [listings]);
 
   // Everything except the area filter — used both as the base for the area
@@ -145,22 +137,22 @@ function App() {
     return rows;
   }, [listings, agencyFilter, minPrice, maxPrice, minBedrooms, minBathrooms]);
 
-  const areaCounts = useMemo(() => {
-    const counts: Record<string, number> = {};
-    for (const l of preAreaFiltered) {
-      const area = extractPostcodeArea(l.summary.address);
-      if (area !== null) counts[area] = (counts[area] ?? 0) + 1;
-    }
-    return counts;
-  }, [preAreaFiltered]);
+  // dots for the map: every home passing the other filters (the drawn area is what narrows them)
+  const mapPoints = useMemo(
+    () =>
+      preAreaFiltered.flatMap((l) => {
+        const g = geo[listingKey(l)];
+        return g ? [{ lat: g[0], lon: g[1], approx: g[2] === "a" }] : [];
+      }),
+    [preAreaFiltered, geo],
+  );
 
   const visible = useMemo(() => {
     let rows = preAreaFiltered;
-    if (areaFilters.length > 0) {
-      const wanted = new Set(areaFilters);
+    if (shapes.length > 0) {
       rows = rows.filter((l) => {
-        const area = extractPostcodeArea(l.summary.address);
-        return area !== null && wanted.has(area);
+        const g = geo[listingKey(l)];
+        return g !== undefined && inAnyShape(g[0], g[1], shapes);
       });
     }
     return [...rows].sort((a, b) => {
@@ -177,13 +169,7 @@ function App() {
       if (pb === null) return -1;
       return sort === "price-asc" ? pa - pb : pb - pa;
     });
-  }, [preAreaFiltered, sort, areaFilters, matchScores]);
-
-  function toggleArea(area: string) {
-    setAreaFilters((current) =>
-      current.includes(area) ? current.filter((a) => a !== area) : [...current, area]
-    );
-  }
+  }, [preAreaFiltered, sort, shapes, geo, matchScores]);
 
   // Once a preference exists, default to showing matches first rather than
   // making the user notice the new sort option themselves. Depends on the
@@ -196,7 +182,7 @@ function App() {
   }, [hasPreference]);
 
   function clearFilters() {
-    setAreaFilters([]);
+    setShapes([]);
     setAgencyFilter("all");
     setMinPrice("");
     setMaxPrice("");
@@ -216,7 +202,7 @@ function App() {
   const effectiveSort: SortKey = sort === "match" && !matchScores ? "price-asc" : sort;
 
   const activeFilterCount =
-    (areaFilters.length > 0 ? 1 : 0) +
+    (shapes.length > 0 ? 1 : 0) +
     (agencyFilter !== "all" ? 1 : 0) +
     (minPrice ? 1 : 0) +
     (maxPrice ? 1 : 0) +
@@ -272,13 +258,15 @@ function App() {
             <button className="app__filter-btn" onClick={() => setFilterSheetOpen(true)}>
               Filters{activeFilterCount > 0 ? ` (${activeFilterCount})` : ""}
             </button>
-            <button
-              className={`app__filter-btn ${areaPanelOpen ? "app__filter-btn--on" : ""}`}
-              onClick={() => setAreaPanelOpen((open) => !open)}
-              aria-expanded={areaPanelOpen}
-            >
-              Areas{areaFilters.length > 0 ? ` (${areaFilters.length})` : ""}
-            </button>
+            {Object.keys(geo).length > 0 && (
+              <button
+                className={`app__filter-btn ${areaPanelOpen ? "app__filter-btn--on" : ""}`}
+                onClick={() => setAreaPanelOpen((open) => !open)}
+                aria-expanded={areaPanelOpen}
+              >
+                Map{shapes.length > 0 ? ` (${shapes.length})` : ""}
+              </button>
+            )}
             <span className="app__result-count" role="status" aria-live="polite">
               {visible.length} {visible.length === 1 ? "home" : "homes"}
             </span>
@@ -291,36 +279,30 @@ function App() {
 
           {areaPanelOpen && (
             <div className="app__area-panel">
-              <input
-                className="app__area-search"
-                type="search"
-                placeholder="Find a postcode, e.g. SW1V"
-                value={areaQuery}
-                onChange={(e) => {
-                  const q = e.target.value.toUpperCase().replace(/\s+/g, "");
-                  setAreaQuery(e.target.value);
-                  const hit = areas.find((a) => a === q) ?? Object.keys(areaCentroids).find((a) => a === q);
-                  setAreaFocus(hit ?? null);
-                }}
-              />
-              <p className="app__map-hint">Tap neighbourhoods to add or remove them. Darker = more homes.</p>
-              <AreaMap
-                centroids={areaCentroids}
-                counts={areaCounts}
-                selected={areaFilters}
-                onToggle={toggleArea}
-                focus={areaFocus}
-              />
-            </div>
-          )}
-
-          {areaFilters.length > 0 && (
-            <div className="app__chip-row">
-              {areaFilters.map((area) => (
-                <button key={area} className="app__chip app__chip--active" onClick={() => toggleArea(area)}>
-                  {area} ✕
+              <div className="app__draw-bar">
+                <button
+                  className={`app__draw-btn ${drawing ? "app__draw-btn--on" : ""}`}
+                  onClick={() => setDrawing((d) => !d)}
+                >
+                  {drawing ? "Done drawing" : "✎ Draw your area"}
                 </button>
-              ))}
+                {shapes.length > 0 && (
+                  <button className="app__clear-btn" onClick={() => setShapes([])}>
+                    Remove {shapes.length === 1 ? "outline" : "outlines"}
+                  </button>
+                )}
+              </div>
+              <p className="app__map-hint">
+                {drawing
+                  ? "Drag a finger around the area you like, then lift. Draw as many outlines as you want."
+                  : "Each dot is a home. Press “Draw your area”, then circle where you'd like to live."}
+              </p>
+              <DrawMap
+                points={mapPoints}
+                shapes={shapes}
+                drawing={drawing}
+                onShape={(ring) => setShapes((cur) => [...cur, ring])}
+              />
             </div>
           )}
 

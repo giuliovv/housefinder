@@ -151,6 +151,15 @@ jobs:
         if: env.DO_SCRAPE == 'true'
         run: python -m scraper.geocode_areas
 
+      # where each listing is, for the draw-your-area filter (street lookups are cached and
+      # time-budgeted, so coverage improves a little every day)
+      - name: Locate listings
+        if: env.DO_SCRAPE == 'true'
+        run: |
+          aws s3 cp "s3://$BUCKET/analytics/geocode-cache.json" analytics/geocode-cache.json || echo "no geocode cache yet"
+          python -m scraper.listing_geo --max-minutes 15
+          aws s3 cp analytics/geocode-cache.json "s3://$BUCKET/analytics/geocode-cache.json" || true
+
       - uses: actions/setup-node@v4
         with:
           node-version: 20

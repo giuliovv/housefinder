@@ -164,6 +164,7 @@
 
 .app__result-count {
   flex: 1;
+  white-space: nowrap;
   font-size: 13px;
   font-weight: 600;
   color: var(--ink);
@@ -943,3 +944,16 @@
   pointer-events: none;
 }
 .area-map__tiles { filter: grayscale(1) brightness(1.12) contrast(0.8); }
+.app__draw-bar { display: flex; align-items: center; gap: 10px; margin-bottom: 6px; }
+.app__draw-btn {
+  padding: 9px 16px;
+  border-radius: 20px;
+  border: 1px solid var(--rust);
+  background: #fff;
+  color: var(--rust);
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+}
+.app__draw-btn--on { background: var(--rust); color: #fff; }
+.neighbourhood-map--drawing { touch-action: none; cursor: crosshair; outline: 2px solid var(--rust); }
