@@ -1,3 +1,5 @@
+type SortKey = "price-asc" | "price-desc" | "match";
+
 export function FilterSheet({
   open,
   onClose,
@@ -12,6 +14,9 @@ export function FilterSheet({
   setMinBedrooms,
   minBathrooms,
   setMinBathrooms,
+  sort,
+  setSort,
+  hasMatchScores,
   onClear,
   canClear,
 }: {
@@ -28,6 +33,9 @@ export function FilterSheet({
   setMinBedrooms: (v: string) => void;
   minBathrooms: string;
   setMinBathrooms: (v: string) => void;
+  sort: SortKey;
+  setSort: (v: SortKey) => void;
+  hasMatchScores: boolean;
   onClear: () => void;
   canClear: boolean;
 }) {
@@ -104,6 +112,30 @@ export function FilterSheet({
               {a}
             </button>
           ))}
+        </div>
+
+        <p className="sheet__label">Sort</p>
+        <div className="sheet__row sheet__row--col">
+          {hasMatchScores && (
+            <button
+              className={`sheet__opt ${sort === "match" ? "sheet__opt--active" : ""}`}
+              onClick={() => setSort("match")}
+            >
+              Best match to your style
+            </button>
+          )}
+          <button
+            className={`sheet__opt ${sort === "price-asc" ? "sheet__opt--active" : ""}`}
+            onClick={() => setSort("price-asc")}
+          >
+            Price: low to high
+          </button>
+          <button
+            className={`sheet__opt ${sort === "price-desc" ? "sheet__opt--active" : ""}`}
+            onClick={() => setSort("price-desc")}
+          >
+            Price: high to low
+          </button>
         </div>
 
         {canClear && (

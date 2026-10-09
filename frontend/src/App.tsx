@@ -297,16 +297,6 @@ function App() {
                 Map{shapes.length > 0 ? ` (${shapes.length})` : ""}
               </button>
             )}
-            <select
-              className="app__sort-select"
-              value={effectiveSort}
-              onChange={(e) => setSort(e.target.value as SortKey)}
-              aria-label="Sort homes"
-            >
-              {matchScores && <option value="match">Best match</option>}
-              <option value="price-asc">Price ↑</option>
-              <option value="price-desc">Price ↓</option>
-            </select>
             <span className="app__result-count" role="status" aria-live="polite">
               {visible.length}
               <span className="app__result-word"> {visible.length === 1 ? "home" : "homes"}</span>
@@ -384,6 +374,9 @@ function App() {
         setMinBedrooms={setMinBedrooms}
         minBathrooms={minBathrooms}
         setMinBathrooms={setMinBathrooms}
+        sort={sort}
+        setSort={setSort}
+        hasMatchScores={matchScores !== null}
         onClear={clearFilters}
         canClear={activeFilterCount > 0}
       />
