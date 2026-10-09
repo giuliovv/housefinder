@@ -861,3 +861,41 @@
     transition: none;
   }
 }
+
+/* ── Swipe intro (shown once, before the first swipe) ─────────────────── */
+
+.swipe__intro {
+  width: 100%;
+  max-width: 340px;
+  margin: 0 auto 16px;
+  padding: 14px 16px 12px;
+  background: #fff;
+  border: 1px solid var(--border);
+  border-left: 3px solid var(--rust);
+  border-radius: 10px;
+  text-align: left;
+}
+
+.swipe__intro-text {
+  margin: 0 0 6px;
+  font-size: 13.5px;
+  line-height: 1.45;
+  color: var(--ink);
+}
+
+.swipe__intro-hint {
+  margin: 0 0 10px;
+  font-size: 12px;
+  color: var(--muted);
+}
+
+.swipe__intro-btn {
+  padding: 7px 16px;
+  border-radius: 8px;
+  border: 1px solid var(--rust);
+  background: var(--rust);
+  color: #fff;
+  font-size: 12.5px;
+  font-weight: 600;
+  cursor: pointer;
+}

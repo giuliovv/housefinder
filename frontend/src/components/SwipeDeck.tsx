@@ -17,6 +17,15 @@ interface Drag {
 }
 
 const DRAG_THRESHOLD = 90;
+const INTRO_SEEN_KEY = "housefinder:swipe-intro-seen:v1";
+
+function introAlreadySeen(): boolean {
+  try {
+    return localStorage.getItem(INTRO_SEEN_KEY) === "1";
+  } catch {
+    return false; // storage blocked: show it, it's harmless
+  }
+}
 
 function clamp(v: number, lo: number, hi: number): number {
   return Math.max(lo, Math.min(hi, v));
@@ -49,6 +58,23 @@ export function SwipeDeck({
   onBroken: (id: string) => void;
 }) {
   const current = undecided[0];
+  // One-time explanation for people who haven't swiped yet. Gone for good once dismissed
+  // or once the first swipe happens, and never shown to someone who already has swipes.
+  const [introSeen, setIntroSeen] = useState(introAlreadySeen);
+  const hasSwiped = likedCount + dislikedCount > 0;
+  const showIntro = !introSeen && !hasSwiped && current !== undefined;
+  function dismissIntro() {
+    setIntroSeen(true);
+    try {
+      localStorage.setItem(INTRO_SEEN_KEY, "1");
+    } catch {
+      /* ignore */
+    }
+  }
+  useEffect(() => {
+    if (hasSwiped && !introSeen) dismissIntro();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [hasSwiped]);
   const [drag, setDrag] = useState<Drag>({ active: false, dx: 0, dy: 0 });
   const [start, setStart] = useState<{ x: number; y: number } | null>(null);
 
@@ -93,6 +119,18 @@ export function SwipeDeck({
 
   return (
     <div className="swipe">
+      {showIntro && (
+        <div className="swipe__intro" role="note">
+          <p className="swipe__intro-text">
+            These are photos from real London properties. Swipe based on what catches your eye — we'll learn your taste and
+            find matching homes in Browse.
+          </p>
+          <p className="swipe__intro-hint">Right or ♥ = like · left or ✕ = pass</p>
+          <button className="swipe__intro-btn" onClick={dismissIntro}>
+            Got it
+          </button>
+        </div>
+      )}
       {current ? (
         <>
           <div className="swipe__stack">
