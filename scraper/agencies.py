@@ -311,6 +311,30 @@ AGENCIES: dict[str, AgencyConfig] = {
         key="homefullstop", name="Home Fullstop", platform="acquaint",
         search_url="https://www.homefullstop.com/properties.aspx?mode=1&menuID=50", london_only=True,
     ),
+    "johnwilcox": AgencyConfig(
+        key="johnwilcox", name="John Wilcox", platform="acquaint",
+        search_url="https://www.johnwilcox.co.uk/properties.aspx?mode=1&menuID=40", london_only=True,
+    ),
+    "amberandco": AgencyConfig(
+        key="amberandco", name="Amber & Co", platform="acquaint",
+        search_url="https://www.amberandco.co.uk/properties.aspx?mode=1&menuID=50", london_only=True,
+    ),
+    "bryants": AgencyConfig(
+        key="bryants", name="Bryants", platform="acquaint",
+        search_url="https://www.bryantsestateagents.co.uk/properties.aspx?mode=1&menuID=3", london_only=True,
+    ),
+    "austinchambers": AgencyConfig(
+        key="austinchambers", name="Austin Chambers", platform="acquaint",
+        search_url="https://www.austinchambers.co.uk/properties.aspx?mode=1&menuID=31", london_only=True,
+    ),
+    "kingsaccommodation": AgencyConfig(
+        key="kingsaccommodation", name="Kings Accommodation", platform="acquaint",
+        search_url="https://www.kingsaccommodation.co.uk/properties.aspx?mode=1&menuID=4", london_only=True,
+    ),
+    "albanyresidential": AgencyConfig(
+        key="albanyresidential", name="Albany Residential", platform="acquaint",
+        search_url="https://www.albanyresidential.com/properties.aspx?mode=1&menuID=5", london_only=True,
+    ),
     # --- EstatesIT website platform; see scraper/estatesit.py.
     "lyons": AgencyConfig(
         key="lyons", name="Lyons", platform="estatesit",
@@ -319,5 +343,42 @@ AGENCIES: dict[str, AgencyConfig] = {
     "londonwide": AgencyConfig(
         key="londonwide", name="Londonwide Estates", platform="estatesit",
         search_url="https://www.londonwideestates.com/results?querytype=8&market=1&displayperpage=12", london_only=True,
+    ),
+    "londonestates": AgencyConfig(
+        key="londonestates", name="London Estates", platform="estatesit",
+        search_url="https://www.london-estates.net/results?querytype=8&market=1&displayperpage=12", london_only=True,
+    ),
+    "latymers": AgencyConfig(
+        key="latymers", name="Latymers", platform="estatesit",
+        search_url="https://www.latymers.co.uk/results?querytype=8&market=1&displayperpage=12", london_only=True,
+    ),
+    "garethjames": AgencyConfig(
+        key="garethjames", name="Gareth James", platform="estatesit",
+        search_url="https://www.garethjames.com/results?querytype=8&market=1&displayperpage=12", london_only=True,
+    ),
+    "allanhoward": AgencyConfig(
+        key="allanhoward", name="Allan Howard", platform="estatesit",
+        search_url="https://www.allanhoward.co.uk/results?querytype=8&market=1&displayperpage=12", london_only=True,
+    ),
+    "bgibson": AgencyConfig(
+        key="bgibson", name="B Gibson", platform="estatesit",
+        search_url="https://www.bgibson.co.uk/results?querytype=8&market=1&displayperpage=12", london_only=True,
+    ),
+    "coultons": AgencyConfig(
+        key="coultons", name="Coultons", platform="estatesit",
+        search_url="https://www.coultons.co.uk/results?querytype=8&market=1&displayperpage=12", london_only=True,
+    ),
+    "kentonhomes": AgencyConfig(
+        key="kentonhomes", name="Kenton Homes", platform="estatesit",
+        search_url="https://www.kentonhomes.co.uk/results?querytype=8&market=1&displayperpage=12", london_only=True,
+    ),
+    # --- Starberry / Property Hive additions
+    "robinsonjackson": AgencyConfig(
+        key="robinsonjackson", name="Robinson Jackson", platform="starberry",
+        search_url="https://www.robinson-jackson.com/lettings/properties-available-to-rent-in-london-and-kent", london_only=True,
+    ),
+    "rlmorris": AgencyConfig(
+        key="rlmorris", name="R L Morris", platform="propertyhive", propertyhive_theme="stock",
+        search_url="https://www.rlmorrisproperty.co.uk/?post_type=property&department=residential-lettings", london_only=True,
     ),
 }

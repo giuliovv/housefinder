@@ -78,7 +78,7 @@ class AcquaintScraper(PlatformScraper):
             agency=agency,
             platform=self.platform,
             url=urljoin(page_url, link["href"]),
-            address=_text(link) or "",
+            address=_clean_address(_text(link) or ""),
             price_text=price_text,
             price_pcm=parse_price_pcm(price_text),
             bedrooms=count("icon-bedrooms"),
@@ -106,6 +106,11 @@ class AcquaintScraper(PlatformScraper):
             photo_urls=photos,
             attributes=extract_attributes(soup, description=description, features=features, address=summary.address),
         )
+
+
+def _clean_address(text: str) -> str:
+    """Some themes put the price inside the title link ("Sibley Grove, London Price £3,200 pcm")."""
+    return re.sub(r"\s*Price\s*(?:£|POA|price on).*$", "", text, flags=re.IGNORECASE).strip()
 
 
 def _price_text(card: Tag) -> str:

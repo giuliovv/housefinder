@@ -78,16 +78,25 @@ class StarberryScraper(PlatformScraper):
             address = ", ".join(p for p in (re.sub(r"\s+", " ", street).strip(" ,"), _text(area)) if p)
         else:
             address = ""
+        # Fourth layout (Robinson Jackson, "nurtur" images): `.property-content h4` holds the price as its own
+        # text and the address in a trailing <span> (an earlier span only carries the "Fees apply" link).
+        heading = card.select_one(".property-content h4") if not address else None
+        if heading is not None:
+            spans = [t for sp in heading.find_all("span", recursive=False) if "fees-apply" not in (sp.get("class") or []) and (t := _text(sp))]
+            address = spans[-1] if spans else ""
 
         price_el = card.select_one(".price, .meta-price")
         # the card appends the "(Tenant Info)" link text to the price; drop it
-        price_text = re.sub(r"\s*\(Tenant Info\)", "", re.sub(r"\s+", " ", _text(price_el) or "")).strip()
+        raw_price = _text(price_el) or ""
+        if not raw_price and heading is not None:
+            raw_price = "".join(heading.find_all(string=True, recursive=False))
+        price_text = re.sub(r"\s*\(Tenant Info\)", "", re.sub(r"\s+", " ", raw_price)).strip()
         monthly = self._monthly_price(card, price_text)
 
         def count(label: str, icon: str) -> int | None:
             node = card.select_one(f"li.{label}")
             if node is None:
-                icon_el = card.select_one(f"i.{icon}")
+                icon_el = card.select_one(f"i[class*='{icon}']")
                 node = icon_el.parent if icon_el else None
             m = re.search(r"\d+", _text(node) or "")
             return int(m.group()) if m else None

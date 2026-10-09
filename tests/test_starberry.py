@@ -52,3 +52,14 @@ def test_detail_keeps_largest_unique_photos_of_this_property(monkeypatch) -> Non
     monkeypatch.setattr(http, "get", lambda url, **kw: html)
     detail = StarberryScraper().detail("x", summary)
     assert detail.description.startswith("This exceptional seven bedroom")
+
+
+def test_nurtur_layout_price_and_address_in_the_heading(monkeypatch) -> None:
+    """Robinson Jackson: price is the h4's own text, address a trailing span, beds/baths in the overlay."""
+    rows = _first("starberry_search_nurtur.html", monkeypatch)
+    assert len(rows) >= 10
+    r = rows[0]
+    assert r.address and "," in r.address
+    assert r.price_pcm and r.price_pcm > 300
+    assert r.price_text.startswith("£")
+    assert r.bedrooms is not None

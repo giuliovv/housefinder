@@ -90,3 +90,12 @@ def test_estatesit_detail_keeps_largest_unique_photos(monkeypatch):
     assert len(bases) == len(set(bases)) >= 10
     assert all(u.endswith("?size=1200%2C800&format=webp") for u in d.photo_urls)   # always a large variant, never a 100px strip thumbnail
     assert d.description
+
+
+def test_acquaint_address_loses_a_price_the_theme_puts_in_the_title():
+    from scraper.acquaint import _clean_address
+
+    assert _clean_address("Sibley Grove, London Price £3,200 pcm") == "Sibley Grove, London"
+    assert _clean_address("Brixton, Tulse Hill Price £2,300 pcm") == "Brixton, Tulse Hill"
+    assert _clean_address("Addison Road, Holland Park") == "Addison Road, Holland Park"
+    assert _clean_address("Some Road Price POA") == "Some Road"

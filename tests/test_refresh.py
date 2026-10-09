@@ -312,3 +312,14 @@ def test_price_text_is_tidied_but_never_changes_the_amount():
     assert clean_price_text(clean_price_text("Let: £1,000 pcm")) == "£1,000 pcm"        # idempotent
     assert clean_price_text(None) == ""
     assert parse_price_pcm(clean_price_text("To Let: £4,616 per week")) == parse_price_pcm("To Let: £4,616 per week")
+
+
+def test_price_with_both_units_uses_the_monthly_figure():
+    from scraper.price import parse_price_pcm
+
+    assert parse_price_pcm("£26,000 pcm (£6,000 pw)") == 26000
+    assert parse_price_pcm("£2,750 pw (£11,917 pcm)") == 11917
+    assert parse_price_pcm("£4,616 per week") == round(4616 * 52 / 12, 2)
+    assert parse_price_pcm("£350 p/w") == round(350 * 52 / 12, 2)
+    assert parse_price_pcm("From £500 per month") == 500
+    assert parse_price_pcm("POA") is None

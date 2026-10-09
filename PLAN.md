@@ -343,6 +343,24 @@ whether to replace them with agencies on other platforms.
 - Personal tool vs. eventually-multi-user — affects how seriously the
   scraping legal question needs revisiting.
 
+## More agencies, round 3 (2026-10-09)
+
+Re-scanned the 475 OSM candidates that matched no platform (homepage third-party hosts, generator tags) and counted vendors:
+GNB Property 22 sites, Property Jungle (tpjfb/thepropertyjungle) ~19, EstatesIT 14, Acquaint 10, Starberry 11, Estate-Track 16 (all done).
+**Added (14, ~190 more London listings):** Acquaint: John Wilcox (Holland Park/Kensington, prime), Amber & Co, Bryants, Austin Chambers,
+Kings Accommodation, Albany Residential. EstatesIT: London Estates (Putney/Kensington/Fulham), Latymers (Hammersmith/Kensington), Gareth James,
+Allan Howard, B Gibson (Highgate), Coultons, Kenton Homes (Orpington). Starberry "nurtur" 4th card layout: Robinson Jackson.
+Property Hive stock: R L Morris. Fixes found on the way: `parse_price_pcm` now reads "£26,000 pcm (£6,000 pw)" as the monthly figure (it
+converted the *weekly* one wrongly and flagged a genuine £26k Holland Park rent as implausible); Acquaint titles that contain "Price £..."
+no longer leak into the address.
+**Not added:** EstatesIT cityrooms (room lets), alexneil/jasonoliver (no results); 17 of the 19 further Property Hive hits (no stock lettings
+markup); Starberry gibbs-gillespie / acorn-john-payne (Herts/Kent, differing card markup); Property Hive hits that are really sales-only.
+**GNB Property re-check:** the earlier "skip" was premature: pages ARE server-rendered (prices appear as `&#163;` entities, cards
+`.property_div > .fe_price`, detail `/property/<id>-slug`), but each site has its own template (`estate_template_*`), the lettings page only
+shows ~10-17 featured cards and 17 of 22 sites have no `.fe_price` markup — so per-site presets for ~5 small outer-London independents. Not built.
+**Scheduler:** GitHub dropped the 2026-10-09 05:23 UTC cron (the only scheduled run ever seen was 2026-10-08 11:40). Added fallback crons at
+11:47 and 17:13 UTC behind a `check` job that exits if today's scrape is already recorded in analytics/history.json.
+
 ## Match scoring: centred Rocchio (2026-10)
 
 Observation: scores read ~90% while only likes existed, then fell to ~20% once dislikes arrived ("stronger results with fewer swipes").

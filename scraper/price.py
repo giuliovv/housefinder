@@ -24,14 +24,27 @@ def clean_price_text(text: str | None) -> str:
     return _STATUS_PREFIX.sub("", t).strip()
 
 
+_PCM_UNIT = re.compile(r"^\s*(?:pcm|p\.c\.m|pm|p/m|per\s+(?:calendar\s+)?month|a\s+month)\b")
+_PW_UNIT = re.compile(r"^\s*(?:pw|p\.w|p/w|per\s+week|/\s*week|a\s+week|weekly)\b")
+
+
 def parse_price_pcm(text: str | None) -> float | None:
+    """Monthly rent from agency price text. When the text states both ("£26,000 pcm (£6,000 pw)") the
+    monthly figure is used as written; a lone weekly figure is converted."""
     if not text:
         return None
     lowered = text.lower()
-    match = _NUMBER_RE.search(lowered)
-    if not match:
+    amounts = [(float(m.group().replace(",", "")), lowered[m.end() : m.end() + 24]) for m in _NUMBER_RE.finditer(lowered)]
+    if not amounts:
         return None  # e.g. "POA", "Price on application"
-    amount = float(match.group().replace(",", ""))
+    for amount, after in amounts:
+        if _PCM_UNIT.match(after):
+            return amount
+    for amount, after in amounts:
+        if _PW_UNIT.match(after):
+            return round(amount * _WEEKS_PER_MONTH, 2)
+    # no unit next to a number: fall back to any weekly wording in the text
+    amount = amounts[0][0]
     if "pw" in lowered or "per week" in lowered or "/week" in lowered:
         return round(amount * _WEEKS_PER_MONTH, 2)
     return amount
