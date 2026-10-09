@@ -4,7 +4,6 @@ import type { EmbeddingStore } from "../lib/embeddingStore";
 import type { SwipeChoice } from "../lib/preferences";
 import { normalizeImageUrl } from "../lib/url";
 import { listingKey } from "../lib/listingKey";
-import { extractPostcodeArea } from "../lib/location";
 
 /** Agencies leak their own wording into the price cell ("To Let: £4,616 per week",
  * "… (Tenant Info)"); show just the price. The pipeline cleans it too, this covers
@@ -174,9 +173,6 @@ export function ListingCard({
       <div className="listing-card__body">
         <div className="listing-card__price-row">
           <p className="listing-card__price">{displayPrice(summary.price_text)}</p>
-          {extractPostcodeArea(summary.address) && (
-            <p className="listing-card__area">{extractPostcodeArea(summary.address)}</p>
-          )}
           {onToggleSave && (
             <button
               className={`listing-card__save ${saved ? "listing-card__save--on" : ""}`}
