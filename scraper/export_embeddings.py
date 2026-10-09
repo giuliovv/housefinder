@@ -154,6 +154,23 @@ def build(embeddings_path: pathlib.Path, listings: list[dict], out_dir: pathlib.
     return {"listings": len(index), "photos": len(rows), "deck": len(deck), "dead": len(dead)}
 
 
+def check_consistency(listings: list[dict], out_dir: pathlib.Path, minimum: float = 0.6) -> float:
+    """Fail loudly (so the run doesn't deploy) if the ranking index doesn't line up with the
+    listings the site will show — the visible symptom is match scores for only a handful of
+    listings. Returns the matched fraction."""
+    browseable = {listing_key(r) for r in listings if is_browseable(r)}
+    indexed = {l["k"] for l in json.loads((out_dir / "ranking-index.json").read_text())["listings"]}
+    if not browseable or not indexed:
+        return 1.0   # no style data at all (first run, no embeddings yet): nothing to compare
+    fraction = len(browseable & indexed) / len(indexed)
+    if fraction < minimum:
+        raise SystemExit(
+            f"ranking index and listings disagree: only {len(browseable & indexed)} of {len(indexed)} indexed "
+            f"listings are browseable listings with the same key ({fraction:.0%}) — refusing to ship"
+        )
+    return fraction
+
+
 def main() -> None:
     parser = argparse.ArgumentParser()
     parser.add_argument("--embeddings", type=pathlib.Path, required=True)
@@ -163,7 +180,15 @@ def main() -> None:
     parser.add_argument("--health-budget", type=int, default=2500, help="most photos to (re)probe this run")
     args = parser.parse_args()
     health = PhotoHealth(args.photo_health, dt.datetime.now(dt.timezone.utc).date(), args.health_budget) if args.photo_health else None
-    stats = build(args.embeddings, json.loads(args.listings.read_text()), args.out_dir, health)
+    listings = json.loads(args.listings.read_text())
+    # The site matches ranking-index.json to listings.json by listing key, so the two must
+    # always agree. Keys are agency-namespaced in memory (migrate_rows), so persist that to the
+    # listings file that gets deployed — otherwise a code-only deploy ships new keys in one file
+    # and old keys in the other and almost nothing gets a match score (this happened once).
+    if migrate_rows(listings):
+        args.listings.write_text(json.dumps(listings, ensure_ascii=False, indent=2))
+    stats = build(args.embeddings, listings, args.out_dir, health)
+    check_consistency(listings, args.out_dir)
     ranking = (args.out_dir / "ranking.bin").stat().st_size / 1e6
     print(f"ranking: {stats['listings']} listings, {stats['photos']} photos ({ranking:.1f} MB); deck: {stats['deck']} photos; dead photos hidden: {stats['dead']}")
 

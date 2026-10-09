@@ -98,3 +98,33 @@ def test_export_reads_an_embedding_store_written_under_legacy_keys(tmp_path):
     index = json.loads((tmp_path / "out/ranking-index.json").read_text())
     assert [(l["k"], l["u"]) for l in index["listings"]] == [("estatetrack:squires:slug-a", ["a1"])]
     assert stats["photos"] == 1
+
+
+def test_export_persists_the_migration_to_listings_json_so_keys_always_agree(tmp_path, monkeypatch):
+    import sys
+
+    def vec(i):
+        return np.random.default_rng(i).normal(size=ee.DIM).astype(np.float32).tolist()
+
+    emb = tmp_path / "e.json"
+    emb.write_text(json.dumps({"estatetrack:slug-a": {"photos": [{"url": "a1", "embedding": vec(1)}]}}))   # legacy key
+    listings = tmp_path / "listings.json"
+    listings.write_text(json.dumps([row("estatetrack", "squires", "slug-a", photos=("a1",))]))             # legacy id
+    monkeypatch.setattr(sys, "argv", ["x", "--embeddings", str(emb), "--listings", str(listings), "--out-dir", str(tmp_path / "out")])
+    ee.main()
+    saved = json.loads(listings.read_text())
+    index = json.loads((tmp_path / "out/ranking-index.json").read_text())
+    assert saved[0]["summary"]["source_id"] == "squires:slug-a"                    # persisted...
+    assert [l["k"] for l in index["listings"]] == ["estatetrack:squires:slug-a"]   # ...and consistent with the index
+
+
+def test_export_refuses_to_ship_when_the_index_and_listings_disagree(tmp_path):
+    import pytest
+
+    out = tmp_path / "out"
+    out.mkdir()
+    (out / "ranking-index.json").write_text(json.dumps({"listings": [{"k": f"p:other{i}", "o": 0, "u": []} for i in range(10)]}))
+    with pytest.raises(SystemExit, match="disagree"):
+        ee.check_consistency([row("estatetrack", "squires", "squires:slug-a")], out)
+    (out / "ranking-index.json").write_text(json.dumps({"listings": [{"k": "estatetrack:squires:slug-a", "o": 0, "u": []}]}))
+    assert ee.check_consistency([row("estatetrack", "squires", "squires:slug-a")], out) == 1.0
