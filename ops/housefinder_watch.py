@@ -22,8 +22,8 @@ re-entrant on one session) — it just tries again next cron tick; it wakes at m
 once per WAKE_COOLDOWN_HOURS unless something is critical; the prompt tells Claude
 to investigate and recommend, not to push, deploy or change anything unasked.
 
-Cron (every 15 min):
-    */15 * * * * /usr/bin/python3 /home/ubuntu/london-rentals/ops/housefinder_watch.py >> /home/ubuntu/housefinder-watch.log 2>&1
+Cron (hourly, at :07 — everything watched happens on a daily scale; only a site outage is time-sensitive):
+    7 * * * * /usr/bin/python3 /home/ubuntu/london-rentals/ops/housefinder_watch.py >> /home/ubuntu/housefinder-watch.log 2>&1
 Manual: --dry-run (print the prompt, change nothing)  --test (inject a harmless test alert).
 """
 from __future__ import annotations
