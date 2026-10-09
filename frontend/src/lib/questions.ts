@@ -129,8 +129,12 @@ export function saveReady(state: ReadyState): void {
   writeJson(READY_KEY, state);
 }
 
-/** The level to announce, or null. Announced exactly once: the first time the read is "good" (about 20 swipes), when
- * matches are already worth looking at. Later levels never repeat it. */
-export function readyToAnnounce(level: number | null, shownLevel: number): number | null {
-  return level !== null && level >= READY_FROM_LEVEL && shownLevel < READY_FROM_LEVEL ? level : null;
+/**
+ * The level to announce, or null. Announced exactly once, and only when the read *crosses* "good" during this visit
+ * (it started below "good" and is now at least "good"). Someone who comes back already past that point (swipes from
+ * an earlier visit, or from before this card existed) is never told "you're ready": they know the way to Browse.
+ */
+export function readyToAnnounce(level: number | null, shownLevel: number, levelAtVisitStart = 0): number | null {
+  if (level === null || levelAtVisitStart >= READY_FROM_LEVEL) return null;
+  return level >= READY_FROM_LEVEL && shownLevel < READY_FROM_LEVEL ? level : null;
 }

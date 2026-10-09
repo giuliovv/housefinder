@@ -66,4 +66,10 @@ describe("the ready-for-Browse nudge", () => {
     expect(readyToAnnounce(3, 2)).toBeNull(); // reaching "strong" later does not repeat it
     expect(readyToAnnounce(3, 0)).toBe(3); // a first read that is already strong still gets the one announcement
   });
+  it("is not shown to someone who returns already past 'good'", () => {
+    expect(readyToAnnounce(3, 0, 3)).toBeNull(); // old swipes, card never shown: still no card
+    expect(readyToAnnounce(2, 0, 2)).toBeNull();
+    expect(readyToAnnounce(2, 0, 1)).toBe(2); // crossed 'good' during this visit
+    expect(readyToAnnounce(2, 0, 0)).toBe(2);
+  });
 });

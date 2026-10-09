@@ -244,10 +244,14 @@ function App() {
   // Each time the deck is shown it starts with photos: a question can only appear after a few swipes
   // in this visit, even for someone returning with plenty of swipes already (or a question left unanswered).
   const [visitStart, setVisitStart] = useState<number | null>(null);
+  const [visitStartLevel, setVisitStartLevel] = useState(0); // taste level when the deck was shown this visit
   useEffect(() => {
     if (tab !== "style") setVisitStart(null);
-    else if (store && visitStart === null) setVisitStart(swipeTotal);
-  }, [tab, store, visitStart, swipeTotal]);
+    else if (store && visitStart === null) {
+      setVisitStart(swipeTotal);
+      setVisitStartLevel(tasteRead?.level ?? 0);
+    }
+  }, [tab, store, visitStart, swipeTotal, tasteRead]);
   const question = deckWarmedUp(visitStart, swipeTotal)
     ? nextQuestion(questionState, swipeTotal, {
         bedrooms: minBedrooms !== "any",
@@ -257,7 +261,7 @@ function App() {
     : null;
   // "You're ready, check Browse": announced once, when the taste read first reaches "good"
   const [ready, setReady] = useState(loadReady);
-  const announce = deckWarmedUp(visitStart, swipeTotal) ? readyToAnnounce(tasteRead?.level ?? null, ready.shownLevel) : null;
+  const announce = deckWarmedUp(visitStart, swipeTotal) ? readyToAnnounce(tasteRead?.level ?? null, ready.shownLevel, visitStartLevel) : null;
   function dismissReady(goBrowse: boolean) {
     if (announce === null) return;
     const next = { shownLevel: announce, browseOpened: goBrowse };
