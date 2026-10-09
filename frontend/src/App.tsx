@@ -288,7 +288,7 @@ function App() {
                 </button>
                 {shapes.length > 0 && (
                   <button className="app__clear-btn" onClick={() => setShapes([])}>
-                    Remove {shapes.length === 1 ? "outline" : "outlines"}
+                    Clean
                   </button>
                 )}
               </div>

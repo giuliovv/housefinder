@@ -57,10 +57,13 @@ export function DrawMap({
     for (const p of points) {
       L.circleMarker([p.lat, p.lon], {
         renderer,
-        radius: 3,
-        weight: 0,
-        fillColor: "#c9a227",
-        fillOpacity: p.approx ? 0.28 : 0.85,
+        radius: 3.5,
+        // dark dot with a white rim: reads on the grey map, and stays distinct from the rust outline
+        color: "#fff",
+        weight: 1,
+        opacity: p.approx ? 0.4 : 0.9,
+        fillColor: "#2b2622",
+        fillOpacity: p.approx ? 0.3 : 0.85,
         interactive: false,
       }).addTo(group);
     }
