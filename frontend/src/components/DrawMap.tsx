@@ -6,6 +6,11 @@ import type { LatLon } from "../lib/geo";
 const LONDON_CENTER: L.LatLngTuple = [51.509, -0.118];
 const MIN_STEP_PX = 5;
 
+/** dot size follows zoom: pin-pricks when the whole of London is in view, bigger once you're close */
+function dotRadius(zoom: number): number {
+  return Math.max(1, Math.min(4.5, (zoom - 9) * 0.7));
+}
+
 export type MapPoint = { lat: number; lon: number; approx: boolean };
 
 /**
@@ -26,6 +31,7 @@ export function DrawMap({
   const containerRef = useRef<HTMLDivElement | null>(null);
   const mapRef = useRef<L.Map | null>(null);
   const dotsRef = useRef<L.LayerGroup | null>(null);
+  const markersRef = useRef<L.CircleMarker[]>([]);
   const shapesRef = useRef<L.LayerGroup | null>(null);
   const onShapeRef = useRef(onShape);
   onShapeRef.current = onShape;
@@ -53,21 +59,37 @@ export function DrawMap({
     const map = mapRef.current;
     if (!group || !map) return;
     group.clearLayers();
+    markersRef.current = [];
     const renderer = L.canvas({ padding: 0.3 });
+    const radius = dotRadius(map.getZoom());
     for (const p of points) {
-      L.circleMarker([p.lat, p.lon], {
+      const marker = L.circleMarker([p.lat, p.lon], {
         renderer,
-        radius: 3.5,
+        radius,
         // dark dot with a white rim: reads on the grey map, and stays distinct from the rust outline
         color: "#fff",
-        weight: 1,
+        weight: 0.5,
         opacity: p.approx ? 0.4 : 0.9,
         fillColor: "#2b2622",
         fillOpacity: p.approx ? 0.3 : 0.85,
         interactive: false,
       }).addTo(group);
+      markersRef.current.push(marker);
     }
   }, [points]);
+
+  useEffect(() => {
+    const map = mapRef.current;
+    if (!map) return;
+    const resize = () => {
+      const radius = dotRadius(map.getZoom());
+      for (const m of markersRef.current) m.setRadius(radius);
+    };
+    map.on("zoomend", resize);
+    return () => {
+      map.off("zoomend", resize);
+    };
+  }, []);
 
   useEffect(() => {
     const group = shapesRef.current;
