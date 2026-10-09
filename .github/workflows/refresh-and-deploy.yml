@@ -2,7 +2,7 @@ name: Refresh listings and deploy
 
 on:
   schedule:
-    - cron: "0 5 * * *"   # daily, 05:00 UTC
+    - cron: "23 5 * * *"   # daily, 05:23 UTC (06:23 London in summer) — not on the hour: GitHub delays/drops :00 crons
   workflow_dispatch: {}
   push:
     branches: [main]
