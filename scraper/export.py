@@ -57,6 +57,9 @@ def _has_known(known: dict[str, dict], cfg) -> bool:
     return any(row.get("summary", {}).get("agency") == cfg.key for row in known.values())
 
 
+_NOT_AVAILABLE = re.compile(r"^(let|let agreed|under offer|reserved|sstc|agreement signed)$", re.IGNORECASE)
+
+
 def scrape_agency(cfg, per_agency: int, max_pages: int, known: dict[str, dict] | None = None) -> tuple[list[dict], bool] | None:
     """Returns (rows, truncated), or None if the agency's search itself
     failed. `truncated` means the agency had more listings than `per_agency`
@@ -103,6 +106,10 @@ def scrape_agency(cfg, per_agency: int, max_pages: int, known: dict[str, dict] |
         summaries = [x for x in summaries if not (_listing_key(x) in seen or seen.add(_listing_key(x)))]
         for i, summary in enumerate(summaries, 1):
             prev = known.get(_listing_key(summary))
+            # A home we've never had that is already let / under offer would only be hidden again (see refresh._unavailable):
+            # don't fetch its page or embed its photos. (EstatesIT's search, for one, is ~90% already-let homes.)
+            if prev is None and _NOT_AVAILABLE.match((summary.status or "").strip()):
+                continue
             # rows stored before attributes existed are re-fetched once to backfill them
             if prev is not None and "attributes" in prev:
                 row = dict(prev)

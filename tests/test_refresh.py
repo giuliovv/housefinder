@@ -323,3 +323,29 @@ def test_price_with_both_units_uses_the_monthly_figure():
     assert parse_price_pcm("£350 p/w") == round(350 * 52 / 12, 2)
     assert parse_price_pcm("From £500 per month") == 500
     assert parse_price_pcm("POA") is None
+
+
+def test_new_homes_that_are_already_let_are_not_fetched_or_kept(monkeypatch):
+    from types import SimpleNamespace
+
+    from scraper import export
+    from scraper.models import ListingDetail, ListingSummary
+
+    def summary(sid, status):
+        return ListingSummary(source_id=sid, agency="a", platform="estatesit", url=f"https://x/{sid}", address="Road, London, SW1V",
+                              price_text="£2,000 pcm", price_pcm=2000.0, bedrooms=1, bathrooms=1, receptions=None, thumbnail_url=None, status=status)
+
+    fetched = []
+
+    class Fake:
+        def search(self, agency, url, max_pages=1):
+            return iter([summary("1", None), summary("2", "Let"), summary("3", "Let Agreed"), summary("4", "Available Now")])
+
+        def detail(self, agency, s):
+            fetched.append(s.source_id)
+            return ListingDetail(summary=s, description="", key_features=[], photo_urls=[], attributes={})
+
+    monkeypatch.setattr(export, "build_scraper", lambda cfg: Fake())
+    cfg = SimpleNamespace(key="a", name="A", london_only=False, platform="estatesit", search_url="x")
+    rows, _ = export.scrape_agency(cfg, 50, 1, {})
+    assert fetched == ["1", "4"] and [r["summary"]["source_id"] for r in rows] == ["1", "4"]
