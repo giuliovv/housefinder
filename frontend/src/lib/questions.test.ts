@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { deckWarmedUp, EMPTY_STATE, gapAfter, nextQuestion, recordAnswered, recordDismissed } from "./questions";
+import { readyToAnnounce, deckWarmedUp, EMPTY_STATE, gapAfter, nextQuestion, recordAnswered, recordDismissed } from "./questions";
 
 describe("when a question card appears", () => {
   it("never before 8 photo swipes, and not at 7", () => {
@@ -54,5 +54,17 @@ describe("never the first thing on the deck", () => {
     expect(deckWarmedUp(50, 50)).toBe(false);
     expect(deckWarmedUp(50, 52)).toBe(false);
     expect(deckWarmedUp(50, 53)).toBe(true);
+  });
+});
+
+describe("the ready-for-Browse nudge", () => {
+  it("is announced once at 'good' and once at 'strong', never before", () => {
+    expect(readyToAnnounce(null, 0)).toBeNull();
+    expect(readyToAnnounce(1, 0)).toBeNull();
+    expect(readyToAnnounce(2, 0)).toBe(2);
+    expect(readyToAnnounce(2, 2)).toBeNull();
+    expect(readyToAnnounce(3, 2)).toBe(3);
+    expect(readyToAnnounce(3, 3)).toBeNull();
+    expect(readyToAnnounce(2, 3)).toBeNull(); // dipping back down never repeats it
   });
 });

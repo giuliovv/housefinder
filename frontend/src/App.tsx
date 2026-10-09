@@ -7,9 +7,13 @@ import { SavedView } from "./components/SavedView";
 import { useShortlist } from "./lib/useShortlist";
 import { DrawMap } from "./components/DrawMap";
 import { inAnyShape, type LatLon, type ListingGeo } from "./lib/geo";
+import { ReadyCard } from "./components/ReadyCard";
 import { QuestionCard } from "./components/QuestionCard";
 import {
   loadFilters,
+  loadReady,
+  readyToAnnounce,
+  saveReady,
   loadQuestionState,
   deckWarmedUp,
   nextQuestion,
@@ -250,6 +254,25 @@ function App() {
         location: shapes.length > 0,
       })
     : null;
+  // "You're ready, check Browse": announced when the taste read reaches good, and again at strong
+  const [ready, setReady] = useState(loadReady);
+  const announce = deckWarmedUp(visitStart, swipeTotal) ? readyToAnnounce(tasteRead?.level ?? null, ready.shownLevel) : null;
+  function dismissReady(goBrowse: boolean) {
+    if (announce === null) return;
+    const next = { shownLevel: announce, browseOpened: goBrowse };
+    setReady(next);
+    saveReady(next);
+    if (goBrowse) setTab("browse");
+  }
+  // the Browse tab stays marked until the person opens it after being told they're ready
+  useEffect(() => {
+    if (tab === "browse" && !ready.browseOpened) {
+      const next = { ...ready, browseOpened: true };
+      setReady(next);
+      saveReady(next);
+    }
+  }, [tab, ready]);
+
   const [skipTip, setSkipTip] = useState(false);
   function finishQuestion(answered: boolean) {
     if (!question) return;
@@ -274,6 +297,7 @@ function App() {
           </button>
           <button className={`app__tab ${tab === "browse" ? "app__tab--active" : ""}`} onClick={() => setTab("browse")}>
             Browse
+            {!ready.browseOpened && <span className="app__tab-dot" aria-label="Your matches are ready" />}
           </button>
           <button className={`app__tab ${tab === "saved" ? "app__tab--active" : ""}`} onClick={() => setTab("saved")}>
             Saved{savedCount > 0 ? ` (${savedCount})` : ""}
@@ -291,7 +315,12 @@ function App() {
           dislikedCount={dislikedCount}
           totalCount={undecided.length + likedCount + dislikedCount}
           onSwipe={swipe}
-          onReset={reset}
+          onReset={() => {
+            reset();
+            const fresh = { shownLevel: 0, browseOpened: true };
+            setReady(fresh);
+            saveReady(fresh);
+          }}
           onGoBrowse={() => setTab("browse")}
           styleDescription={styleDescription}
           tasteRead={tasteRead}
@@ -299,7 +328,9 @@ function App() {
           onHide={hidePhoto}
           paused={skipTip}
           interlude={
-            question ? (
+            announce !== null ? (
+              <ReadyCard key={`ready-${announce}`} level={announce as 2 | 3} onGo={() => dismissReady(true)} onKeep={() => dismissReady(false)} />
+            ) : question ? (
               <QuestionCard
                 key={question}
                 id={question}

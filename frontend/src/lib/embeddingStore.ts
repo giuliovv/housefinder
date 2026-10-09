@@ -26,7 +26,9 @@ export interface EmbeddingStore {
   hasPhoto(listingKey: ListingKey, url: string): boolean;
   /** dequantised vector of a photo, from the ranking matrix or the deck sample */
   vectorOf(photoId: string): Float32Array | null;
-  /** best-photo cosine similarity per browseable listing for a preference vector */
+  /** mean vector of all listing photos (the "average interior"), used to centre vectors before comparing */
+  mean: Float32Array;
+  /** best-photo cosine similarity per browseable listing, in centred space: cos(photo - mean, preference) */
   scoreListings(preference: ArrayLike<number>): Record<ListingKey, number>;
 }
 
@@ -100,6 +102,31 @@ export async function loadEmbeddingStore(): Promise<EmbeddingStore> {
   const scales = new Float32Array(buffer, 0, count);
   const q = new Int8Array(buffer, count * 4, count * dim);
 
+  // mean photo vector, and each row's 1/|x - mean| so a centred cosine is one dot product per row
+  const mean = new Float32Array(dim);
+  for (let r = 0; r < count; r++) {
+    const base = r * dim;
+    for (let i = 0; i < dim; i++) mean[i] += q[base + i] * scales[r];
+  }
+  let meanSq = 0;
+  for (let i = 0; i < dim; i++) {
+    mean[i] /= count;
+    meanSq += mean[i] * mean[i];
+  }
+  const invCentredNorm = new Float32Array(count);
+  for (let r = 0; r < count; r++) {
+    const base = r * dim;
+    let dot = 0;
+    let sq = 0;
+    for (let i = 0; i < dim; i++) {
+      const x = q[base + i] * scales[r];
+      dot += x * mean[i];
+      sq += x * x;
+    }
+    const centredSq = sq - 2 * dot + meanSq;
+    invCentredNorm[r] = centredSq > 1e-9 ? 1 / Math.sqrt(centredSq) : 0;
+  }
+
   const rowById = new Map<string, number>();
   for (const l of index.listings) l.u.forEach((url, i) => rowById.set(photoId(l.k, url), l.o + i));
 
@@ -113,6 +140,7 @@ export async function loadEmbeddingStore(): Promise<EmbeddingStore> {
   return {
     dim,
     deck,
+    mean,
     hasPhoto: (listingKey, url) => rowById.has(photoId(listingKey, url)),
     vectorOf(id) {
       const row = rowById.get(id);
@@ -124,6 +152,8 @@ export async function loadEmbeddingStore(): Promise<EmbeddingStore> {
       let norm = 0;
       for (let i = 0; i < dim; i++) norm += preference[i] * preference[i];
       const inv = norm === 0 ? 0 : 1 / Math.sqrt(norm);
+      let meanDotPref = 0;
+      for (let i = 0; i < dim; i++) meanDotPref += mean[i] * preference[i];
       const out: Record<ListingKey, number> = {};
       for (const l of index.listings) {
         let best = -Infinity;
@@ -131,7 +161,7 @@ export async function loadEmbeddingStore(): Promise<EmbeddingStore> {
           let dot = 0;
           const base = r * dim;
           for (let i = 0; i < dim; i++) dot += q[base + i] * preference[i];
-          const sim = dot * scales[r] * inv;
+          const sim = (dot * scales[r] - meanDotPref) * invCentredNorm[r] * inv;
           if (sim > best) best = sim;
         }
         out[l.k] = best;

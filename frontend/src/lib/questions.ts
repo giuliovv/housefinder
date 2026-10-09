@@ -110,3 +110,26 @@ export function loadFilters(): Partial<StoredFilters> {
 export function saveFilters(filters: StoredFilters): void {
   writeJson(FILTERS_KEY, filters);
 }
+
+/** The "you're ready, go to Browse" nudge: which taste level it was last shown for, and whether Browse has been
+ * opened since (the Browse tab wears a dot until then). */
+export interface ReadyState {
+  shownLevel: number;
+  browseOpened: boolean;
+}
+
+const READY_KEY = "housefinder:ready:v1";
+const READY_FROM_LEVEL = 2; // "a good read"
+
+export function loadReady(): ReadyState {
+  return { shownLevel: 0, browseOpened: true, ...readJson<Partial<ReadyState>>(READY_KEY, {}) };
+}
+
+export function saveReady(state: ReadyState): void {
+  writeJson(READY_KEY, state);
+}
+
+/** the level to announce, or null: good and strong are each announced once */
+export function readyToAnnounce(level: number | null, shownLevel: number): number | null {
+  return level !== null && level >= READY_FROM_LEVEL && level > shownLevel ? level : null;
+}

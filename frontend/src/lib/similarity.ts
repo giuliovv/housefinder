@@ -14,7 +14,7 @@ export function cosineSimilarity(a: ArrayLike<number>, b: ArrayLike<number>): nu
   return dot / (Math.sqrt(normA) * Math.sqrt(normB));
 }
 
-function mean(vectors: ArrayLike<number>[]): Float32Array {
+function meanOf(vectors: ArrayLike<number>[]): Float32Array {
   const dim = vectors[0].length;
   const out = new Float32Array(dim);
   for (const v of vectors) {
@@ -36,10 +36,37 @@ export function computePreferenceVector(
   disliked: ArrayLike<number>[],
 ): Float32Array | null {
   if (liked.length === 0) return null;
-  const likedCentroid = mean(liked);
+  const likedCentroid = meanOf(liked);
   if (disliked.length === 0) return likedCentroid;
-  const dislikedCentroid = mean(disliked);
+  const dislikedCentroid = meanOf(disliked);
   return likedCentroid.map((v, i) => v - dislikedCentroid[i]);
+}
+
+/** How much the dislikes count against the likes. Textbook Rocchio weights negatives well below positives; 0.5 won
+ * the simulated-user comparison (see PLAN.md) once embeddings are centred. */
+export const DISLIKE_WEIGHT = 0.5;
+
+/**
+ * The direction used to rank listings: Rocchio feedback in *centred* space. CLIP photo vectors all share a large
+ * common component (the "average interior photo"); left in, it makes scores read ~90% while only likes exist and
+ * collapse once dislikes arrive, and it swamps the taste signal. Subtracting the mean vector of the catalogue
+ * first (as in "All-but-the-Top", Mu & Viswanath 2018) makes scores comparable at every swipe count and ranks
+ * better, most of all with few swipes. `mean` is the mean of all listing photo vectors.
+ */
+export function computeCenteredPreference(
+  liked: ArrayLike<number>[],
+  disliked: ArrayLike<number>[],
+  mean: ArrayLike<number>,
+  dislikeWeight = DISLIKE_WEIGHT,
+): Float32Array | null {
+  if (liked.length === 0) return null;
+  const likedCentroid = meanOf(liked);
+  const dislikedCentroid = disliked.length > 0 ? meanOf(disliked) : null;
+  // mean(liked - mu) - w * mean(disliked - mu), written without materialising the centred vectors
+  return likedCentroid.map(
+    (v, i) =>
+      v - mean[i] - (dislikedCentroid ? dislikeWeight * (dislikedCentroid[i] - mean[i]) : 0),
+  );
 }
 
 /* A listing's match score is the best (max) cosine similarity across its own

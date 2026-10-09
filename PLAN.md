@@ -342,3 +342,15 @@ whether to replace them with agencies on other platforms.
   Phase 3).
 - Personal tool vs. eventually-multi-user — affects how seriously the
   scraping legal question needs revisiting.
+
+## Match scoring: centred Rocchio (2026-10)
+
+Observation: scores read ~90% while only likes existed, then fell to ~20% once dislikes arrived ("stronger results with fewer swipes").
+Cause: all CLIP photo vectors share a large common component; with likes-only the preference vector *is* that component.
+Fix (literature: Rocchio feedback; mean-centring as in All-but-the-Top / CLIP mean-shift): subtract the catalogue's mean photo vector
+before comparing and weight dislikes at 0.5 (`computeCenteredPreference`, `embeddingStore.scoreListings`).
+Simulated users (real photos, style-label tastes, 10% mistaps), ranking AUC current -> centred+0.5: 5/0 swipes .68->.75, 8/4 .73->.76,
+20/10 .79->.81, 40/40 .81->.82; top-10 raw score now 55-69% at any swipe count instead of 95% -> 26%.
+Rejected: tier badges ("Strong match") — wrong confidence if the person disagrees; multi-centroid / nearest-neighbour scoring (bigger raw
+scores, worse ranking); textbook gamma=0.15 without centring (worse ranking, all scores ~95%).
+Untouched on purpose: `preferenceVector` (uncentred) still drives the style-words, `tasteRead` calibration.

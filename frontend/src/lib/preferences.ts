@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import type { ListingKey } from "../types";
-import { computePreferenceVector } from "./similarity";
+import { computeCenteredPreference, computePreferenceVector } from "./similarity";
 import { computeTasteRead } from "./tasteRead";
 import { decodeInt8, dequantize, encodeInt8, photoId, quantize, type DeckPhoto, type EmbeddingStore } from "./embeddingStore";
 
@@ -185,10 +185,17 @@ export function useStylePreferences(store: EmbeddingStore | null) {
     return { preferenceVector: computePreferenceVector(liked, disliked), tasteRead: computeTasteRead(liked, disliked) };
   }, [stored]);
 
+  // Ranking uses the centred preference; `preferenceVector` (uncentred) is kept for describing taste in words,
+  // which compares against text embeddings that live in a different space.
   const matchScores = useMemo<Record<ListingKey, number> | null>(() => {
-    if (!preferenceVector || !store) return null;
-    return store.scoreListings(preferenceVector);
-  }, [preferenceVector, store]);
+    if (!store) return null;
+    const vectors = (choice: SwipeChoice) =>
+      Object.values(stored)
+        .filter((sw) => sw.c === choice)
+        .map((sw) => dequantize(decodeInt8(sw.v), sw.s));
+    const pref = computeCenteredPreference(vectors("like"), vectors("dislike"), store.mean);
+    return pref ? store.scoreListings(pref) : null;
+  }, [stored, store]);
 
   const likedCount = useMemo(() => Object.values(stored).filter((sw) => sw.c === "like").length, [stored]);
   const dislikedCount = useMemo(() => Object.values(stored).filter((sw) => sw.c === "dislike").length, [stored]);

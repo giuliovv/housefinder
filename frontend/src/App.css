@@ -1038,3 +1038,7 @@
 .tip__text { font-size: 14px; line-height: 1.5; color: var(--ink); margin: 0 0 16px; }
 .tip__btn { width: 100%; padding: 13px; border-radius: 14px; border: none; background: var(--rust); color: #fff; font-size: 15px; font-weight: 700; cursor: pointer; }
 .question__note { font-size: 11.5px; color: var(--muted); margin: 12px 0 0; }
+
+.question--ready { border-top-color: var(--rust); background: linear-gradient(#fff, #fdf6ee); }
+.app__tab-dot { display: inline-block; width: 8px; height: 8px; margin-left: 6px; border-radius: 50%; background: var(--rust); vertical-align: 2px; animation: tab-pulse 1.6s ease-in-out infinite; }
+@keyframes tab-pulse { 0%, 100% { transform: scale(1); opacity: 1; } 50% { transform: scale(1.5); opacity: 0.55; } }
