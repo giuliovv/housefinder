@@ -23,6 +23,8 @@ export function ListingCard({
   deadPhotos,
   swipes,
   onRate,
+  saved,
+  onToggleSave,
 }: {
   listing: Listing;
   matchScore?: number;
@@ -31,6 +33,8 @@ export function ListingCard({
   deadPhotos?: ReadonlySet<string>;
   swipes?: Record<string, SwipeChoice>;
   onRate?: (photoId: string, choice: SwipeChoice) => void;
+  saved?: boolean;
+  onToggleSave?: () => void;
 }) {
   const { summary } = listing;
   const allPhotos = listing.photo_urls.length > 0
@@ -172,6 +176,19 @@ export function ListingCard({
           <p className="listing-card__price">{displayPrice(summary.price_text)}</p>
           {extractPostcodeArea(summary.address) && (
             <p className="listing-card__area">{extractPostcodeArea(summary.address)}</p>
+          )}
+          {onToggleSave && (
+            <button
+              className={`listing-card__save ${saved ? "listing-card__save--on" : ""}`}
+              onClick={(e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                onToggleSave();
+              }}
+              aria-pressed={saved}
+            >
+              {saved ? "★ Saved" : "☆ Save"}
+            </button>
           )}
         </div>
         {summary.price_flag && (

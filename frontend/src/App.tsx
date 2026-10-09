@@ -3,6 +3,8 @@ import type { Listing, StyleLabel } from "./types";
 import { loadEmbeddingStore, type EmbeddingStore } from "./lib/embeddingStore";
 import { ListingCard } from "./components/ListingCard";
 import { SwipeDeck } from "./components/SwipeDeck";
+import { SavedView } from "./components/SavedView";
+import { useShortlist } from "./lib/useShortlist";
 import { DrawMap } from "./components/DrawMap";
 import { inAnyShape, type LatLon, type ListingGeo } from "./lib/geo";
 import { FilterSheet } from "./components/FilterSheet";
@@ -14,7 +16,7 @@ import { topStyleLabels } from "./lib/similarity";
 import "./App.css";
 
 type SortKey = "price-asc" | "price-desc" | "match";
-type Tab = "browse" | "style";
+type Tab = "browse" | "style" | "saved";
 
 // Browse renders cards in pages: thousands of cards (each with a photo strip)
 // at once would make the page crawl.
@@ -35,7 +37,7 @@ function App() {
   const [maxPrice, setMaxPrice] = useState<string>("");
   const [minBedrooms, setMinBedrooms] = useState<string>("any");
   const [minBathrooms, setMinBathrooms] = useState<string>("any");
-  const [tab, setTab] = useState<Tab>("style");
+  const [tab, setTab] = useState<Tab>(() => (new URLSearchParams(window.location.search).has("board") ? "saved" : "style"));
   const [filterSheetOpen, setFilterSheetOpen] = useState(false);
   const [areaPanelOpen, setAreaPanelOpen] = useState(false);
   const [drawing, setDrawing] = useState(false);
@@ -108,6 +110,8 @@ function App() {
     for (const l of allListings ?? []) map[listingKey(l)] = l;
     return map;
   }, [allListings]);
+
+  const shortlist = useShortlist(listingsByKey);
 
   const agencies = useMemo(() => {
     if (!listings) return [];
@@ -225,6 +229,9 @@ function App() {
           <button className={`app__tab ${tab === "browse" ? "app__tab--active" : ""}`} onClick={() => setTab("browse")}>
             Browse {listings ? `(${listings.length})` : ""}
           </button>
+          <button className={`app__tab ${tab === "saved" ? "app__tab--active" : ""}`} onClick={() => setTab("saved")}>
+            Saved{shortlist.saved.length > 0 ? ` (${shortlist.saved.length})` : ""}
+          </button>
         </div>
       </header>
 
@@ -250,6 +257,27 @@ function App() {
       {tab === "style" && !store && !styleFailed && <LoadingMessage kind="style" />}
       {tab === "style" && styleFailed && (
         <p className="app__error">Couldn't load the style cards just now — you can still browse; try a refresh in a moment.</p>
+      )}
+
+      {tab === "saved" && (
+        <SavedView
+          saved={shortlist.saved}
+          listingsByKey={listingsByKey}
+          me={shortlist.me}
+          boardId={shortlist.boardId}
+          invite={shortlist.invite}
+          status={shortlist.status}
+          board={shortlist.board}
+          sharingAvailable={shortlist.sharingAvailable}
+          matchScores={matchScores}
+          store={store}
+          deadPhotos={deadPhotos}
+          onToggleSave={shortlist.toggleSave}
+          onStartBoard={shortlist.startBoard}
+          onJoin={shortlist.joinInvite}
+          onLeave={shortlist.leaveBoard}
+          onBrowse={() => setTab("browse")}
+        />
       )}
 
       {tab === "browse" && (
@@ -329,6 +357,8 @@ function App() {
                 deadPhotos={deadPhotos}
                 swipes={swipes}
                 onRate={toggleSwipe}
+                saved={shortlist.saved.includes(listingKey(listing))}
+                onToggleSave={() => shortlist.toggleSave(listing)}
               />
             ))}
           </main>

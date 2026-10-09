@@ -959,3 +959,29 @@
 }
 .app__draw-btn--on { background: var(--rust); color: #fff; }
 .neighbourhood-map--drawing { touch-action: none; cursor: crosshair; outline: 2px solid var(--rust); }
+
+/* ── Saved / shared list ──────────────────────────────────────────────── */
+.listing-card__price-row { align-items: center; }
+.listing-card__save {
+  flex: none;
+  padding: 5px 11px;
+  border-radius: 16px;
+  border: 1px solid var(--border);
+  background: #fff;
+  color: var(--ink);
+  font-size: 12.5px;
+  font-weight: 600;
+  cursor: pointer;
+}
+.listing-card__save--on { border-color: var(--rust); color: var(--rust); }
+.saved__title { font-family: var(--serif); font-size: 1.3rem; margin: 4px 0 10px; }
+.saved__form { display: flex; flex-direction: column; gap: 8px; align-items: flex-start; margin-bottom: 12px; }
+.saved__share { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; margin-bottom: 14px; }
+.saved__wa { text-decoration: none; display: inline-block; }
+.saved__by { font-size: 12px; color: var(--muted); margin: 0 0 6px; }
+.saved__by--both { color: var(--rust); font-weight: 700; }
+.saved__item { display: block; }
+.saved__gone { display: flex; gap: 12px; padding: 10px; background: #fff; border: 1px solid var(--border); border-radius: 14px; color: var(--ink); text-decoration: none; }
+.saved__gone img { width: 90px; height: 70px; object-fit: cover; border-radius: 8px; }
+.saved__gone p { margin: 2px 0; font-size: 13px; }
+.app__link-btn { background: none; border: none; color: var(--rust); text-decoration: underline; cursor: pointer; font-size: inherit; padding: 0; }
