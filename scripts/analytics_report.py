@@ -37,6 +37,12 @@ FUNNEL = [
     ("m_share_joined", "joined a shared list"),
     ("m_agency_click", "opened an agency listing"),
 ]
+EVENTS = [
+    ("ev_match_shown", "match moments offered"),
+    ("ev_match_hit", "...swiped right (a hit)"),
+    ("ev_match_miss", "...swiped left (a miss)"),
+    ("ev_match_opened", "...opened the home from the celebration"),
+]
 
 
 def credentials() -> service_account.Credentials:
@@ -89,6 +95,14 @@ def main() -> None:
     print(f"\nTotals over {len(data)} day(s) (milestones count each browser once, the first time it got there):")
     for key, label in FUNNEL:
         print(f"  {total[key]:>6}  {total[key] / top:>5.0%}  {label}")
+    ev = {k: sum(v.get(k, 0) for v in data.values()) for k, _ in EVENTS}
+    if ev["ev_match_shown"]:
+        print("\nMatch moments (event counts):")
+        for key, label in EVENTS:
+            print(f"  {ev[key]:>6}  {label}")
+        answered = ev["ev_match_hit"] + ev["ev_match_miss"]
+        if answered:
+            print(f"  hit rate {ev['ev_match_hit'] / answered:.0%} of {answered} answered (a typical photo is liked far less often)")
 
 
 if __name__ == "__main__":

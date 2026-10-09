@@ -24,7 +24,7 @@ service cloud.firestore {
     match /stats/{day} {
       allow read: if false;
       allow create, update: if day.matches('^[0-9]{4}-[0-9]{2}-[0-9]{2}$')
-        && request.resource.data.keys().hasOnly(['visitors', 'visitors_new', 'visitors_mobile', 'm_first_swipe', 'm_swipes_10', 'm_swipes_25', 'm_swipes_50', 'm_ready_shown', 'm_ready_go', 'm_browse_opened', 'm_browse_deep', 'm_filter_used', 'm_map_used', 'm_area_drawn', 'm_q_answered', 'm_q_skipped', 'm_saved', 'm_share_created', 'm_share_joined', 'm_agency_click']);
+        && request.resource.data.keys().hasOnly(['visitors', 'visitors_new', 'visitors_mobile', 'm_first_swipe', 'm_swipes_10', 'm_swipes_25', 'm_swipes_50', 'm_ready_shown', 'm_ready_go', 'm_browse_opened', 'm_browse_deep', 'm_filter_used', 'm_map_used', 'm_area_drawn', 'm_q_answered', 'm_q_skipped', 'm_saved', 'm_share_created', 'm_share_joined', 'm_agency_click', 'ev_match_shown', 'ev_match_hit', 'ev_match_miss', 'ev_match_opened']);
       allow delete: if false;
     }
     // everything else stays closed

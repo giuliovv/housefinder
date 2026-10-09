@@ -1,13 +1,15 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import type { Listing, StyleLabel } from "./types";
-import { loadEmbeddingStore, type EmbeddingStore } from "./lib/embeddingStore";
+import { loadEmbeddingStore, photoId, type EmbeddingStore } from "./lib/embeddingStore";
 import { ListingCard } from "./components/ListingCard";
 import { SwipeDeck } from "./components/SwipeDeck";
 import { SavedView } from "./components/SavedView";
 import { useShortlist } from "./lib/useShortlist";
 import { DrawMap } from "./components/DrawMap";
 import { inAnyShape, type LatLon, type ListingGeo } from "./lib/geo";
-import { trackMilestone, trackVisit } from "./lib/stats";
+import { trackEvent, trackMilestone, trackVisit } from "./lib/stats";
+import { MatchCelebration } from "./components/MatchCelebration";
+import { loadMatchState, pickMatch, saveMatchState, shouldOffer } from "./lib/matchmoment";
 import { ReadyCard } from "./components/ReadyCard";
 import { QuestionCard } from "./components/QuestionCard";
 import {
@@ -114,7 +116,7 @@ function App() {
     setShownCount(PAGE_SIZE);
   }, [agencyFilter, shapes, minPrice, maxPrice, minBedrooms, minBathrooms, sort]);
 
-  const { undecided, markBroken, hidePhoto, swipes, swipe, toggleSwipe, reset, preferenceVector, tasteRead, matchScores, likedCount, dislikedCount } = useStylePreferences(store);
+  const { undecided, markBroken, hidePhoto, swipes, swipe, toggleSwipe, reset, preferenceVector, rankingPreference, tasteRead, matchScores, likedCount, dislikedCount } = useStylePreferences(store);
 
   const styleDescription = useMemo(() => {
     if (!preferenceVector || styleLabels.length === 0) return null;
@@ -291,6 +293,44 @@ function App() {
     if (!answered) setSkipTip(true); // skipping one skips all: tell them where the same settings live
   }
 
+  // "It's a match!" moments (lib/matchmoment.ts): now and then the next photo is a home we expect them to love.
+  const [matchCard, setMatchCard] = useState<{ id: string; listingKey: string; url: string } | null>(null);
+  const [celebration, setCelebration] = useState<{ listingKey: string; url: string } | null>(null);
+  const [pinnedKey, setPinnedKey] = useState<string | null>(null);
+  const [matchState, setMatchState] = useState(loadMatchState);
+  function swipeInDeck(id: string, choice: "like" | "dislike") {
+    swipe(id, choice); // always an ordinary swipe: it trains the taste model like any other
+    if (matchCard && id === matchCard.id) {
+      if (choice === "like") {
+        trackEvent("ev_match_hit");
+        setCelebration({ listingKey: matchCard.listingKey, url: matchCard.url });
+        setPinnedKey(matchCard.listingKey);
+      } else {
+        trackEvent("ev_match_miss"); // we predicted a good one and they passed: no fuss, just a number for us
+      }
+      setMatchCard(null);
+      return;
+    }
+    const total = swipeTotal + 1;
+    const dislikes = dislikedCount + (choice === "dislike" ? 1 : 0);
+    if (!store || !matchScores || !rankingPreference || !shouldOffer(matchState, total, dislikes, tasteRead?.level ?? 0)) return;
+    const excluded = new Set([...matchState.shown, ...shortlist.saved]);
+    const key = pickMatch(
+      visible.map((l) => ({ key: listingKey(l), score: matchScores[listingKey(l)] ?? -Infinity, price: l.summary.price_pcm })),
+      Object.values(matchScores),
+      excluded,
+    );
+    const url = key ? store.bestPhoto(key, rankingPreference) : null;
+    if (!key || !url || swipes[photoId(key, url)]) return; // no suitable home right now: try again after a later swipe
+    const next = { shown: [...matchState.shown, key], lastAt: total };
+    setMatchState(next);
+    saveMatchState(next);
+    setMatchCard({ id: photoId(key, url), listingKey: key, url });
+    trackEvent("ev_match_shown");
+  }
+  const celebrated = celebration ? listingsByKey[celebration.listingKey] : undefined;
+  const pinned = pinnedKey ? listingsByKey[pinnedKey] : undefined;
+
   // anonymous usage counters (see lib/stats.ts)
   useEffect(() => {
     const t = window.setTimeout(trackVisit, 1500); // after the first paint, never competing with loading
@@ -356,7 +396,8 @@ function App() {
           likedCount={likedCount}
           dislikedCount={dislikedCount}
           totalCount={undecided.length + likedCount + dislikedCount}
-          onSwipe={swipe}
+          onSwipe={swipeInDeck}
+          injected={matchCard}
           onReset={() => {
             reset();
             const fresh = { shownLevel: 0, browseOpened: true };
@@ -393,6 +434,21 @@ function App() {
               />
             ) : undefined
           }
+        />
+      )}
+      {celebration && celebrated && (
+        <MatchCelebration
+          photoUrl={celebration.url}
+          price={celebrated.summary.price_text}
+          address={celebrated.summary.address}
+          matchPercent={matchScores ? Math.round((matchScores[celebration.listingKey] ?? 0) * 100) : null}
+          onOpen={() => {
+            trackEvent("ev_match_opened");
+            setCelebration(null);
+            setTab("browse");
+            window.scrollTo({ top: 0 });
+          }}
+          onKeep={() => setCelebration(null)}
         />
       )}
       {skipTip && (
@@ -485,8 +541,28 @@ function App() {
             </div>
           )}
 
+          {pinned && (
+            <div className="browse__pinned">
+              <p className="browse__pinned-label">
+                <span>♥ It's a match!</span>
+                <button onClick={() => setPinnedKey(null)}>Dismiss</button>
+              </p>
+              <div className="listing-grid">
+                <ListingCard
+                  listing={pinned}
+                  matchScore={matchScores?.[listingKey(pinned)]}
+                  store={store}
+                  deadPhotos={deadPhotos}
+                  swipes={swipes}
+                  onRate={toggleSwipe}
+                  saved={shortlist.saved.includes(listingKey(pinned))}
+                  onToggleSave={() => shortlist.toggleSave(pinned)}
+                />
+              </div>
+            </div>
+          )}
           <main className="listing-grid app__results" ref={resultsRef}>
-            {visible.slice(0, shownCount).map((listing) => (
+            {visible.filter((l) => listingKey(l) !== pinnedKey).slice(0, shownCount).map((listing) => (
               <ListingCard
                 key={`${listing.summary.platform}-${listing.summary.source_id}`}
                 listing={listing}

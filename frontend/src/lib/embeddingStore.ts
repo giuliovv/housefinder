@@ -30,6 +30,8 @@ export interface EmbeddingStore {
   mean: Float32Array;
   /** best-photo cosine similarity per browseable listing, in centred space: cos(photo - mean, preference) */
   scoreListings(preference: ArrayLike<number>): Record<ListingKey, number>;
+  /** the url of the listing's photo that matches the (centred) preference best */
+  bestPhoto(listingKey: ListingKey, preference: ArrayLike<number>): string | null;
 }
 
 interface RankingIndex {
@@ -127,6 +129,7 @@ export async function loadEmbeddingStore(): Promise<EmbeddingStore> {
     invCentredNorm[r] = centredSq > 1e-9 ? 1 / Math.sqrt(centredSq) : 0;
   }
 
+  const listingByKey = new Map(index.listings.map((l) => [l.k, l]));
   const rowById = new Map<string, number>();
   for (const l of index.listings) l.u.forEach((url, i) => rowById.set(photoId(l.k, url), l.o + i));
 
@@ -147,6 +150,25 @@ export async function loadEmbeddingStore(): Promise<EmbeddingStore> {
       if (row !== undefined) return dequantize(q.subarray(row * dim, (row + 1) * dim), scales[row]);
       const d = deckVectors.get(id);
       return d ? dequantize(d.q, d.scale) : null;
+    },
+    bestPhoto(listingKey, preference) {
+      const l = listingByKey.get(listingKey);
+      if (!l) return null;
+      let meanDotPref = 0;
+      for (let i = 0; i < dim; i++) meanDotPref += mean[i] * preference[i];
+      let best = -Infinity;
+      let bestUrl: string | null = null;
+      for (let r = l.o; r < l.o + l.u.length; r++) {
+        let dot = 0;
+        const base = r * dim;
+        for (let i = 0; i < dim; i++) dot += q[base + i] * preference[i];
+        const sim = (dot * scales[r] - meanDotPref) * invCentredNorm[r];
+        if (sim > best) {
+          best = sim;
+          bestUrl = l.u[r - l.o];
+        }
+      }
+      return bestUrl;
     },
     scoreListings(preference) {
       let norm = 0;

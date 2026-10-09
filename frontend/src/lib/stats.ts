@@ -33,6 +33,11 @@ export const COUNTERS = [
   "m_share_created",
   "m_share_joined",
   "m_agency_click", // opened a listing on the agency's site
+  // "It's a match!" moments (plain event counts, not once per browser): how often offered, loved, passed, opened
+  "ev_match_shown",
+  "ev_match_hit",
+  "ev_match_miss",
+  "ev_match_opened",
 ] as const;
 export type Counter = (typeof COUNTERS)[number];
 
@@ -117,5 +122,10 @@ export function trackMilestone(name: Counter): void {
   const state = readJson<StatsState>(KEY, { seen: {}, lastVisitDay: "", returning: false });
   if (state.seen[name]) return;
   writeJson(KEY, { ...state, seen: { ...state.seen, [name]: true } });
+  void bump([name]);
+}
+
+/** count an event every time it happens (unlike a milestone, which counts a browser once) */
+export function trackEvent(name: Counter): void {
   void bump([name]);
 }

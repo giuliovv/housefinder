@@ -187,20 +187,23 @@ export function useStylePreferences(store: EmbeddingStore | null) {
 
   // Ranking uses the centred preference; `preferenceVector` (uncentred) is kept for describing taste in words,
   // which compares against text embeddings that live in a different space.
-  const matchScores = useMemo<Record<ListingKey, number> | null>(() => {
+  const rankingPreference = useMemo(() => {
     if (!store) return null;
     const vectors = (choice: SwipeChoice) =>
       Object.values(stored)
         .filter((sw) => sw.c === choice)
         .map((sw) => dequantize(decodeInt8(sw.v), sw.s));
-    const pref = computeCenteredPreference(vectors("like"), vectors("dislike"), store.mean);
-    return pref ? store.scoreListings(pref) : null;
+    return computeCenteredPreference(vectors("like"), vectors("dislike"), store.mean);
   }, [stored, store]);
+  const matchScores = useMemo<Record<ListingKey, number> | null>(
+    () => (store && rankingPreference ? store.scoreListings(rankingPreference) : null),
+    [store, rankingPreference],
+  );
 
   const likedCount = useMemo(() => Object.values(stored).filter((sw) => sw.c === "like").length, [stored]);
   const dislikedCount = useMemo(() => Object.values(stored).filter((sw) => sw.c === "dislike").length, [stored]);
 
-  return { deck, undecided, markBroken, hidePhoto, swipes, swipe, toggleSwipe, reset, preferenceVector, tasteRead, matchScores, likedCount, dislikedCount };
+  return { deck, undecided, markBroken, hidePhoto, swipes, swipe, toggleSwipe, reset, preferenceVector, rankingPreference, tasteRead, matchScores, likedCount, dislikedCount };
 }
 
 export { photoId };

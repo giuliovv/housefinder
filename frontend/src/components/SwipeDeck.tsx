@@ -45,6 +45,7 @@ export function SwipeDeck({
   onHide,
   interlude,
   paused,
+  injected,
 }: {
   undecided: DeckPhoto[];
   likedCount: number;
@@ -63,8 +64,10 @@ export function SwipeDeck({
   interlude?: ReactNode;
   /** a popup is open over the deck: ignore the keyboard so it can't swipe photos behind it */
   paused?: boolean;
+  /** a card to show next instead of the next undecided photo (a "match" moment); looks like any other */
+  injected?: DeckPhoto | null;
 }) {
-  const current = undecided[0];
+  const current = injected ?? undecided[0];
   // One-time explanation for people who haven't swiped yet. Gone for good once dismissed
   // or once the first swipe happens, and never shown to someone who already has swipes.
   const [introSeen, setIntroSeen] = useState(introAlreadySeen);
@@ -122,7 +125,7 @@ export function SwipeDeck({
   const decided = totalCount - undecided.length;
   const likeOpacity = drag.dx > 0 ? clamp(drag.dx / DRAG_THRESHOLD, 0, 1) : 0;
   const passOpacity = drag.dx < 0 ? clamp(-drag.dx / DRAG_THRESHOLD, 0, 1) : 0;
-  const visibleCards = undecided.slice(0, 3);
+  const visibleCards = injected ? [injected, ...undecided.filter((p) => p.id !== injected.id).slice(0, 2)] : undecided.slice(0, 3);
 
   return (
     <div className="swipe">
@@ -159,6 +162,7 @@ export function SwipeDeck({
                 <div
                   key={card.id}
                   className="swipe__card"
+                  data-match-moment={injected?.id === card.id ? "1" : undefined}
                   style={{
                     transform: `translate(${tx}px, ${ty}px) rotate(${rot}deg) scale(${scale})`,
                     zIndex: 10 - i,
