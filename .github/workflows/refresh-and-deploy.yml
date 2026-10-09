@@ -179,3 +179,20 @@ jobs:
       - name: Clear checkpoint
         if: env.DO_SCRAPE == 'true'
         run: aws s3 rm "s3://$BUCKET/cache/" --recursive
+
+      # Last, and always (even after a failure): turn problems into alerts that the
+      # host-side watcher hands to Claude (ops/housefinder_watch.py), and record a
+      # heartbeat for good scraping runs so a missing run is noticed too.
+      - name: Health report and alerts
+        if: always()
+        continue-on-error: true
+        run: |
+          mkdir -p alerts analytics
+          aws s3 cp "s3://$BUCKET/analytics/health.json" analytics/health.json || true
+          python3 -m scraper.health --history analytics/history.json --listings frontend/public/data/listings.json \
+            --health analytics/health.json --job-status "${{ job.status }}" --run-id "$GITHUB_RUN_ID" \
+            --run-url "$GITHUB_SERVER_URL/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID" \
+            --event "${{ github.event_name }}" --scraped "$DO_SCRAPE" --out-dir alerts --heartbeat analytics/last-scrape.json
+          aws s3 cp alerts/ "s3://$BUCKET/alerts/pending/" --recursive --quiet || true
+          aws s3 cp analytics/health.json "s3://$BUCKET/analytics/health.json" --quiet || true
+          [ -f analytics/last-scrape.json ] && aws s3 cp analytics/last-scrape.json "s3://$BUCKET/analytics/last-scrape.json" --quiet || true

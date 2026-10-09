@@ -100,8 +100,8 @@ export class InfraStack extends cdk.Stack {
       ephemeralStorageSize: cdk.Size.gibibytes(2),
       // inbox/ holds pre-scraped results uploaded by the dev host's cron
       // (see scraper/refresh.py --dump); cache/ holds a CI run's checkpoint
-      // analytics/ the permanent listing history and work/ the full embeddings working store (see the workflow). Without this, prune would delete them on deploy.
-      exclude: ['inbox/*', 'cache/*', 'analytics/*', 'work/*'],
+      // analytics/ the permanent listing history and work/ the full embeddings working store, alerts/ the pending/handled health alerts (see the workflow). Without this, prune would delete them on deploy.
+      exclude: ['inbox/*', 'cache/*', 'analytics/*', 'work/*', 'alerts/*'],
     });
 
     new cdk.CfnOutput(this, 'CloudFrontDomain', { value: distribution.distributionDomainName });

@@ -41,9 +41,7 @@ TEXT_MODEL = "Qdrant/clip-ViT-B-32-text"
 IMAGE_DOWNLOAD_DELAY_SECONDS = 0.3
 
 
-def _listing_key(listing: dict) -> str:
-    s = listing["summary"]
-    return f"{s['platform']}:{s['source_id']}"
+from .keys import alias_map, embedding_belongs_to, listing_key as _listing_key, migrate_rows  # noqa: E402
 
 
 # Images the CDNs serve in place of a deleted photo (often with a 404 status, which
@@ -124,9 +122,17 @@ def main() -> None:
     # place looks; the frontend hides them from Browse separately.
     print(f"loaded {len(listings)} listings")
 
+    migrate_rows(listings)  # in memory; refresh.py persists the migration
     previous: dict[str, dict] = {}
     if args.incremental and args.out.exists():
         previous = json.loads(args.out.read_text())
+        # entries stored under a listing's pre-namespacing key move to its current key —
+        # but only if the photos in them are really that listing's
+        by_key = {_listing_key(l): l for l in listings}
+        for legacy, current in alias_map(listings).items():
+            entry = previous.pop(legacy, None)
+            if entry is not None and current not in previous and embedding_belongs_to(by_key[current], entry):
+                previous[current] = entry
     result: dict[str, dict] = {_listing_key(l): previous[_listing_key(l)] for l in listings if _listing_key(l) in previous}
     if not result and not listings:
         raise SystemExit("no listings to embed")

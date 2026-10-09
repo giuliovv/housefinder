@@ -43,9 +43,7 @@ def is_unavailable_status(status: str | None) -> bool:
     return bool(_UNAVAILABLE.match((status or "").strip()))
 
 
-def listing_key(row: dict) -> str:
-    s = row["summary"]
-    return f"{s['platform']}:{s['source_id']}"
+from .keys import listing_key  # noqa: E402  (re-exported; the one definition of a listing's identity)
 
 
 def empty_history(today: dt.date) -> dict:
@@ -53,7 +51,11 @@ def empty_history(today: dt.date) -> dict:
 
 
 def load(path: pathlib.Path, today: dt.date) -> dict:
-    return json.loads(path.read_text()) if path.exists() else empty_history(today)
+    from .keys import migrate_history
+
+    history = json.loads(path.read_text()) if path.exists() else empty_history(today)
+    migrate_history(history)  # idempotent: namespaces keys written before agencies were part of them
+    return history
 
 
 def save(path: pathlib.Path, history: dict) -> None:

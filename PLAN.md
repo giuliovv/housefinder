@@ -253,6 +253,14 @@ current parser status.
    embedding step refuses tiny, blank or known-placeholder images (md5 list in
    `embeddings.py`). First run probes ~4,500 photos (~5 min), later runs a rolling slice.
 
+   **Listing identity and alerts (2026-10-09):** keys are now `platform:source_id`
+   with the agency baked into `source_id` for platforms whose ids are only unique per
+   site (Property Hive, Expert Agent, Estate-Track, Starberry) — 6 cross-agency id
+   collisions had been silently overwriting listings. Stored listings, history and
+   embeddings migrate on load (idempotent; embeddings re-keyed by alias and only reused
+   if the photos belong to the listing), so nothing is re-downloaded; the collided
+   listings reappear at the next real scrape. Failure alerts: see README "Alerts (ops)".
+
 ## Infra
 
 - `frontend/` (Vite/React) + `infra/` (CDK: S3 + CloudFront) — done, deployed

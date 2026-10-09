@@ -39,6 +39,7 @@ import time
 
 from .agencies import AGENCIES
 from . import history as history_mod
+from . import keys
 from .export import BLOCKED, scrape_agency
 from .price import implausible_reason
 
@@ -50,9 +51,7 @@ BLOCK_BACKOFF_DAYS = 3
 _UNAVAILABLE_STATUS = re.compile(r"^(let|let agreed|under offer|reserved|sstc|agreement signed)$", re.IGNORECASE)
 
 
-def listing_key(listing: dict) -> str:
-    s = listing["summary"]
-    return f"{s['platform']}:{s['source_id']}"
+listing_key = keys.listing_key
 
 
 def _unavailable(listing: dict) -> bool:
@@ -237,7 +236,14 @@ def main() -> None:
     blocked = hist.setdefault("blocked", {}) if hist is not None else {}
 
     changed = False
+    migrated = keys.migrate_rows(existing)
+    if migrated:
+        print(f"namespaced {migrated} stored listing ids by agency (one-off migration, no requests)")
+        changed = True
     if hist is not None:
+        moved = keys.migrate_history(hist)
+        if moved:
+            print(f"re-keyed {moved} history records by agency")
         restored = restore_attributes(existing, hist)
         if restored:
             print(f"restored attributes for {restored} listings from history (no requests made)")

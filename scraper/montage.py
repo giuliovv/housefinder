@@ -40,9 +40,7 @@ CELL_HEIGHT = 270
 IMAGE_DOWNLOAD_DELAY_SECONDS = 0.3
 
 
-def _listing_key(listing: dict) -> str:
-    s = listing["summary"]
-    return f"{s['platform']}:{s['source_id']}"
+from .keys import listing_key as _listing_key  # noqa: E402
 
 
 def _download_image(url: str) -> Image.Image | None:

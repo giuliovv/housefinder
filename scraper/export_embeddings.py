@@ -60,9 +60,7 @@ def _photo_hash(key: str, url: str) -> int:
     return int.from_bytes(hashlib.sha1(f"{key}|{url}".encode()).digest()[:8], "big")
 
 
-def listing_key(row: dict) -> str:
-    s = row["summary"]
-    return f"{s['platform']}:{s['source_id']}"
+from .keys import alias_map, embedding_belongs_to, listing_key, migrate_rows  # noqa: E402
 
 
 def is_browseable(row: dict) -> bool:
@@ -73,13 +71,18 @@ def build(embeddings_path: pathlib.Path, listings: list[dict], out_dir: pathlib.
     """`health` is an optional photo_health.PhotoHealth: photos known to be dead are
     left out of the ranking matrix and the deck, and written to dead-photos.json so
     the site can hide them from listing cards too."""
+    migrate_rows(listings)
     browseable = {listing_key(r) for r in listings if is_browseable(r)}
     known = {listing_key(r) for r in listings}
+    by_key = {listing_key(r): r for r in listings}
+    alias = alias_map(listings)   # legacy key -> current key, for a store written before agencies were in the key
 
     entries: dict[str, list[tuple[str, np.ndarray, float]]] = {}
     with open(embeddings_path, "rb") as f:
         for key, entry in ijson.kvitems(f, "", use_float=True):
-            if key not in known:
+            if key in alias and key not in known and embedding_belongs_to(by_key[alias[key]], entry):
+                key = alias[key]
+            if key not in known or key in entries:
                 continue
             photos = [p for p in entry.get("photos", []) if p.get("embedding") and len(p["embedding"]) == DIM]
             if photos:

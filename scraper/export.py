@@ -19,6 +19,7 @@ import re
 from .agencies import AGENCIES
 from .cli import build_scraper
 from .http import Blocked
+from .keys import key_for, namespaced_source_id
 from .price import implausible_reason
 from .london import is_london
 
@@ -32,7 +33,15 @@ BLOCKED: set[str] = set()
 
 
 def _listing_key(summary) -> str:
-    return f"{summary.platform}:{summary.source_id}"
+    return key_for(summary.platform, summary.agency, summary.source_id)
+
+
+def _namespace(row: dict) -> dict:
+    """Parsers work with the agency's raw id (some use it to find photos); the stored
+    row carries the agency-namespaced one."""
+    s = row["summary"]
+    s["source_id"] = namespaced_source_id(s["platform"], s["agency"], s["source_id"])
+    return row
 
 
 def _flag_implausible_price(summary):
@@ -97,7 +106,7 @@ def scrape_agency(cfg, per_agency: int, max_pages: int, known: dict[str, dict] |
             if prev is not None and "attributes" in prev:
                 row = dict(prev)
                 row["summary"] = dataclasses.asdict(summary)
-                rows.append(row)
+                rows.append(_namespace(row))
                 continue
             print(f"[{cfg.key}] detail {i}/{len(summaries)}: {summary.address}")
             try:
@@ -113,7 +122,7 @@ def scrape_agency(cfg, per_agency: int, max_pages: int, known: dict[str, dict] |
                 continue
             row = dataclasses.asdict(detail)
             row["agency_name"] = cfg.name
-            rows.append(row)
+            rows.append(_namespace(row))
     finally:
         if hasattr(scraper, "close"):
             scraper.close()

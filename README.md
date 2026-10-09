@@ -287,3 +287,16 @@ growing to 250 listings/6 agencies and the gap held roughly steady
   could just be an artifact of averaging cosine similarity across a more
   stylistically varied set of "different listings." Worth a real look before
   trusting match scores much, especially with more agencies added later.
+
+
+## Alerts (ops)
+
+Every workflow run ends with `scraper/health.py`, which writes alerts to
+`s3://…/alerts/pending/` (run failed, an agency collapsed/blocked/went stale, browseable
+listings shrank) plus a heartbeat (`analytics/last-scrape.json`). `ops/housefinder_watch.py`
+runs from cron on the dev host every 15 minutes, also checks the heartbeat (older than
+30h = missed run) and the live site, and delivers new alerts to Claude by resuming the
+Telegram conversation's session (`claude -p --resume`, exactly as the bridge does); Claude
+investigates and messages the user. It waits while a user turn is in flight and wakes at
+most every 2h unless critical. `python ops/housefinder_watch.py --dry-run` shows what it
+would do; `--test` injects a harmless test alert.
