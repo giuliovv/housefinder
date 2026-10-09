@@ -86,6 +86,7 @@ export function QuestionCard(p: Props) {
       <button className="question__continue" disabled={!ready} onClick={choose}>
         Continue swiping
       </button>
+      <p className="question__note">This narrows Browse, not the photos you swipe.</p>
       <button className="question__skip" onClick={p.onSkip}>
         Skip these questions
       </button>

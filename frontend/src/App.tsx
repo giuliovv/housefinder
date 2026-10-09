@@ -277,7 +277,6 @@ function App() {
       {tab === "style" && store && (
         <SwipeDeck
           undecided={undecided}
-          listingsByKey={listingsByKey}
           likedCount={likedCount}
           dislikedCount={dislikedCount}
           totalCount={undecided.length + likedCount + dislikedCount}
@@ -318,7 +317,7 @@ function App() {
           <div className="tip" role="dialog" aria-label="Filters tip" onClick={(e) => e.stopPropagation()}>
             <p className="tip__title">No problem</p>
             <p className="tip__text">
-              We won't ask these again. You can set bedrooms, budget and area any time in <strong>Browse</strong>, under{" "}
+              We won't ask these again. Your answers only narrow Browse, never the swipe photos, and you can set bedrooms, budget and area any time in <strong>Browse</strong>, under{" "}
               <strong>Filters</strong> and <strong>Map</strong>.
             </p>
             <button className="tip__btn" onClick={() => setSkipTip(false)}>

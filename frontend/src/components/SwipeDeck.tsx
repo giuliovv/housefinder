@@ -1,5 +1,5 @@
 import { useEffect, useState, type ReactNode } from "react";
-import type { Listing, ListingKey } from "../types";
+import type { ListingKey } from "../types";
 import { normalizeImageUrl } from "../lib/url";
 import { TasteMeter } from "./TasteMeter";
 import type { TasteRead } from "../lib/tasteRead";
@@ -33,7 +33,6 @@ function clamp(v: number, lo: number, hi: number): number {
 
 export function SwipeDeck({
   undecided,
-  listingsByKey,
   likedCount,
   dislikedCount,
   totalCount,
@@ -48,7 +47,6 @@ export function SwipeDeck({
   paused,
 }: {
   undecided: DeckPhoto[];
-  listingsByKey: Record<ListingKey, Listing>;
   likedCount: number;
   dislikedCount: number;
   totalCount: number;
@@ -131,8 +129,8 @@ export function SwipeDeck({
       {showIntro && (
         <div className="swipe__intro" role="note">
           <p className="swipe__intro-text">
-            These are photos from real London properties. Swipe based on what catches your eye — we'll learn your taste and
-            find matching homes in Browse.
+            These are photos from a wide mix of real London homes. Swipe based on what catches your eye — we'll learn your
+            taste and find matching homes in Browse.
           </p>
           <p className="swipe__intro-hint">Right or ♥ = like · left or ✕ = pass</p>
           <button className="swipe__intro-btn" onClick={dismissIntro}>
@@ -157,7 +155,6 @@ export function SwipeDeck({
               const rot = isTop ? drag.dx / 16 : 0;
               const scale = 1 - i * 0.045;
               const transition = isTop && drag.active ? "none" : "transform .38s cubic-bezier(.2,.8,.2,1)";
-              const listing = listingsByKey[card.listingKey];
               return (
                 <div
                   key={card.id}
@@ -189,11 +186,6 @@ export function SwipeDeck({
                         <div className="swipe__stamp swipe__stamp--pass" style={{ opacity: passOpacity }}>PASS</div>
                       </>
                     )}
-                    {listing && (
-                      <div className="swipe__caption">
-                        <p className="swipe__caption-addr">{listing.summary.address}</p>
-                      </div>
-                    )}
                   </div>
                 </div>
               );
@@ -203,6 +195,7 @@ export function SwipeDeck({
             <button className="swipe__btn swipe__btn--dislike" onClick={() => commit("dislike")} aria-label="Not for me">✕</button>
             <button className="swipe__btn swipe__btn--like" onClick={() => commit("like")} aria-label="Like this">♥</button>
           </div>
+          <p className="swipe__note">Style photos teach us your taste. They're not a shortlist: your matches are in Browse.</p>
           <button className="swipe__skip" onClick={() => onHide(current.id)}>
             Not a room? Skip this photo
           </button>
