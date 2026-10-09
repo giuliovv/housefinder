@@ -39,7 +39,7 @@ def test_build_writes_consistent_files(tmp_path):
 
     stats = ee.build(emb, listings, tmp_path / "out")
 
-    assert stats == {"listings": 2, "photos": 3, "deck": 4}
+    assert stats == {"listings": 2, "photos": 3, "deck": 4, "dead": 0}
     index = json.loads((tmp_path / "out/ranking-index.json").read_text())
     assert index["count"] == 3
     assert [(l["k"], l["o"], l["u"]) for l in index["listings"]] == [("p:1", 0, ["a1", "a2"]), ("p:2", 2, ["b1"])]
@@ -65,3 +65,54 @@ def test_deck_sample_is_deterministic_and_capped_per_listing(tmp_path):
     deck_a = json.loads((tmp_path / "a/deck.json").read_text())["photos"]
     deck_b = json.loads((tmp_path / "b/deck.json").read_text())["photos"]
     assert deck_a == deck_b and len(deck_a) == ee.DECK_MAX_PER_LISTING and a == b
+
+
+def test_dead_photos_are_dropped_from_ranking_and_deck_and_listed(tmp_path):
+    import datetime as dt
+
+    from scraper.photo_health import PhotoHealth
+
+    store = {
+        "p:1": {"photos": [{"url": "a1", "embedding": vec(1).tolist()}, {"url": "a2", "embedding": vec(2).tolist()}]},
+        "p:2": {"photos": [{"url": "b1", "embedding": vec(3).tolist()}]},
+        "p:3": {"photos": [{"url": "c1", "embedding": vec(4).tolist()}]},   # let: deck only
+    }
+    emb = tmp_path / "emb.json"
+    emb.write_text(json.dumps(store))
+    listings = [{**listing("1"), "photo_urls": ["a1", "a2"]}, {**listing("2"), "photo_urls": ["b1"]}, {**listing("3", off_market=True), "photo_urls": ["c1", "c2"]}]
+    dead = {"a1", "c1"}
+    health = PhotoHealth(tmp_path / "health.json", dt.date(2026, 10, 9), prober=lambda u: (u not in dead, 200 if u not in dead else 404))
+
+    stats = ee.build(emb, listings, tmp_path / "out", health)
+
+    index = json.loads((tmp_path / "out/ranking-index.json").read_text())
+    assert {l["k"]: l["u"] for l in index["listings"]} == {"p:1": ["a2"], "p:2": ["b1"]}
+    deck_urls = {d["u"] for d in json.loads((tmp_path / "out/deck.json").read_text())["photos"]}
+    assert deck_urls == {"a2", "b1"}                      # a1 and c1 were dead, so p:3 has nothing left for the deck
+    assert json.loads((tmp_path / "out/dead-photos.json").read_text()) == ["a1", "c1"]
+    assert stats["dead"] == 2 and (tmp_path / "health.json").exists()
+
+
+def test_photo_health_caches_and_rechecks_by_age(tmp_path):
+    import datetime as dt
+
+    from scraper.photo_health import RECHECK_ALIVE_DAYS, RECHECK_DEAD_DAYS, PhotoHealth
+
+    calls = []
+
+    def prober(url):
+        calls.append(url)
+        return url != "gone", 200 if url != "gone" else 404
+
+    path = tmp_path / "h.json"
+    h = PhotoHealth(path, dt.date(2026, 10, 1), prober=prober)
+    assert h.check(["ok", "gone", "ok"]) == 2 and h.is_dead("gone") and not h.is_dead("ok")
+    h.save()
+    later = PhotoHealth(path, dt.date(2026, 10, 1) + dt.timedelta(days=RECHECK_ALIVE_DAYS - 1), prober=prober)
+    assert later.check(["ok", "gone"]) == 0                                   # still fresh
+    later = PhotoHealth(path, dt.date(2026, 10, 1) + dt.timedelta(days=RECHECK_ALIVE_DAYS), prober=prober)
+    assert later.check(["ok", "gone"]) == 1 and calls[-1] == "ok"           # alive ones are re-verified sooner than dead ones
+    much_later = PhotoHealth(path, dt.date(2026, 10, 1) + dt.timedelta(days=RECHECK_DEAD_DAYS), prober=prober)
+    assert much_later.check(["gone"]) == 1
+    capped = PhotoHealth(None, dt.date(2026, 10, 1), budget=2, prober=prober)
+    assert capped.check([f"u{i}" for i in range(10)]) == 2                    # the per-run budget is respected

@@ -30,12 +30,15 @@ from __future__ import annotations
 
 import argparse
 import base64
+import datetime as dt
 import hashlib
 import json
 import pathlib
 
 import ijson
 import numpy as np
+
+from .photo_health import PhotoHealth
 
 DIM = 512
 DECK_SIZE = 1500
@@ -66,32 +69,64 @@ def is_browseable(row: dict) -> bool:
     return not row.get("off_market") and not row.get("unverified")
 
 
-def build(embeddings_path: pathlib.Path, listings: list[dict], out_dir: pathlib.Path) -> dict:
+def build(embeddings_path: pathlib.Path, listings: list[dict], out_dir: pathlib.Path, health=None) -> dict:
+    """`health` is an optional photo_health.PhotoHealth: photos known to be dead are
+    left out of the ranking matrix and the deck, and written to dead-photos.json so
+    the site can hide them from listing cards too."""
     browseable = {listing_key(r) for r in listings if is_browseable(r)}
     known = {listing_key(r) for r in listings}
 
-    scales: list[float] = []
-    rows: list[np.ndarray] = []
-    index: list[dict] = []
-    deck_candidates: list[tuple[int, str, str, np.ndarray, float]] = []
-
+    entries: dict[str, list[tuple[str, np.ndarray, float]]] = {}
     with open(embeddings_path, "rb") as f:
         for key, entry in ijson.kvitems(f, "", use_float=True):
             if key not in known:
                 continue
             photos = [p for p in entry.get("photos", []) if p.get("embedding") and len(p["embedding"]) == DIM]
-            if not photos:
+            if photos:
+                entries[key] = [(p["url"], *quantize(p["embedding"])) for p in photos]
+
+    # Deck: per listing the photos with the smallest hash, then globally by hash; health-check
+    # candidates in batches until enough are alive (dead ones are skipped, next in line used).
+    candidates = []
+    for key, photos in entries.items():
+        for url, q, s in sorted(photos, key=lambda t: _photo_hash(key, t[0]))[:DECK_MAX_PER_LISTING + 2]:
+            candidates.append((_photo_hash(key, url), key, url, q, s))
+    candidates.sort(key=lambda t: t[0])
+    deck_candidates: list[tuple[int, str, str, np.ndarray, float]] = []
+    per_listing: dict[str, int] = {}
+    i = 0
+    while len(deck_candidates) < DECK_SIZE and i < len(candidates):
+        batch = candidates[i : i + 400]
+        i += 400
+        if health is not None:
+            health.check([c[2] for c in batch], limit=len(batch))   # the deck's candidates always get checked
+        for h, key, url, q, s in batch:
+            if health is not None and health.is_dead(url):
                 continue
-            quantized = [(p["url"], *quantize(p["embedding"])) for p in photos]
-            if key in browseable:
-                index.append({"k": key, "o": len(rows), "u": [u for u, _, _ in quantized]})
-                for _, q, s in quantized:
-                    rows.append(q)
-                    scales.append(s)
-            # the deck's per-listing picks: the photos with the smallest hash, so
-            # the sample is stable from run to run and independent of ordering
-            for url, q, s in sorted(quantized, key=lambda t: _photo_hash(key, t[0]))[:DECK_MAX_PER_LISTING]:
-                deck_candidates.append((_photo_hash(key, url), key, url, q, s))
+            if per_listing.get(key, 0) >= DECK_MAX_PER_LISTING:
+                continue
+            per_listing[key] = per_listing.get(key, 0) + 1
+            deck_candidates.append((h, key, url, q, s))
+            if len(deck_candidates) >= DECK_SIZE:
+                break
+
+    if health is not None:
+        # Browseable listings' photos: a rolling slice per run (oldest check first, within
+        # the budget) so every photo is re-verified within a couple of weeks without
+        # hammering the CDNs. After the deck so the deck's checks are never starved.
+        health.check([u for k in browseable for u, _, _ in entries.get(k, [])])
+
+    scales: list[float] = []
+    rows: list[np.ndarray] = []
+    index: list[dict] = []
+    for key in (k for k in entries if k in browseable):
+        live = [(u, q, s) for u, q, s in entries[key] if health is None or not health.is_dead(u)]
+        if not live:
+            continue
+        index.append({"k": key, "o": len(rows), "u": [u for u, _, _ in live]})
+        for _, q, s in live:
+            rows.append(q)
+            scales.append(s)
 
     out_dir.mkdir(parents=True, exist_ok=True)
     matrix = np.stack(rows) if rows else np.zeros((0, DIM), dtype=np.int8)
@@ -99,14 +134,21 @@ def build(embeddings_path: pathlib.Path, listings: list[dict], out_dir: pathlib.
     (out_dir / "ranking-index.json").write_text(
         json.dumps({"version": 1, "dim": DIM, "count": len(rows), "listings": index}, ensure_ascii=False, separators=(",", ":"))
     )
-
-    deck_candidates.sort(key=lambda t: t[0])
     deck = [
         {"k": k, "u": u, "s": round(s, 8), "v": base64.b64encode(q.tobytes()).decode()}
-        for _, k, u, q, s in deck_candidates[:DECK_SIZE]
+        for _, k, u, q, s in sorted(deck_candidates, key=lambda t: t[0])
     ]
     (out_dir / "deck.json").write_text(json.dumps({"version": 1, "dim": DIM, "photos": deck}, separators=(",", ":")))
-    return {"listings": len(index), "photos": len(rows), "deck": len(deck)}
+
+    # every photo URL of a listing we still show that is known dead — card strips hide these
+    dead: list[str] = []
+    if health is not None:
+        shown = {u for r in listings for u in r.get("photo_urls", [])}
+        dead = sorted(health.dead_among(shown))
+    (out_dir / "dead-photos.json").write_text(json.dumps(dead, separators=(",", ":")))
+    if health is not None:
+        health.save()
+    return {"listings": len(index), "photos": len(rows), "deck": len(deck), "dead": len(dead)}
 
 
 def main() -> None:
@@ -114,10 +156,13 @@ def main() -> None:
     parser.add_argument("--embeddings", type=pathlib.Path, required=True)
     parser.add_argument("--listings", type=pathlib.Path, required=True)
     parser.add_argument("--out-dir", type=pathlib.Path, required=True)
+    parser.add_argument("--photo-health", type=pathlib.Path, help="cache of which photo URLs still work (created if missing); enables dead-photo filtering")
+    parser.add_argument("--health-budget", type=int, default=2500, help="most photos to (re)probe this run")
     args = parser.parse_args()
-    stats = build(args.embeddings, json.loads(args.listings.read_text()), args.out_dir)
+    health = PhotoHealth(args.photo_health, dt.datetime.now(dt.timezone.utc).date(), args.health_budget) if args.photo_health else None
+    stats = build(args.embeddings, json.loads(args.listings.read_text()), args.out_dir, health)
     ranking = (args.out_dir / "ranking.bin").stat().st_size / 1e6
-    print(f"ranking: {stats['listings']} listings, {stats['photos']} photos ({ranking:.1f} MB); deck: {stats['deck']} photos")
+    print(f"ranking: {stats['listings']} listings, {stats['photos']} photos ({ranking:.1f} MB); deck: {stats['deck']} photos; dead photos hidden: {stats['dead']}")
 
 
 if __name__ == "__main__":

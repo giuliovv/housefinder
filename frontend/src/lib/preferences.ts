@@ -85,8 +85,14 @@ export function useStylePreferences(store: EmbeddingStore | null) {
     [stored],
   );
 
+  // Photos whose image failed to load this session (deleted, blocked, blank) are skipped.
+  // Session-only on purpose: a flaky connection shouldn't blacklist a good photo for good;
+  // the pipeline's dead-photo list handles the permanent cases.
+  const [broken, setBroken] = useState<ReadonlySet<string>>(new Set());
+  const markBroken = useCallback((id: string) => setBroken((prev) => (prev.has(id) ? prev : new Set(prev).add(id))), []);
+
   const deck = useMemo<DeckPhoto[]>(() => (store ? seededShuffle(store.deck, 42) : []), [store]);
-  const undecided = useMemo(() => deck.filter((p) => !(p.id in stored)), [deck, stored]);
+  const undecided = useMemo(() => deck.filter((p) => !(p.id in stored) && !broken.has(p.id)), [deck, stored, broken]);
 
   const record = useCallback(
     (id: string, choice: SwipeChoice) => {
@@ -137,7 +143,7 @@ export function useStylePreferences(store: EmbeddingStore | null) {
   const likedCount = useMemo(() => Object.values(stored).filter((sw) => sw.c === "like").length, [stored]);
   const dislikedCount = useMemo(() => Object.values(stored).filter((sw) => sw.c === "dislike").length, [stored]);
 
-  return { deck, undecided, swipes, swipe, toggleSwipe, reset, preferenceVector, tasteRead, matchScores, likedCount, dislikedCount };
+  return { deck, undecided, markBroken, swipes, swipe, toggleSwipe, reset, preferenceVector, tasteRead, matchScores, likedCount, dislikedCount };
 }
 
 export { photoId };

@@ -27,6 +27,7 @@ function App() {
   const [styleLabels, setStyleLabels] = useState<StyleLabel[]>([]);
   const [error, setError] = useState<string | null>(null);
   const [styleFailed, setStyleFailed] = useState(false);
+  const [deadPhotos, setDeadPhotos] = useState<ReadonlySet<string>>(new Set());
   const [sort, setSort] = useState<SortKey>("price-asc");
   const [agencyFilter, setAgencyFilter] = useState<string>("all");
   const [areaFilters, setAreaFilters] = useState<string[]>([]);
@@ -58,6 +59,13 @@ function App() {
         setStyleFailed(true);
       });
 
+    // Photo URLs the agencies have deleted (built by the pipeline); optional, and kept
+    // out of the style store so a failure there can't hide this too.
+    fetch("/data/dead-photos.json")
+      .then((res) => (res.ok ? res.json() : []))
+      .then((urls: string[]) => setDeadPhotos(new Set(urls)))
+      .catch(() => setDeadPhotos(new Set()));
+
     // Same deal — the map is a nice-to-have on top of the area filter,
     // which already works without it via the chips.
     fetch("/data/area-centroids.json")
@@ -87,7 +95,7 @@ function App() {
     setShownCount(PAGE_SIZE);
   }, [agencyFilter, areaFilters, minPrice, maxPrice, minBedrooms, minBathrooms, sort]);
 
-  const { undecided, swipes, swipe, toggleSwipe, reset, preferenceVector, tasteRead, matchScores, likedCount, dislikedCount } = useStylePreferences(store);
+  const { undecided, markBroken, swipes, swipe, toggleSwipe, reset, preferenceVector, tasteRead, matchScores, likedCount, dislikedCount } = useStylePreferences(store);
 
   const styleDescription = useMemo(() => {
     if (!preferenceVector || styleLabels.length === 0) return null;
@@ -246,6 +254,7 @@ function App() {
           onGoBrowse={() => setTab("browse")}
           styleDescription={styleDescription}
           tasteRead={tasteRead}
+          onBroken={markBroken}
         />
       )}
       {tab === "style" && !store && !styleFailed && <LoadingMessage kind="style" />}
@@ -311,6 +320,7 @@ function App() {
                 listing={listing}
                 matchScore={matchScores?.[listingKey(listing)]}
                 store={store}
+                deadPhotos={deadPhotos}
                 swipes={swipes}
                 onRate={toggleSwipe}
               />

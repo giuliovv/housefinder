@@ -46,6 +46,39 @@ def _listing_key(listing: dict) -> str:
     return f"{s['platform']}:{s['source_id']}"
 
 
+# Images the CDNs serve in place of a deleted photo (often with a 404 status, which
+# _download_image already rejects — this covers servers that answer 200). Add the
+# md5 of any new one found.
+PLACEHOLDER_MD5 = {
+    "2584d253464b2efbef752a5d23c8e350",  # Homeflow "Awaiting image" + camera, 1200x1200
+}
+MIN_SIDE_PX = 200
+MIN_PIXEL_STDDEV = 6.0
+
+
+def _unusable_image(path: pathlib.Path) -> str | None:
+    """Why this downloaded file shouldn't be embedded (placeholder, tiny, blank),
+    or None. A blank/solid or tiny image would just add a meaningless vector to
+    the style deck."""
+    import hashlib
+
+    from PIL import Image
+    import numpy as np
+
+    if hashlib.md5(path.read_bytes()).hexdigest() in PLACEHOLDER_MD5:
+        return "known placeholder image"
+    try:
+        with Image.open(path) as im:
+            if min(im.size) < MIN_SIDE_PX:
+                return f"too small ({im.size[0]}x{im.size[1]})"
+            thumb = im.convert("L").resize((64, 64))
+            if float(np.asarray(thumb, dtype=np.float32).std()) < MIN_PIXEL_STDDEV:
+                return "blank/solid image"
+    except Exception as exc:  # noqa: BLE001 - unreadable image is unusable
+        return f"unreadable ({type(exc).__name__})"
+    return None
+
+
 def _download_image(url: str, dest: pathlib.Path) -> bool:
     """Returns False (and leaves dest untouched) on any failure — a broken
     photo URL shouldn't kill the whole batch."""
@@ -130,6 +163,11 @@ def main() -> None:
             photo_entries = []
             for url, local_path, downloaded in zip(photo_urls, paths, ok):
                 if not downloaded:
+                    continue
+                reason = _unusable_image(local_path)
+                if reason:
+                    print(f"  ! skipping {url}: {reason}")
+                    local_path.unlink(missing_ok=True)
                     continue
                 try:
                     embedding = next(img_model.embed([str(local_path)]))

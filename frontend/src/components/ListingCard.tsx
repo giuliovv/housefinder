@@ -10,19 +10,23 @@ export function ListingCard({
   listing,
   matchScore,
   store,
+  deadPhotos,
   swipes,
   onRate,
 }: {
   listing: Listing;
   matchScore?: number;
   store?: EmbeddingStore | null;
+  /** photo URLs known to be gone (the agency deleted them) — never shown */
+  deadPhotos?: ReadonlySet<string>;
   swipes?: Record<string, SwipeChoice>;
   onRate?: (photoId: string, choice: SwipeChoice) => void;
 }) {
   const { summary } = listing;
-  const photos = listing.photo_urls.length > 0
+  const allPhotos = listing.photo_urls.length > 0
     ? listing.photo_urls
     : [summary.thumbnail_url].filter((u): u is string => Boolean(u));
+  const photos = deadPhotos && deadPhotos.size > 0 ? allPhotos.filter((u) => !deadPhotos.has(u)) : allPhotos;
   const [photoIndex, setPhotoIndex] = useState(0);
   const stripRef = useRef<HTMLDivElement>(null);
   const scrollFrame = useRef<number | null>(null);

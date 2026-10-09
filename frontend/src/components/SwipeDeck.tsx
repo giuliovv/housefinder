@@ -33,6 +33,7 @@ export function SwipeDeck({
   onGoBrowse,
   styleDescription,
   tasteRead,
+  onBroken,
 }: {
   undecided: DeckPhoto[];
   listingsByKey: Record<ListingKey, Listing>;
@@ -44,6 +45,8 @@ export function SwipeDeck({
   onGoBrowse: () => void;
   styleDescription: string[] | null;
   tasteRead: TasteRead | null;
+  /** called for a card whose image fails to load or arrives as a tiny speck */
+  onBroken: (id: string) => void;
 }) {
   const current = undecided[0];
   const [drag, setDrag] = useState<Drag>({ active: false, dx: 0, dy: 0 });
@@ -117,7 +120,15 @@ export function SwipeDeck({
                   onPointerLeave={isTop ? onPointerUp : undefined}
                 >
                   <div className="swipe__photo">
-                    <img src={normalizeImageUrl(card.url) ?? undefined} alt="Rate this interior style" draggable={false} />
+                    <img
+                      src={normalizeImageUrl(card.url) ?? undefined}
+                      alt="Rate this interior style"
+                      draggable={false}
+                      onError={() => onBroken(card.id)}
+                      onLoad={(e) => {
+                        if (e.currentTarget.naturalWidth < 120 || e.currentTarget.naturalHeight < 120) onBroken(card.id);
+                      }}
+                    />
                     {isTop && (
                       <>
                         <div className="swipe__stamp swipe__stamp--like" style={{ opacity: likeOpacity }}>LIKE</div>

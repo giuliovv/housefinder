@@ -241,6 +241,18 @@ current parser status.
    taste profile survives listings expiring; v1 swipes migrate when their photo
    is still in the data.
 
+   **Dead photos (2026-10-09):** agencies delete a let listing's photos while our
+   embeddings (and the swipe deck) live on; the CDN then serves an "Awaiting image"
+   placeholder, often with a 404 status, which browsers draw happily (3.7% of the
+   deck, mostly Homeflow's image servers). `scraper/photo_health.py` probes photo URLs
+   (HEAD; alive = 200 + image type + not a stub), cached in
+   `analytics/photo-health.json` (alive re-checked after 14 days, dead after 30); the
+   exporter drops dead photos from `ranking.bin`/`deck.json` (the deck takes the next
+   photo in line) and writes `dead-photos.json`, which listing cards filter on. The
+   deck also skips any image that fails to load or arrives as a speck, and the
+   embedding step refuses tiny, blank or known-placeholder images (md5 list in
+   `embeddings.py`). First run probes ~4,500 photos (~5 min), later runs a rolling slice.
+
 ## Infra
 
 - `frontend/` (Vite/React) + `infra/` (CDK: S3 + CloudFront) — done, deployed
