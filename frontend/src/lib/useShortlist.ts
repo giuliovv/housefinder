@@ -86,9 +86,13 @@ export function useShortlist(listingsByKey: Record<string, Listing>) {
   const mirror = useCallback(
     (key: string, isSaved: boolean, me_: Me, board: string | null) => {
       const listing = listingsRef.current[key];
-      if (board && backend && listing) void backend.setSaved(board, key, snapOf(listing), me_, isSaved).catch(() => setStatus("error"));
+      if (!board || !listing) return;
+      // the service may still be loading (e.g. right after "share"), so wait for it rather than dropping the save
+      void loadBackend()
+        .then((b) => (b ? b.setSaved(board, key, snapOf(listing), me_, isSaved) : setStatus("error")))
+        .catch(() => setStatus("error"));
     },
-    [backend],
+    [],
   );
 
   const toggleSave = useCallback(

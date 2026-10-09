@@ -20,7 +20,15 @@ export async function fetchConfig(): Promise<Record<string, string> | null> {
   }
 }
 
-export async function loadBackend(): Promise<BoardBackend | null> {
+let cached: Promise<BoardBackend | null> | null = null;
+
+/** one shared instance; callers can await it even if it is still loading */
+export function loadBackend(): Promise<BoardBackend | null> {
+  cached ??= createBackend();
+  return cached;
+}
+
+async function createBackend(): Promise<BoardBackend | null> {
   const config = await fetchConfig();
   if (!config) return null;
 
