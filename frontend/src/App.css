@@ -943,7 +943,7 @@
   text-shadow: 0 0 3px #fff, 0 0 3px #fff;
   pointer-events: none;
 }
-.area-map__tiles { filter: grayscale(1) brightness(1.12) contrast(0.8); }
+.area-map__tiles { filter: saturate(0.85) brightness(1.06) contrast(0.9); }
 .app__draw-bar { display: flex; align-items: center; gap: 10px; margin-bottom: 6px; }
 .app__draw-btn {
   padding: 9px 16px;
