@@ -43,6 +43,7 @@ export function SwipeDeck({
   styleDescription,
   tasteRead,
   onBroken,
+  onHide,
 }: {
   undecided: DeckPhoto[];
   listingsByKey: Record<ListingKey, Listing>;
@@ -56,6 +57,8 @@ export function SwipeDeck({
   tasteRead: TasteRead | null;
   /** called for a card whose image fails to load or arrives as a tiny speck */
   onBroken: (id: string) => void;
+  /** the person says this photo isn't a room (a view, a plan, ...): hide it for them for good */
+  onHide: (id: string) => void;
 }) {
   const current = undecided[0];
   // One-time explanation for people who haven't swiped yet. Gone for good once dismissed
@@ -187,6 +190,9 @@ export function SwipeDeck({
             <button className="swipe__btn swipe__btn--dislike" onClick={() => commit("dislike")} aria-label="Not for me">✕</button>
             <button className="swipe__btn swipe__btn--like" onClick={() => commit("like")} aria-label="Like this">♥</button>
           </div>
+          <button className="swipe__skip" onClick={() => onHide(current.id)}>
+            Not a room? Skip this photo
+          </button>
           <p className="swipe__progress">
             {decided} of {totalCount} rated · {likedCount} liked · {dislikedCount} disliked
           </p>

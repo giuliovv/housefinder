@@ -38,6 +38,7 @@ import pathlib
 import ijson
 import numpy as np
 
+from . import photo_classes
 from .photo_health import PhotoHealth
 
 DIM = 512
@@ -77,7 +78,8 @@ def build(embeddings_path: pathlib.Path, listings: list[dict], out_dir: pathlib.
     by_key = {listing_key(r): r for r in listings}
     alias = alias_map(listings)   # legacy key -> current key, for a store written before agencies were in the key
 
-    entries: dict[str, list[tuple[str, np.ndarray, float]]] = {}
+    # url, quantized vector, scale, deck_worthy (clearly a room), junk (not the property: view/EPC/plan/map/logo)
+    entries: dict[str, list[tuple[str, np.ndarray, float, bool, bool]]] = {}
     with open(embeddings_path, "rb") as f:
         for key, entry in ijson.kvitems(f, "", use_float=True):
             if key in alias and key not in known and embedding_belongs_to(by_key[alias[key]], entry):
@@ -86,13 +88,18 @@ def build(embeddings_path: pathlib.Path, listings: list[dict], out_dir: pathlib.
                 continue
             photos = [p for p in entry.get("photos", []) if p.get("embedding") and len(p["embedding"]) == DIM]
             if photos:
-                entries[key] = [(p["url"], *quantize(p["embedding"])) for p in photos]
+                probs = photo_classes.probabilities(np.asarray([p["embedding"] for p in photos], dtype=np.float32))
+                deck_ok, junk = photo_classes.is_deck_worthy(probs), photo_classes.is_junk(probs)
+                entries[key] = [(p["url"], *quantize(p["embedding"]), bool(deck_ok[i]), bool(junk[i])) for i, p in enumerate(photos)]
 
-    # Deck: per listing the photos with the smallest hash, then globally by hash; health-check
-    # candidates in batches until enough are alive (dead ones are skipped, next in line used).
+    # Deck: per listing the photos with the smallest hash — among those that are clearly rooms
+    # (taste is learned from interiors; no skylines, floor plans, facades) — then globally by
+    # hash; health-check candidates in batches until enough are alive (dead ones are skipped,
+    # next in line used).
     candidates = []
     for key, photos in entries.items():
-        for url, q, s in sorted(photos, key=lambda t: _photo_hash(key, t[0]))[:DECK_MAX_PER_LISTING + 2]:
+        rooms = [t for t in photos if t[3]]
+        for url, q, s, _, _ in sorted(rooms, key=lambda t: _photo_hash(key, t[0]))[:DECK_MAX_PER_LISTING + 2]:
             candidates.append((_photo_hash(key, url), key, url, q, s))
     candidates.sort(key=lambda t: t[0])
     deck_candidates: list[tuple[int, str, str, np.ndarray, float]] = []
@@ -117,13 +124,14 @@ def build(embeddings_path: pathlib.Path, listings: list[dict], out_dir: pathlib.
         # Browseable listings' photos: a rolling slice per run (oldest check first, within
         # the budget) so every photo is re-verified within a couple of weeks without
         # hammering the CDNs. After the deck so the deck's checks are never starved.
-        health.check([u for k in browseable for u, _, _ in entries.get(k, [])])
+        health.check([t[0] for k in browseable for t in entries.get(k, [])])
 
     scales: list[float] = []
     rows: list[np.ndarray] = []
     index: list[dict] = []
     for key in (k for k in entries if k in browseable):
-        live = [(u, q, s) for u, q, s in entries[key] if health is None or not health.is_dead(u)]
+        # junk (views/EPC/plans/maps/logos) can't be rated or influence a match score
+        live = [(u, q, s) for u, q, s, _, junk in entries[key] if not junk and (health is None or not health.is_dead(u))]
         if not live:
             continue
         index.append({"k": key, "o": len(rows), "u": [u for u, _, _ in live]})
@@ -151,7 +159,8 @@ def build(embeddings_path: pathlib.Path, listings: list[dict], out_dir: pathlib.
     (out_dir / "dead-photos.json").write_text(json.dumps(dead, separators=(",", ":")))
     if health is not None:
         health.save()
-    return {"listings": len(index), "photos": len(rows), "deck": len(deck), "dead": len(dead)}
+    junk_photos = sum(1 for k in entries if k in browseable for t in entries[k] if t[4])
+    return {"listings": len(index), "photos": len(rows), "deck": len(deck), "dead": len(dead), "junk": junk_photos}
 
 
 def check_consistency(listings: list[dict], out_dir: pathlib.Path, minimum: float = 0.6) -> float:
@@ -190,7 +199,7 @@ def main() -> None:
     stats = build(args.embeddings, listings, args.out_dir, health)
     check_consistency(listings, args.out_dir)
     ranking = (args.out_dir / "ranking.bin").stat().st_size / 1e6
-    print(f"ranking: {stats['listings']} listings, {stats['photos']} photos ({ranking:.1f} MB); deck: {stats['deck']} photos; dead photos hidden: {stats['dead']}")
+    print(f"ranking: {stats['listings']} listings, {stats['photos']} photos ({ranking:.1f} MB); deck: {stats['deck']} photos; dead photos hidden: {stats['dead']}; non-property photos left out of ranking: {stats['junk']}")
 
 
 if __name__ == "__main__":

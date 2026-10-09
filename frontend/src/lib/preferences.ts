@@ -16,6 +16,38 @@ interface StoredSwipe {
 }
 
 const STORAGE_KEY = "housefinder:style-swipes:v2";
+const SEED_KEY = "housefinder:deck-seed:v1";
+const HIDDEN_KEY = "housefinder:hidden-photos:v1";
+
+/** Every browser gets its own deck order (stable across reloads in that browser), so opening the
+ * app on another device doesn't feel like starting over with the same sequence. */
+function newSeed(): number {
+  const seed = crypto.getRandomValues(new Uint32Array(1))[0];
+  try {
+    localStorage.setItem(SEED_KEY, String(seed));
+  } catch {
+    /* storage blocked: the order just won't survive a reload */
+  }
+  return seed;
+}
+
+function loadSeed(): number {
+  try {
+    const n = Number(localStorage.getItem(SEED_KEY));
+    if (Number.isInteger(n) && n > 0) return n;
+  } catch {
+    /* fall through */
+  }
+  return newSeed();
+}
+
+function loadHidden(): Set<string> {
+  try {
+    return new Set<string>(JSON.parse(localStorage.getItem(HIDDEN_KEY) ?? "[]"));
+  } catch {
+    return new Set();
+  }
+}
 const LEGACY_KEY = "housefinder:style-swipes:v1"; // id -> choice only, vectors lived in the big embeddings file
 
 function loadStored(): Record<string, StoredSwipe> {
@@ -91,8 +123,23 @@ export function useStylePreferences(store: EmbeddingStore | null) {
   const [broken, setBroken] = useState<ReadonlySet<string>>(new Set());
   const markBroken = useCallback((id: string) => setBroken((prev) => (prev.has(id) ? prev : new Set(prev).add(id))), []);
 
-  const deck = useMemo<DeckPhoto[]>(() => (store ? seededShuffle(store.deck, 42) : []), [store]);
-  const undecided = useMemo(() => deck.filter((p) => !(p.id in stored) && !broken.has(p.id)), [deck, stored, broken]);
+  const [seed, setSeed] = useState(loadSeed);
+  const deck = useMemo<DeckPhoto[]>(() => (store ? seededShuffle(store.deck, seed) : []), [store, seed]);
+
+  // Photos this person marked "not a room": hidden for them for good (kept on their device only).
+  const [hidden, setHidden] = useState<ReadonlySet<string>>(loadHidden);
+  const hidePhoto = useCallback((id: string) => {
+    setHidden((prev) => {
+      const next = new Set(prev).add(id);
+      try {
+        localStorage.setItem(HIDDEN_KEY, JSON.stringify([...next]));
+      } catch {
+        /* ignore */
+      }
+      return next;
+    });
+  }, []);
+  const undecided = useMemo(() => deck.filter((p) => !(p.id in stored) && !broken.has(p.id) && !hidden.has(p.id)), [deck, stored, broken, hidden]);
 
   const record = useCallback(
     (id: string, choice: SwipeChoice) => {
@@ -123,7 +170,10 @@ export function useStylePreferences(store: EmbeddingStore | null) {
     [stored, record],
   );
 
-  const reset = useCallback(() => setStored({}), []);
+  const reset = useCallback(() => {
+    setStored({});
+    setSeed(newSeed()); // starting over also gets a fresh order
+  }, []);
 
   const { preferenceVector, tasteRead } = useMemo(() => {
     const vectors = (choice: SwipeChoice) =>
@@ -143,7 +193,7 @@ export function useStylePreferences(store: EmbeddingStore | null) {
   const likedCount = useMemo(() => Object.values(stored).filter((sw) => sw.c === "like").length, [stored]);
   const dislikedCount = useMemo(() => Object.values(stored).filter((sw) => sw.c === "dislike").length, [stored]);
 
-  return { deck, undecided, markBroken, swipes, swipe, toggleSwipe, reset, preferenceVector, tasteRead, matchScores, likedCount, dislikedCount };
+  return { deck, undecided, markBroken, hidePhoto, swipes, swipe, toggleSwipe, reset, preferenceVector, tasteRead, matchScores, likedCount, dislikedCount };
 }
 
 export { photoId };

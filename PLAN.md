@@ -261,6 +261,20 @@ current parser status.
    if the photos belong to the listing), so nothing is re-downloaded; the collided
    listings reappear at the next real scrape. Failure alerts: see README "Alerts (ops)".
 
+   **Non-property photos (2026-10-09):** feedback flagged the odd London Eye / skyline
+   in the swipe deck. `scraper/photo_classes.py` classifies every stored photo vector
+   zero-shot with CLIP text prompts (interior / exterior / junk: views, landmarks, EPC
+   charts, floor plans, maps, logos) — no downloads, prompt vectors committed so CI needs
+   no text model. Checked on contact sheets of 28k real photos (junk ~0.8%, near-pure).
+   The deck shows only clear rooms (p_interior >= 0.8, ~79% of photos); junk is left out
+   of the ranking (so it can't be rated or influence scores) but stays visible in listing
+   cards — floor plans and views are useful to renters. A per-device "Not a room? Skip"
+   link covers misses. Crowd-sourced "mark as not relevant" flags were deliberately not
+   built: they need the project's first write backend plus abuse protection/accounts for
+   a ~1% problem the classifier already handles; revisit when a backend exists for
+   notifications/joint search. The deck order is shuffled per browser (random seed in
+   localStorage; "start over" reseeds).
+
 ## Infra
 
 - `frontend/` (Vite/React) + `infra/` (CDK: S3 + CloudFront) — done, deployed

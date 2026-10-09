@@ -3,6 +3,7 @@ import json
 import numpy as np
 
 from scraper import export, export_embeddings as ee, keys
+from tests import vecs
 
 
 def row(platform, agency, sid, photos=("p1",)):
@@ -87,7 +88,7 @@ def test_known_rows_stored_under_the_legacy_id_are_reused_not_refetched(monkeypa
 
 def test_export_reads_an_embedding_store_written_under_legacy_keys(tmp_path):
     def vec(i):
-        return np.random.default_rng(i).normal(size=ee.DIM).astype(np.float32).tolist()
+        return vecs.room(i)
 
     store = {"estatetrack:slug-a": {"photos": [{"url": "a1", "embedding": vec(1)}]},
              "estatetrack:slug-b": {"photos": [{"url": "OTHER", "embedding": vec(2)}]}}      # not this listing's photo: ignored
@@ -104,7 +105,7 @@ def test_export_persists_the_migration_to_listings_json_so_keys_always_agree(tmp
     import sys
 
     def vec(i):
-        return np.random.default_rng(i).normal(size=ee.DIM).astype(np.float32).tolist()
+        return vecs.room(i)
 
     emb = tmp_path / "e.json"
     emb.write_text(json.dumps({"estatetrack:slug-a": {"photos": [{"url": "a1", "embedding": vec(1)}]}}))   # legacy key

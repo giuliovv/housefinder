@@ -95,7 +95,7 @@ function App() {
     setShownCount(PAGE_SIZE);
   }, [agencyFilter, areaFilters, minPrice, maxPrice, minBedrooms, minBathrooms, sort]);
 
-  const { undecided, markBroken, swipes, swipe, toggleSwipe, reset, preferenceVector, tasteRead, matchScores, likedCount, dislikedCount } = useStylePreferences(store);
+  const { undecided, markBroken, hidePhoto, swipes, swipe, toggleSwipe, reset, preferenceVector, tasteRead, matchScores, likedCount, dislikedCount } = useStylePreferences(store);
 
   const styleDescription = useMemo(() => {
     if (!preferenceVector || styleLabels.length === 0) return null;
@@ -255,6 +255,7 @@ function App() {
           styleDescription={styleDescription}
           tasteRead={tasteRead}
           onBroken={markBroken}
+          onHide={hidePhoto}
         />
       )}
       {tab === "style" && !store && !styleFailed && <LoadingMessage kind="style" />}

@@ -4,10 +4,11 @@ import json
 import numpy as np
 
 from scraper import export_embeddings as ee
+from tests import vecs
 
 
 def vec(seed):
-    return np.random.default_rng(seed).normal(size=ee.DIM).astype(np.float32)
+    return np.asarray(vecs.room(seed), dtype=np.float32)
 
 
 def listing(sid, **flags):
@@ -39,7 +40,7 @@ def test_build_writes_consistent_files(tmp_path):
 
     stats = ee.build(emb, listings, tmp_path / "out")
 
-    assert stats == {"listings": 2, "photos": 3, "deck": 4, "dead": 0}
+    assert stats == {"listings": 2, "photos": 3, "deck": 4, "dead": 0, "junk": 0}
     index = json.loads((tmp_path / "out/ranking-index.json").read_text())
     assert index["count"] == 3
     assert [(l["k"], l["o"], l["u"]) for l in index["listings"]] == [("p:1", 0, ["a1", "a2"]), ("p:2", 2, ["b1"])]
@@ -116,3 +117,18 @@ def test_photo_health_caches_and_rechecks_by_age(tmp_path):
     assert much_later.check(["gone"]) == 1
     capped = PhotoHealth(None, dt.date(2026, 10, 1), budget=2, prober=prober)
     assert capped.check([f"u{i}" for i in range(10)]) == 2                    # the per-run budget is respected
+
+
+def test_junk_is_left_out_of_the_ranking_and_only_clear_rooms_reach_the_deck(tmp_path):
+    store = {
+        "p:1": {"photos": [{"url": "kitchen", "embedding": vecs.room(1)}, {"url": "london-eye", "embedding": vecs.junk(2)},
+                           {"url": "garden", "embedding": vecs.outside(3)}]},
+    }
+    emb = tmp_path / "e.json"
+    emb.write_text(json.dumps(store))
+    stats = ee.build(emb, [listing("1")], tmp_path / "out")
+    index = json.loads((tmp_path / "out/ranking-index.json").read_text())
+    assert index["listings"][0]["u"] == ["kitchen", "garden"]          # the junk photo can't be rated or score
+    deck_urls = {d["u"] for d in json.loads((tmp_path / "out/deck.json").read_text())["photos"]}
+    assert deck_urls == {"kitchen"}                                      # a garden isn't a taste signal either
+    assert stats["junk"] == 1

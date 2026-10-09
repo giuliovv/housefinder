@@ -899,3 +899,19 @@
   font-weight: 600;
   cursor: pointer;
 }
+
+.swipe__skip {
+  margin: 10px auto 0;
+  padding: 2px 4px;
+  background: none;
+  border: none;
+  color: var(--muted);
+  font-size: 12px;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+  cursor: pointer;
+}
+
+.swipe__skip:hover {
+  color: var(--ink);
+}
