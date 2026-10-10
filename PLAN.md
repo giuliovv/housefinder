@@ -385,3 +385,17 @@ Simulated users (real photos, style-label tastes, 10% mistaps), ranking AUC curr
 Rejected: tier badges ("Strong match") — wrong confidence if the person disagrees; multi-centroid / nearest-neighbour scoring (bigger raw
 scores, worse ranking); textbook gamma=0.15 without centring (worse ranking, all scores ~95%).
 Untouched on purpose: `preferenceVector` (uncentred) still drives the style-words, `tasteRead` calibration.
+
+## Central London agency hunt, round 4 (2026-10-10)
+
+Scanned the 204 reachable OSM agencies inside central London (lat 51.475-51.56, lon -0.23 to -0.04) that we don't cover: homepage -> lettings
+link -> count price strings (outside <select>/<option>, which fake "£1,000 pcm" filters) and property links. ~55 have a server-rendered
+lettings page; almost all are one-off WordPress/custom sites, so a shared-platform parser doesn't exist. Built `scraper/themed.py`: a
+selector-config scraper (`Theme` in `scraper/themes.py`: card/address/price/beds selectors; next page by rel/text; photos found by the
+`og:image` folder heuristic) so a new site is ~6 config lines plus a fixture test. **Added:** Greater London Properties (Soho/West End,
+~295 rows, ~50 available) and Plaza Estates (Knightsbridge/Chelsea ultra-prime, weekly rents, ~78 available).
+**Checked, not added (low yield / needs more work):** T&K (Hampstead, 131 rows, 9 available), Foundation Estates (81 London, 9 available),
+Bargets (ultra-prime, 15 available), Hudsons (Marylebone, card markup unclear), Estateology (Kensington, big page, unfinished),
+Benham & Reeves (Reapit site, 36 links), Burghleys, Johns & Co (Battersea), Lurot Brand (Property Hive variant, 0 results with stock theme),
+Naylius McKenzie / Paul Lee (the same "streeten" vendor, 0 results with stock theme), KFH / Martin & Co (Gatsby / franchise).
+Foxtons/Savills/Hamptons/Chestertons: see above (Foxtons added; the others robots-blocked or behind bot protection).

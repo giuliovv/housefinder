@@ -32,6 +32,8 @@ class AgencyConfig:
     # scraper/export.py:is_london) — for agencies whose search covers outside
     # London too (e.g. Surrey/Berkshire branches).
     london_only: bool = False
+    # Only meaningful for platform="themed": the key of a selector config in scraper/themes.py.
+    theme: str | None = None
 
 
 AGENCIES: dict[str, AgencyConfig] = {
@@ -385,5 +387,14 @@ AGENCIES: dict[str, AgencyConfig] = {
     "foxtons": AgencyConfig(
         key="foxtons", name="Foxtons", platform="foxtons",
         search_url="https://www.foxtons.co.uk/properties-to-rent", london_only=True,
+    ),
+    # --- Bespoke sites handled by selector config (scraper/themed.py, scraper/themes.py)
+    "greaterlondonproperties": AgencyConfig(
+        key="greaterlondonproperties", name="Greater London Properties", platform="themed", theme="glp",
+        search_url="https://www.greaterlondonproperties.co.uk/to-rent/", london_only=True,
+    ),
+    "plazaestates": AgencyConfig(
+        key="plazaestates", name="Plaza Estates", platform="themed", theme="plaza",
+        search_url="https://plazaestates.co.uk/property-to-rent/", london_only=True,
     ),
 }

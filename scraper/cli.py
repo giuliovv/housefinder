@@ -17,6 +17,8 @@ import sys
 from .agencies import AGENCIES, AgencyConfig
 from .acquaint import AcquaintScraper
 from .foxtons import FoxtonsScraper
+from .themed import ThemedScraper
+from .themes import THEMES
 from .estatesit import EstatesItScraper
 from .estatetrack import EstateTrackScraper
 from .expertagent import ExpertAgentScraper
@@ -43,6 +45,8 @@ def build_scraper(cfg: AgencyConfig):
         return StarberryScraper(user_agent=cfg.user_agent)
     if cfg.platform == "estatetrack":
         return EstateTrackScraper(user_agent=cfg.user_agent)
+    if cfg.platform == "themed":
+        return ThemedScraper(THEMES[cfg.theme], user_agent=cfg.user_agent)
     if cfg.platform == "foxtons":
         return FoxtonsScraper(user_agent=cfg.user_agent)
     if cfg.platform == "expertagent":
