@@ -11,6 +11,7 @@ import { trackEvent, trackMilestone, trackVisit } from "./lib/stats";
 import { MatchCelebration } from "./components/MatchCelebration";
 import { loadMatchState, pickMatch, saveMatchState, shouldOffer } from "./lib/matchmoment";
 import { ReadyCard } from "./components/ReadyCard";
+import { matchesBedrooms, reconcileBedrooms } from "./lib/bedrooms";
 import { QuestionCard } from "./components/QuestionCard";
 import {
   loadFilters,
@@ -66,6 +67,7 @@ function App() {
   const [minPrice, setMinPrice] = useState<string>(stored.minPrice ?? "");
   const [maxPrice, setMaxPrice] = useState<string>(stored.maxPrice ?? "");
   const [minBedrooms, setMinBedrooms] = useState<string>(stored.minBedrooms ?? "any");
+  const [maxBedrooms, setMaxBedrooms] = useState<string>(stored.maxBedrooms ?? "any");
   const [minBathrooms, setMinBathrooms] = useState<string>(stored.minBathrooms ?? "any");
   const [tab, setTab] = useState<Tab>(() => (new URLSearchParams(window.location.search).has("board") ? "saved" : "style"));
   const [filterSheetOpen, setFilterSheetOpen] = useState(false);
@@ -131,7 +133,7 @@ function App() {
   // rating re-ranks the list — that would yank the user back up mid-scroll)
   useEffect(() => {
     setShownCount(PAGE_SIZE);
-  }, [agencyFilter, shapes, minPrice, maxPrice, minBedrooms, minBathrooms, sort]);
+  }, [agencyFilter, shapes, minPrice, maxPrice, minBedrooms, maxBedrooms, minBathrooms, sort]);
 
   const { undecided, markBroken, hidePhoto, swipes, swipe, toggleSwipe, reset, preferenceVector, rankingPreference, tasteRead, matchScores, likedCount, dislikedCount } = useStylePreferences(store);
 
@@ -168,16 +170,15 @@ function App() {
     const max = maxPrice ? Number(maxPrice) : null;
     if (min !== null) rows = rows.filter((l) => l.summary.price_pcm !== null && l.summary.price_pcm >= min);
     if (max !== null) rows = rows.filter((l) => l.summary.price_pcm !== null && l.summary.price_pcm <= max);
-    if (minBedrooms !== "any") {
-      const n = Number(minBedrooms);
-      rows = rows.filter((l) => l.summary.bedrooms !== null && l.summary.bedrooms >= n);
+    if (minBedrooms !== "any" || maxBedrooms !== "any") {
+      rows = rows.filter((l) => matchesBedrooms(l.summary.bedrooms, minBedrooms, maxBedrooms));
     }
     if (minBathrooms !== "any") {
       const n = Number(minBathrooms);
       rows = rows.filter((l) => l.summary.bathrooms !== null && l.summary.bathrooms >= n);
     }
     return rows;
-  }, [listings, agencyFilter, minPrice, maxPrice, minBedrooms, minBathrooms]);
+  }, [listings, agencyFilter, minPrice, maxPrice, minBedrooms, maxBedrooms, minBathrooms]);
 
   // dots for the map: every home passing the other filters (the drawn area is what narrows them)
   const mapPoints = useMemo(
@@ -229,6 +230,7 @@ function App() {
     setMinPrice("");
     setMaxPrice("");
     setMinBedrooms("any");
+    setMaxBedrooms("any");
     setMinBathrooms("any");
   }
 
@@ -248,13 +250,13 @@ function App() {
     (agencyFilter !== "all" ? 1 : 0) +
     (minPrice ? 1 : 0) +
     (maxPrice ? 1 : 0) +
-    (minBedrooms !== "any" ? 1 : 0) +
+    (minBedrooms !== "any" || maxBedrooms !== "any" ? 1 : 0) +
     (minBathrooms !== "any" ? 1 : 0);
 
   // the filters (set here, in the filter sheet or through a question card) survive a reload
   useEffect(() => {
-    saveFilters({ minPrice, maxPrice, minBedrooms, minBathrooms, shapes });
-  }, [minPrice, maxPrice, minBedrooms, minBathrooms, shapes]);
+    saveFilters({ minPrice, maxPrice, minBedrooms, maxBedrooms, minBathrooms, shapes });
+  }, [minPrice, maxPrice, minBedrooms, maxBedrooms, minBathrooms, shapes]);
 
   // Practical questions between photos. Photo swipes only train taste; a question's answer just sets
   // the ordinary filters above, which stay editable in Browse.
@@ -617,7 +619,17 @@ function App() {
         maxPrice={maxPrice}
         setMaxPrice={setMaxPrice}
         minBedrooms={minBedrooms}
-        setMinBedrooms={setMinBedrooms}
+        setMinBedrooms={(v) => {
+          const r = reconcileBedrooms(v, maxBedrooms, "min");
+          setMinBedrooms(r.min);
+          setMaxBedrooms(r.max);
+        }}
+        maxBedrooms={maxBedrooms}
+        setMaxBedrooms={(v) => {
+          const r = reconcileBedrooms(minBedrooms, v, "max");
+          setMinBedrooms(r.min);
+          setMaxBedrooms(r.max);
+        }}
         minBathrooms={minBathrooms}
         setMinBathrooms={setMinBathrooms}
         sort={sort}

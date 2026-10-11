@@ -12,6 +12,8 @@ export function FilterSheet({
   setMaxPrice,
   minBedrooms,
   setMinBedrooms,
+  maxBedrooms,
+  setMaxBedrooms,
   minBathrooms,
   setMinBathrooms,
   sort,
@@ -31,6 +33,8 @@ export function FilterSheet({
   setMaxPrice: (v: string) => void;
   minBedrooms: string;
   setMinBedrooms: (v: string) => void;
+  maxBedrooms: string;
+  setMaxBedrooms: (v: string) => void;
   minBathrooms: string;
   setMinBathrooms: (v: string) => void;
   sort: SortKey;
@@ -78,6 +82,19 @@ export function FilterSheet({
               onClick={() => setMinBedrooms(String(v))}
             >
               {v === "any" ? "Any" : `${v}+`}
+            </button>
+          ))}
+        </div>
+
+        <p className="sheet__label">Maximum bedrooms</p>
+        <div className="sheet__row sheet__row--wrap">
+          {["any", 1, 2, 3, 4].map((v) => (
+            <button
+              key={v}
+              className={`sheet__opt ${maxBedrooms === String(v) ? "sheet__opt--active" : ""}`}
+              onClick={() => setMaxBedrooms(String(v))}
+            >
+              {v === "any" ? "Any" : `Up to ${v}`}
             </button>
           ))}
         </div>
