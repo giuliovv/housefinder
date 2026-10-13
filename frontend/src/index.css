@@ -54,3 +54,16 @@ p {
   justify-content: center;
   background: var(--outer-bg);
 }
+
+/* A dragged swipe card sticks out past the right edge of the screen. That widens the page, and iOS Safari answers by
+   zooming the whole site out until the finger lifts (dragging left is harmless: nothing scrolls off to the left).
+   Clip sideways overflow at every level; `clip` (unlike `hidden`) doesn't create a scroll container, so the sticky
+   filter bar keeps working. */
+@supports (overflow: clip) {
+  html,
+  body,
+  #root,
+  .app {
+    overflow-x: clip;
+  }
+}

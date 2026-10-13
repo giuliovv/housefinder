@@ -416,3 +416,15 @@ terraces at 0.9 were 9/9 (0.6 was ~60%), balconies at 0.7 only ~50% (interiors w
 Implemented in `scraper/photo_classes.outdoor_features` and stored in each listing's `attributes.seen_in_photos` by
 `export_embeddings`; the Browse "Must have" filter uses text amenities OR photo-seen. On the live data: 361 gardens, 144 terraces, 26 balconies
 seen in photos. Weak spots: communal gardens and parks count as gardens; balcony detection is conservative.
+
+## Notes 2026-10-14 (price history, agencies, Homeflow)
+- Price history IS recorded (`analytics/history.json`: per listing dated prices and statuses, first/last seen, relisted). 4,746 homes tracked
+  since 2026-10-08; 67 real price changes so far (+9 sub-2% moves that are weekly/monthly rounding or the parser fix). It is private:
+  the site can't show "price dropped" yet. **Idea: publish a slim `price-changes.json` and badge cards ("Price dropped £100").**
+- Agency sweep of 243 non-central OSM agencies: little left worth building. Winkworth (UK-wide, 14 results/page, robots forbids the paging
+  params, commercial + non-London mixed): skip. Lexingtons / Charmill / Braithwait share the `wp-property-feed` plugin (`article.wppf_property_item*`)
+  but are N11/N12: one theme would cover three agencies if ever wanted. The rest are bespoke sites, mostly-let pages or non-London.
+  The real remaining gap is behind bot protection / private APIs (Hamptons, Chestertons, Knight Frank, Savills): needs permission emails.
+- Homeflow (John D Wood, Inner City, Tates, Aspire; ~164 homes) are still unverified/hidden: Cloudflare challenge also from this host (the 2026-10-07
+  dump timed out). Not bypassed, by policy.
+- iOS Safari zoom-out on swipe right: the dragged card widened the page (scrollWidth 536 vs 390); fixed with `overflow-x: clip` on html/body/#root/.app.
