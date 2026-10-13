@@ -108,6 +108,7 @@ export function ListingCard({
                 {Math.abs(i - photoIndex) <= 2 && (
                   <img
                     className="listing-card__photo"
+                    referrerPolicy="no-referrer"
                     src={normalizeImageUrl(raw) ?? undefined}
                     alt={i === 0 ? summary.address : ""}
                     loading="lazy"

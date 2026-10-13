@@ -39,7 +39,7 @@ export function MatchCelebration({ photoUrl, price, address, matchPercent, onOpe
       <div className="match__card">
         <p className="match__kicker">You and this home</p>
         <h2 className="match__title">It's a match!</h2>
-        <div className="match__photo" style={{ backgroundImage: `url("${normalizeImageUrl(photoUrl) ?? ""}")` }} />
+        <img className="match__photo" referrerPolicy="no-referrer" src={normalizeImageUrl(photoUrl) ?? undefined} alt="" />
         <p className="match__price">{price}</p>
         <p className="match__address">{address}</p>
         {matchPercent !== null && <p className="match__score">{matchPercent}% match with your taste</p>}

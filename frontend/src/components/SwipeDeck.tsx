@@ -176,6 +176,7 @@ export function SwipeDeck({
                 >
                   <div className="swipe__photo">
                     <img
+                      referrerPolicy="no-referrer"
                       src={normalizeImageUrl(card.url) ?? undefined}
                       alt="Rate this interior style"
                       draggable={false}

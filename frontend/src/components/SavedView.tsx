@@ -196,7 +196,7 @@ export function SavedView(p: Props) {
                     />
                   ) : (
                     <a className="saved__gone" href={item.snap.url} target="_blank" rel="noreferrer">
-                      {item.snap.thumb && <img src={item.snap.thumb.startsWith("//") ? `https:${item.snap.thumb}` : item.snap.thumb} alt="" />}
+                      {item.snap.thumb && <img referrerPolicy="no-referrer" src={item.snap.thumb.startsWith("//") ? `https:${item.snap.thumb}` : item.snap.thumb} alt="" />}
                       <div>
                         <strong>{item.snap.price}</strong>
                         <p>{item.snap.address}</p>
