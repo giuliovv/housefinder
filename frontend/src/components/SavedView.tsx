@@ -3,6 +3,7 @@ import type { Listing } from "../types";
 import type { BoardStatus } from "../lib/useShortlist";
 import { listingKey } from "../lib/listingKey";
 import { boardPeople, joinNames, shareUrl, whatsappLink, type BoardItem, type Me } from "../lib/shortlist";
+import { normalizeImageUrl } from "../lib/url";
 import { CheckIcon, CopyIcon, WhatsAppIcon } from "./icons";
 import { ListingCard } from "./ListingCard";
 import type { EmbeddingStore } from "../lib/embeddingStore";
@@ -196,7 +197,7 @@ export function SavedView(p: Props) {
                     />
                   ) : (
                     <a className="saved__gone" href={item.snap.url} target="_blank" rel="noreferrer">
-                      {item.snap.thumb && <img referrerPolicy="no-referrer" src={item.snap.thumb.startsWith("//") ? `https:${item.snap.thumb}` : item.snap.thumb} alt="" />}
+                      {item.snap.thumb && <img referrerPolicy="no-referrer" src={normalizeImageUrl(item.snap.thumb) ?? undefined} alt="" />}
                       <div>
                         <strong>{item.snap.price}</strong>
                         <p>{item.snap.address}</p>
