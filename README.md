@@ -309,3 +309,10 @@ No ids, IPs, cookies or content are stored (see `frontend/src/lib/stats.ts`). No
 browser opened once with `?notrack`. Clients can only add to a fixed list of counters (`firebase/firestore.rules`) and cannot read them.
 
     python3 scripts/analytics_report.py --days 14   # needs AWS access to SSM /housefinder/firebase-admin
+
+## CloudFront cost guard
+
+`ops/cost_guard.py` (run by the hourly watcher) reads CloudFront's free CloudWatch metrics for the month so far. Warning at 25 GB or
+300k requests; hard stop at 300 GB, 3M requests, or 60 GB in one day: it disables the distribution (the site goes down on purpose; these
+limits are all inside CloudFront's always-free 1 TB / 10M requests, so a stop happens before any charge). `python3 ops/cost_guard.py
+status|enable|disable`. A CDK deploy re-enables the distribution; the guard re-checks hourly. Typical traffic today: ~0.3 GB and ~100 requests a day.

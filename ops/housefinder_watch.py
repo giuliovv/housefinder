@@ -95,6 +95,23 @@ def site_alert(status: int | None, listing_count: int | None, now: dt.datetime) 
     return None
 
 
+def cloudfront_alert(now: dt.datetime) -> dict | None:
+    """Soft alarm / hard stop on CloudFront traffic (ops/cost_guard.py). A failure to read the metrics is only logged."""
+    try:
+        from ops import cost_guard
+    except ImportError:  # run as a script from another directory
+        sys.path.insert(0, str(pathlib.Path(__file__).resolve().parent.parent))
+        from ops import cost_guard
+    try:
+        u = cost_guard.usage(now)
+    except Exception as exc:  # noqa: BLE001
+        log(f"cost guard could not read CloudFront usage: {exc}")
+        return None
+    level = cost_guard.decide(u["month_gb"], u["month_requests"], u["day_gb"])
+    disabled = cost_guard.set_enabled(False) if level == "hard" else None
+    return cost_guard.alert_for(level, u, now, disabled)
+
+
 def pick_new(alerts: list[dict], handled: dict[str, str]) -> list[dict]:
     seen: set[str] = set()
     out = []
@@ -263,7 +280,7 @@ def main() -> int:
     now = dt.datetime.now(dt.timezone.utc)
     state = load_state()
     found: list[tuple[str | None, dict]] = [(name, doc) for name, doc in pending_alerts()]
-    for synthetic in (stale_scrape_alert(s3_json("analytics/last-scrape.json"), now), site_alert(*fetch_site(), now)):
+    for synthetic in (stale_scrape_alert(s3_json("analytics/last-scrape.json"), now), site_alert(*fetch_site(), now), cloudfront_alert(now)):
         if synthetic:
             found.append((None, synthetic))
     if args.test:
