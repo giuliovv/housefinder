@@ -11,6 +11,7 @@ import { trackEvent, trackMilestone, trackVisit } from "./lib/stats";
 import { MatchCelebration } from "./components/MatchCelebration";
 import { loadMatchState, pickMatch, saveMatchState, shouldOffer } from "./lib/matchmoment";
 import { ReadyCard } from "./components/ReadyCard";
+import { latestDrop, type PriceHistory } from "./lib/priceHistory";
 import { hasFeatures } from "./lib/features";
 import { browserStores, newKeys, newestDay, startVisit } from "./lib/newsince";
 import { matchesBedrooms, reconcileBedrooms } from "./lib/bedrooms";
@@ -70,6 +71,8 @@ function App() {
   const [maxPrice, setMaxPrice] = useState<string>(stored.maxPrice ?? "");
   const [minBedrooms, setMinBedrooms] = useState<string>(stored.minBedrooms ?? "any");
   const [maxBedrooms, setMaxBedrooms] = useState<string>(stored.maxBedrooms ?? "any");
+  const [priceHistory, setPriceHistory] = useState<PriceHistory>({});
+  const todayIso = new Date().toISOString().slice(0, 10);
   const [features, setFeatures] = useState<string[]>(stored.features ?? []);
   const [minBathrooms, setMinBathrooms] = useState<string>(stored.minBathrooms ?? "any");
   const [tab, setTab] = useState<Tab>(() => (new URLSearchParams(window.location.search).has("board") ? "saved" : "style"));
@@ -87,6 +90,12 @@ function App() {
       })
       .then(setAllListings)
       .catch((err) => setError(err instanceof Error ? err.message : String(err)));
+
+    // optional: the homes whose rent really changed (built by scraper/price_changes.py)
+    fetch("/data/price-history.json")
+      .then((res) => (res.ok ? res.json() : {}))
+      .then((h) => setPriceHistory(h && typeof h === "object" ? (h as PriceHistory) : {}))
+      .catch(() => setPriceHistory({}));
 
     fetch("/killswitch.json", { cache: "no-cache" })
       .then((res) => (res.ok ? res.json() : { disabled: [] }))
@@ -176,13 +185,19 @@ function App() {
     if (minBedrooms !== "any" || maxBedrooms !== "any") {
       rows = rows.filter((l) => matchesBedrooms(l.summary.bedrooms, minBedrooms, maxBedrooms));
     }
-    if (features.length > 0) rows = rows.filter((l) => hasFeatures([...(l.attributes?.amenities ?? []), ...(l.attributes?.seen_in_photos ?? [])], features));
+    if (features.length > 0) {
+      rows = rows.filter((l) => {
+        const have = [...(l.attributes?.amenities ?? []), ...(l.attributes?.seen_in_photos ?? [])];
+        if (latestDrop(priceHistory[listingKey(l)])) have.push("price_dropped");
+        return hasFeatures(have, features);
+      });
+    }
     if (minBathrooms !== "any") {
       const n = Number(minBathrooms);
       rows = rows.filter((l) => l.summary.bathrooms !== null && l.summary.bathrooms >= n);
     }
     return rows;
-  }, [listings, agencyFilter, minPrice, maxPrice, minBedrooms, maxBedrooms, minBathrooms, features]);
+  }, [listings, agencyFilter, minPrice, maxPrice, minBedrooms, maxBedrooms, minBathrooms, features, priceHistory]);
 
   // dots for the map: every home passing the other filters (the drawn area is what narrows them)
   const mapPoints = useMemo(
@@ -638,6 +653,8 @@ function App() {
                 saved={shortlist.saved.includes(listingKey(listing))}
                 onToggleSave={() => shortlist.toggleSave(listing)}
                 isNew={newSet.has(listingKey(listing))}
+                priceSeries={priceHistory[listingKey(listing)]}
+                today={todayIso}
               />
             ))}
           </main>

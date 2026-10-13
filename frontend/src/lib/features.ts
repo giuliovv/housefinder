@@ -7,6 +7,7 @@ export const FEATURES = [
   { key: "parking", label: "Parking" },
   { key: "lift", label: "Lift" },
   { key: "pets", label: "Pets OK" },
+  { key: "price_dropped", label: "Price dropped" }, // from the price history, not the listing text
 ] as const;
 
 export type FeatureKey = (typeof FEATURES)[number]["key"];

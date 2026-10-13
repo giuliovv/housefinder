@@ -158,6 +158,11 @@ jobs:
 
       # The durable copy of the working embeddings (checkpoints under cache/ are
       # cleared after a deploy); saved before deploying so a failed deploy can't lose it.
+      # The slim public price history (homes whose rent really changed); regenerated on scraping runs, carried by data/ otherwise.
+      - name: Build price history
+        if: env.DO_SCRAPE == 'true'
+        run: python -m scraper.price_changes --history analytics/history.json --out frontend/public/data/price-history.json
+
       - name: Save working embeddings
         if: always() && env.DO_SCRAPE == 'true'
         run: |

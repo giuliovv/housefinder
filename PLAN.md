@@ -428,3 +428,6 @@ seen in photos. Weak spots: communal gardens and parks count as gardens; balcony
 - Homeflow (John D Wood, Inner City, Tates, Aspire; ~164 homes) are still unverified/hidden: Cloudflare challenge also from this host (the 2026-10-07
   dump timed out). Not bypassed, by policy.
 - iOS Safari zoom-out on swipe right: the dragged card widened the page (scrollWidth 536 vs 390); fixed with `overflow-x: clip` on html/body/#root/.app.
+- 2026-10-14: price drops shipped. `scraper/price_changes.py` writes the slim public `price-history.json` (homes with a real >=2% change) on every
+  scraping run; cards show "↓ £100" and a step chart (first and latest price labelled, one series, one axis); Filters > Must have > "Price dropped".
+  67 of the first 73 changes were downwards (Stirling Ackroyd 29, Dexters 15): plausible (unlet homes get reduced) but worth watching for parser artefacts.

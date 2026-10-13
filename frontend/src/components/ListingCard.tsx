@@ -3,6 +3,8 @@ import type { Listing } from "../types";
 import type { EmbeddingStore } from "../lib/embeddingStore";
 import type { SwipeChoice } from "../lib/preferences";
 import { normalizeImageUrl } from "../lib/url";
+import { latestDrop, gbp, type PricePoint } from "../lib/priceHistory";
+import { PriceChart } from "./PriceChart";
 import { trackMilestone } from "../lib/stats";
 import { listingKey } from "../lib/listingKey";
 
@@ -26,6 +28,8 @@ export function ListingCard({
   saved,
   onToggleSave,
   isNew,
+  priceSeries,
+  today,
 }: {
   listing: Listing;
   matchScore?: number;
@@ -38,8 +42,12 @@ export function ListingCard({
   onToggleSave?: () => void;
   /** first seen since this person last visited */
   isNew?: boolean;
+  /** this home's rent history when it really changed (lib/priceHistory.ts) */
+  priceSeries?: PricePoint[];
+  today?: string;
 }) {
   const { summary } = listing;
+  const drop = latestDrop(priceSeries);
   const allPhotos = listing.photo_urls.length > 0
     ? listing.photo_urls
     : [summary.thumbnail_url].filter((u): u is string => Boolean(u));
@@ -147,6 +155,7 @@ export function ListingCard({
         <div className="listing-card__tags">
           <span className="listing-card__agency">{listing.agency_name}</span>
           {isNew && <span className="listing-card__new">New</span>}
+          {drop && <span className="listing-card__drop">↓ {gbp(drop.amount)}</span>}
           {summary.status && <span className="listing-card__status">{summary.status}</span>}
         </div>
         {matchScore != null && (
@@ -193,6 +202,7 @@ export function ListingCard({
             </button>
           )}
         </div>
+        {priceSeries && priceSeries.length >= 2 && today && <PriceChart series={priceSeries} today={today} />}
         {summary.price_flag && (
           <p className="listing-card__price-flag">Price looks off — check with the agency</p>
         )}

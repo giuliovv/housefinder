@@ -1067,3 +1067,13 @@
 .app__new-chip--on { background: var(--rust); border-color: var(--rust); color: #fff; }
 .listing-card__new { background: #c9a227; color: #fff; font-size: 0.7rem; font-weight: 700; padding: 3px 9px; border-radius: 20px; text-transform: uppercase; }
 .sheet__hint { font-size: 11.5px; color: var(--muted); margin: 6px 0 16px; }
+
+/* ── Price history ───────────────────────────────────────────────────── */
+.listing-card__drop { background: #fff; color: var(--rust); border: 1px solid var(--rust); font-size: 0.7rem; font-weight: 700; padding: 2px 8px; border-radius: 20px; }
+.price-chart { margin: 8px 0 2px; }
+.price-chart svg { display: block; width: 100%; height: auto; }
+.price-chart__line { fill: none; stroke: var(--rust); stroke-width: 2; stroke-linejoin: round; stroke-linecap: round; }
+.price-chart__dot { fill: var(--rust); stroke: #fff; stroke-width: 2; }
+.price-chart__axis { stroke: var(--border); stroke-width: 1; }
+.price-chart__label { font-size: 12px; font-weight: 600; fill: var(--ink); }
+.price-chart__caption { font-size: 11.5px; color: var(--muted); margin-top: 2px; }
