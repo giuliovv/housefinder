@@ -58,6 +58,47 @@ def is_junk(p: np.ndarray) -> np.ndarray:
     return p[:, 2] >= JUNK_MIN
 
 
+# --- Outdoor spaces seen in photos: garden / terrace / balcony ------------------------------------------------------
+#
+# Listing text is silent about a garden or terrace for many homes (no description at all for ~27%), but the photos show
+# it. Zero-shot, like the classes above: each photo is scored against prompts for garden / terrace / balcony and against
+# the interior and exterior prompts as the alternatives, softmax over the five. A listing "has" a feature when its best
+# photo clears the bar. The bars come from looking at contact sheets of homes whose text did NOT mention the feature:
+# gardens at 0.6 were 20 of 20 real gardens; terraces at 0.6 were only about 60% right (facades, a car park, an interior)
+# but 9 of 9 at 0.9; balconies at 0.7 were about half right (interiors with French doors), hence 0.9 for both.
+OUTDOOR_PROMPTS_PATH = pathlib.Path(__file__).parent / "data" / "outdoor_prompts.json"
+OUTDOOR_FEATURES = {"garden": 0.6, "terrace": 0.9, "balcony": 0.9}
+_outdoor_cache: tuple[np.ndarray, np.ndarray] | None = None
+
+
+def _outdoor_matrix() -> tuple[np.ndarray, np.ndarray]:
+    """Prompt vectors and their class index over (garden, terrace, balcony, interior, exterior)."""
+    global _outdoor_cache
+    if _outdoor_cache is None:
+        names = list(OUTDOOR_FEATURES) + ["interior", "exterior"]
+        base = json.loads(PROMPTS_PATH.read_text())["prompts"]
+        extra = json.loads(OUTDOOR_PROMPTS_PATH.read_text())["prompts"]
+        rows = [(p["class"], p["vector"]) for p in extra] + [(p["class"], p["vector"]) for p in base if p["class"] in ("interior", "exterior")]
+        vectors = np.asarray([v for _, v in rows], dtype=np.float32)
+        vectors /= np.linalg.norm(vectors, axis=1, keepdims=True) + 1e-9
+        _outdoor_cache = (vectors, np.asarray([names.index(c) for c, _ in rows]))
+    return _outdoor_cache
+
+
+def outdoor_features(vectors: np.ndarray) -> list[str]:
+    """(N, 512) embeddings of ONE listing's photos -> the outdoor features its photos show."""
+    prompts, owner = _outdoor_matrix()
+    v = np.asarray(vectors, dtype=np.float32)
+    v = v / (np.linalg.norm(v, axis=1, keepdims=True) + 1e-9)
+    sims = v @ prompts.T
+    per_class = np.stack([sims[:, owner == c].max(axis=1) for c in range(5)], axis=1)
+    z = LOGIT_SCALE * per_class
+    z -= z.max(axis=1, keepdims=True)
+    p = np.exp(z)
+    p /= p.sum(axis=1, keepdims=True)
+    return [name for i, (name, bar) in enumerate(OUTDOOR_FEATURES.items()) if p[:, i].max() >= bar]
+
+
 def is_deck_worthy(p: np.ndarray) -> np.ndarray:
     return p[:, 0] >= INTERIOR_MIN
 

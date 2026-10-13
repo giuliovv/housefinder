@@ -28,7 +28,7 @@ export interface Listing {
   /** not seen in the agency's results recently, so availability can't be confirmed */
   unverified?: boolean;
   /** read from the listing text by scraper/attributes.py; `amenities` is what the text says the home has */
-  attributes?: { amenities?: string[] };
+  attributes?: { amenities?: string[]; seen_in_photos?: string[] };
 }
 
 /** listing key = `${platform}:${source_id}` — matches scraper/embeddings.py's _listing_key */

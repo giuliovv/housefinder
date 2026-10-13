@@ -40,7 +40,7 @@ def test_build_writes_consistent_files(tmp_path):
 
     stats = ee.build(emb, listings, tmp_path / "out")
 
-    assert stats == {"listings": 2, "photos": 3, "deck": 4, "dead": 0, "junk": 0}
+    assert {k: v for k, v in stats.items() if k != "outdoor_changed"} == {"listings": 2, "photos": 3, "deck": 4, "dead": 0, "junk": 0}
     index = json.loads((tmp_path / "out/ranking-index.json").read_text())
     assert index["count"] == 3
     assert [(l["k"], l["o"], l["u"]) for l in index["listings"]] == [("p:1", 0, ["a1", "a2"]), ("p:2", 2, ["b1"])]
@@ -132,3 +132,25 @@ def test_junk_is_left_out_of_the_ranking_and_only_clear_rooms_reach_the_deck(tmp
     deck_urls = {d["u"] for d in json.loads((tmp_path / "out/deck.json").read_text())["photos"]}
     assert deck_urls == {"kitchen"}                                      # a garden isn't a taste signal either
     assert stats["junk"] == 1
+
+
+def test_outdoor_features_come_from_the_photos():
+    import json as _json
+
+    import numpy as np
+
+    from scraper import photo_classes
+
+    outdoor = _json.loads(photo_classes.OUTDOOR_PROMPTS_PATH.read_text())["prompts"]
+
+    def vec(cls: str, text_start: str) -> list[float]:
+        base = next(np.asarray(p["vector"], dtype=np.float32) for p in outdoor if p["class"] == cls and p["text"].startswith(text_start))
+        return (base / np.linalg.norm(base)).tolist()
+
+    from tests.vecs import room
+
+    garden = np.asarray([vec("garden", "a back garden with a lawn"), room(1)], dtype=np.float32)
+    assert photo_classes.outdoor_features(garden) == ["garden"]
+    terrace = np.asarray([vec("terrace", "a photo of a roof terrace")], dtype=np.float32)
+    assert "terrace" in photo_classes.outdoor_features(terrace)
+    assert photo_classes.outdoor_features(np.asarray([room(2), room(3)], dtype=np.float32)) == []

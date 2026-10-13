@@ -406,3 +406,13 @@ Foxtons/Savills/Hamptons/Chestertons: see above (Foxtons added; the others robot
   named after the Reapit reference) and Hudsons (Marylebone/Bloomsbury, ~10 homes, one page). **Estateology skipped:** 2 MB pages that time out when
   asked for more than 10 rows, and 9 of every 10 rows are already let (1 available). Knight Frank: the lettings pages are an empty shell filled by their
   private API (`api-v2.web.prd-knightfrank.com`, returns an error to an honest client): not pursued, same stance as Savills.
+
+## Features from photos (2026-10-14)
+Idea from the user: the "your style so far" words already surface "garden" when you swipe right on gardens. Those labels only rank
+*within* the taste direction, they are not a detector (raw cosine to "Private garden" vs the text-derived garden flag: AUC 0.48). A proper
+zero-shot detector (garden/terrace/balcony prompt sets vs the interior/exterior prompts, softmax, best photo per listing) reaches AUC
+0.79 / 0.66 / 0.76 against the text flags, and on contact sheets of homes whose text did not mention it: gardens at p>=0.6 were 20/20 real,
+terraces at 0.9 were 9/9 (0.6 was ~60%), balconies at 0.7 only ~50% (interiors with French doors), so terrace and balcony need 0.9.
+Implemented in `scraper/photo_classes.outdoor_features` and stored in each listing's `attributes.seen_in_photos` by
+`export_embeddings`; the Browse "Must have" filter uses text amenities OR photo-seen. On the live data: 361 gardens, 144 terraces, 26 balconies
+seen in photos. Weak spots: communal gardens and parks count as gardens; balcony detection is conservative.

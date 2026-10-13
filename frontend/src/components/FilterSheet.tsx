@@ -116,7 +116,7 @@ export function FilterSheet({
             </button>
           ))}
         </div>
-        <p className="sheet__hint">Read from each listing's text. A home that doesn't mention a feature isn't shown.</p>
+        <p className="sheet__hint">From each listing's text, plus gardens, terraces and balconies spotted in its photos. A home that shows none of it isn't listed.</p>
 
         <p className="sheet__label">Minimum bathrooms</p>
         <div className="sheet__row sheet__row--wrap">

@@ -176,7 +176,7 @@ function App() {
     if (minBedrooms !== "any" || maxBedrooms !== "any") {
       rows = rows.filter((l) => matchesBedrooms(l.summary.bedrooms, minBedrooms, maxBedrooms));
     }
-    if (features.length > 0) rows = rows.filter((l) => hasFeatures(l.attributes?.amenities, features));
+    if (features.length > 0) rows = rows.filter((l) => hasFeatures([...(l.attributes?.amenities ?? []), ...(l.attributes?.seen_in_photos ?? [])], features));
     if (minBathrooms !== "any") {
       const n = Number(minBathrooms);
       rows = rows.filter((l) => l.summary.bathrooms !== null && l.summary.bathrooms >= n);

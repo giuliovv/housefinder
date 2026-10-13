@@ -80,6 +80,7 @@ def build(embeddings_path: pathlib.Path, listings: list[dict], out_dir: pathlib.
 
     # url, quantized vector, scale, deck_worthy (clearly a room), junk (not the property: view/EPC/plan/map/logo)
     entries: dict[str, list[tuple[str, np.ndarray, float, bool, bool]]] = {}
+    seen_outdoors: dict[str, list[str]] = {}   # listing key -> garden / terrace / balcony visible in its photos
     with open(embeddings_path, "rb") as f:
         for key, entry in ijson.kvitems(f, "", use_float=True):
             if key in alias and key not in known and embedding_belongs_to(by_key[alias[key]], entry):
@@ -91,6 +92,7 @@ def build(embeddings_path: pathlib.Path, listings: list[dict], out_dir: pathlib.
                 probs = photo_classes.probabilities(np.asarray([p["embedding"] for p in photos], dtype=np.float32))
                 deck_ok, junk = photo_classes.is_deck_worthy(probs), photo_classes.is_junk(probs)
                 entries[key] = [(p["url"], *quantize(p["embedding"]), bool(deck_ok[i]), bool(junk[i])) for i, p in enumerate(photos)]
+                seen_outdoors[key] = photo_classes.outdoor_features(np.asarray([p["embedding"] for p in photos], dtype=np.float32))
 
     # Deck: per listing the photos with the smallest hash — among those that are clearly rooms
     # (taste is learned from interiors; no skylines, floor plans, facades) — then globally by
@@ -160,7 +162,16 @@ def build(embeddings_path: pathlib.Path, listings: list[dict], out_dir: pathlib.
     if health is not None:
         health.save()
     junk_photos = sum(1 for k in entries if k in browseable for t in entries[k] if t[4])
-    return {"listings": len(index), "photos": len(rows), "deck": len(deck), "dead": len(dead), "junk": junk_photos}
+    outdoor_changed = 0
+    for key, seen in seen_outdoors.items():
+        attrs = by_key[key].setdefault("attributes", {})
+        if seen != attrs.get("seen_in_photos", []):
+            if seen:
+                attrs["seen_in_photos"] = seen
+            else:
+                attrs.pop("seen_in_photos", None)
+            outdoor_changed += 1
+    return {"listings": len(index), "photos": len(rows), "deck": len(deck), "dead": len(dead), "junk": junk_photos, "outdoor_changed": outdoor_changed}
 
 
 def check_consistency(listings: list[dict], out_dir: pathlib.Path, minimum: float = 0.6) -> float:
@@ -197,6 +208,9 @@ def main() -> None:
     if migrate_rows(listings):
         args.listings.write_text(json.dumps(listings, ensure_ascii=False, indent=2))
     stats = build(args.embeddings, listings, args.out_dir, health)
+    if stats["outdoor_changed"]:   # gardens / terraces / balconies seen in photos are part of the data the site filters on
+        args.listings.write_text(json.dumps(listings, ensure_ascii=False, indent=2))
+        print(f"outdoor features from photos updated for {stats['outdoor_changed']} listings")
     check_consistency(listings, args.out_dir)
     ranking = (args.out_dir / "ranking.bin").stat().st_size / 1e6
     print(f"ranking: {stats['listings']} listings, {stats['photos']} photos ({ranking:.1f} MB); deck: {stats['deck']} photos; dead photos hidden: {stats['dead']}; non-property photos left out of ranking: {stats['junk']}")
