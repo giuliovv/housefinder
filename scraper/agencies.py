@@ -397,4 +397,8 @@ AGENCIES: dict[str, AgencyConfig] = {
         key="plazaestates", name="Plaza Estates", platform="themed", theme="plaza",
         search_url="https://plazaestates.co.uk/property-to-rent/", london_only=True,
     ),
+    "obprivate": AgencyConfig(
+        key="obprivate", name="OB Private", platform="themed", theme="obprivate",
+        search_url="https://www.obprivate.co.uk/property/property-to-rent/", london_only=True,
+    ),
 }

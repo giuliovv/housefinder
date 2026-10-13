@@ -19,4 +19,10 @@ THEMES: dict[str, Theme] = {
         card="div.grid-box-card", address=".property-archive-title h4", price=".property-archive-price",
         beds=".property-types li:first-child", status=".property-label span", id_from_url=r"/([^/]+)/?$",
     ),
+    # obprivate.co.uk — WordPress, `PropertyCard` blocks; the unit ("per month"/"per week") sits in the price block's label
+    "obprivate": Theme(
+        card="div.PropertyCard", link="a.PropertyCard__link", address=".PropertyCard__title",
+        price=".PropertyCard__price", beds=".PropertyCard__icons li:nth-child(1)", baths=".PropertyCard__icons li:nth-child(2)",
+        id_from_url=r"/property/([^/]+)/?$", page_path="page/{n}/",
+    ),
 }

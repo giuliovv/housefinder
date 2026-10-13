@@ -16,6 +16,7 @@ from collections.abc import Iterator
 from dataclasses import dataclass
 from urllib.parse import urljoin, urlparse
 
+import requests
 from bs4 import BeautifulSoup, Tag
 
 from . import http
@@ -37,10 +38,13 @@ class Theme:
     photos_scope: str | None = None  # selector for the detail page's main content (keeps out related-property blocks)
     description: str | None = None
     id_from_url: str = r"/([^/]+)/?$"  # regex over the detail url; group 1 is the source id
+    # Build page N as `<search url>/<page_path>` instead of following the "next" link (for sites whose next link leads
+    # to a different results list). A 404 past the last page ends the search.
+    page_path: str | None = None
     address_sep: str = ", "
 
 
-_NEXT_TEXT = {"next", ">", "›", "»", "next ›", "next »", "next page"}
+_NEXT_TEXT = {"next", ">", "›", "»", "→", "next ›", "next »", "next →", "next page"}
 _IMG_EXT = re.compile(r"\.(?:jpe?g|png|webp)(?:\?|$)", re.IGNORECASE)
 _JUNK = re.compile(r"logo|icon|avatar|sprite|flag|placeholder|favicon|badge|banner|team|staff|blank", re.IGNORECASE)
 _SIZE_SUFFIX = re.compile(r"-\d{2,4}x\d{2,4}(?=\.\w+$)")
@@ -67,6 +71,7 @@ def _largest(url: str) -> str:
 
 def gather_photos(soup: BeautifulSoup, page_url: str, scope: str | None = None) -> list[str]:
     """The property's own photos. `og:image` anchors the search (same folder, or sharing its long number)."""
+    raw_html = str(soup)  # before pruning: some sites keep their gallery in lightbox JSON or <noscript>, not <img>
     root = (soup.select_one(scope) if scope else None) or soup
     for junk in root.select("footer, nav, header, [class*=similar], [class*=related], [class*=recommend]"):
         junk.decompose()
@@ -79,10 +84,22 @@ def gather_photos(soup: BeautifulSoup, page_url: str, scope: str | None = None) 
             first = raw.split(",")[0].strip().split(" ")[0]
             if _IMG_EXT.search(first) and not _JUNK.search(first):
                 urls.append(_largest(urljoin(page_url, first)))
+    urls += [_largest(u) for u in re.findall(r"https?://[^\"'\s)\\<>]+?\.(?:jpe?g|png|webp)(?:\?[^\"'\s)\\<>]*)?", raw_html, re.IGNORECASE) if not _JUNK.search(u)]
     og = soup.find("meta", attrs={"property": "og:image"})
     anchor = urljoin(page_url, og["content"]) if og is not None and og.get("content") else None
     ordered = list(dict.fromkeys(urls))
     if anchor:
+        # Some sites name every photo of a property after one reference ("NHG260579_01.jpg", "_02", ...) and serve them
+        # through an image CDN with many size variants: keep one URL per file name that shares the reference.
+        stem = re.sub(r"[_\-]?\d+$", "", anchor.rsplit("/", 1)[1].rsplit(".", 1)[0])
+        if len(stem) >= 5:
+            by_name: dict[str, str] = {}
+            for u in ordered:
+                name = u.rsplit("/", 1)[1]
+                if name.startswith(stem):
+                    by_name.setdefault(name.split("?")[0], anchor.rsplit("/", 1)[0] + "/" + name.split("?")[0])
+            if len(by_name) >= 2:
+                return [by_name[k] for k in sorted(by_name)][:30]
         folder = anchor.rsplit("/", 1)[0]
         numbers = set(re.findall(r"\d{5,}", anchor.rsplit("/", 1)[1]))
         mine = [u for u in ordered if u.rsplit("/", 1)[0] == folder or any(n in u for n in numbers)]
@@ -111,10 +128,15 @@ class ThemedScraper(PlatformScraper):
     def search(self, agency: str, search_url: str, max_pages: int = 5) -> Iterator[ListingSummary]:
         seen: set[str] = set()
         url: str | None = search_url
-        for _ in range(max_pages):
+        for page in range(1, max_pages + 1):
             if url is None:
                 return
-            soup = BeautifulSoup(http.get(url, user_agent=self.user_agent), "html.parser")
+            try:
+                soup = BeautifulSoup(http.get(url, user_agent=self.user_agent), "html.parser")
+            except requests.HTTPError as exc:
+                if page > 1 and exc.response is not None and exc.response.status_code == 404:
+                    return
+                raise
             new = 0
             for card in soup.select(self.theme.card):
                 summary = self._parse_card(agency, card, url)
@@ -122,7 +144,10 @@ class ThemedScraper(PlatformScraper):
                     seen.add(summary.source_id)
                     new += 1
                     yield summary
-            nxt = next_url(soup, url)
+            if self.theme.page_path:
+                nxt = search_url.rstrip("/") + "/" + self.theme.page_path.format(n=page + 1)
+            else:
+                nxt = next_url(soup, url)
             if new == 0 or nxt == url:
                 return
             url = nxt

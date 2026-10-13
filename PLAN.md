@@ -399,3 +399,6 @@ Bargets (ultra-prime, 15 available), Hudsons (Marylebone, card markup unclear), 
 Benham & Reeves (Reapit site, 36 links), Burghleys, Johns & Co (Battersea), Lurot Brand (Property Hive variant, 0 results with stock theme),
 Naylius McKenzie / Paul Lee (the same "streeten" vendor, 0 results with stock theme), KFH / Martin & Co (Gatsby / franchise).
 Foxtons/Savills/Hamptons/Chestertons: see above (Foxtons added; the others robots-blocked or behind bot protection).
+- 2026-10-13: added OB Private (obprivate.co.uk; Mayfair/Hyde Park/Notting Hill/Chelsea prime lettings, ~164 rows) through the selector scraper
+  (`obprivate` theme: `PropertyCard` blocks, unit in the price label, paging by `/page/N/` because their "next" link leads to a different
+  results list, photos named after one reference through an image CDN). Photo gathering also reads image URLs from the raw HTML now.

@@ -52,3 +52,12 @@ def test_photo_gathering_keeps_the_gallery_and_drops_related_and_furniture() -> 
     photos = gather_photos(BeautifulSoup(html, "html.parser"), "https://s.test/p/555/")
     assert photos == ["https://s.test/up/2026/1_555_IMG.jpg", "https://s.test/up/2026/2_555_IMG.jpg", "https://s.test/up/2026/3_555_IMG.jpg"]
     assert not any("777" in p or "logo" in p or "team" in p for p in photos)
+
+
+def test_photos_named_after_one_reference_are_collected_across_cdn_size_variants() -> None:
+    html = """<html><head><meta property="og:image" content="https://cdn.test/o/up/2026/09/NHG260579_08.jpg"></head><body>
+    <img src="https://cdn.test/o/tr:w-1600/up/2026/09/NHG260579_01.jpg"><img data-src="https://cdn.test/o/tr:w-800/up/2026/09/NHG260579_01.jpg">
+    <img data-src="https://cdn.test/o/tr:w-1600/up/2026/09/NHG260579_02.jpg"><img src="https://cdn.test/o/tr:w-1600/up/2026/09/NHG260579_08.jpg">
+    <img src="https://cdn.test/o/tr:w-400/up/2024/10/shutterstock_209.jpg"></body></html>"""
+    photos = gather_photos(BeautifulSoup(html, "html.parser"), "https://x.test/p/")
+    assert photos == [f"https://cdn.test/o/up/2026/09/NHG260579_{n}.jpg" for n in ("01", "02", "08")]
