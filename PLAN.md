@@ -402,3 +402,7 @@ Foxtons/Savills/Hamptons/Chestertons: see above (Foxtons added; the others robot
 - 2026-10-13: added OB Private (obprivate.co.uk; Mayfair/Hyde Park/Notting Hill/Chelsea prime lettings, ~164 rows) through the selector scraper
   (`obprivate` theme: `PropertyCard` blocks, unit in the price label, paging by `/page/N/` because their "next" link leads to a different
   results list, photos named after one reference through an image CDN). Photo gathering also reads image URLs from the raw HTML now.
+- 2026-10-14: added Benham & Reeves (benhams.com; ~168 lettings across London, mostly zones 2-3 plus some Chelsea/Kensington; paging by `?page=N`, photos
+  named after the Reapit reference) and Hudsons (Marylebone/Bloomsbury, ~10 homes, one page). **Estateology skipped:** 2 MB pages that time out when
+  asked for more than 10 rows, and 9 of every 10 rows are already let (1 available). Knight Frank: the lettings pages are an empty shell filled by their
+  private API (`api-v2.web.prd-knightfrank.com`, returns an error to an honest client): not pursued, same stance as Savills.

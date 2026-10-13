@@ -35,12 +35,14 @@ class Theme:
     beds: str | None = None         # selector whose first number is the bedroom count
     baths: str | None = None
     status: str | None = None       # selector for a "Let Agreed" style pill
+    status_marker: tuple[str, str] | None = None  # (selector, label): the label is the status when the selector is present (a "let" banner image)
     photos_scope: str | None = None  # selector for the detail page's main content (keeps out related-property blocks)
     description: str | None = None
     id_from_url: str = r"/([^/]+)/?$"  # regex over the detail url; group 1 is the source id
     # Build page N as `<search url>/<page_path>` instead of following the "next" link (for sites whose next link leads
     # to a different results list). A 404 past the last page ends the search.
     page_path: str | None = None
+    page_param: str | None = None   # or a query parameter: `<search url>?<page_param>=N`
     address_sep: str = ", "
 
 
@@ -144,7 +146,9 @@ class ThemedScraper(PlatformScraper):
                     seen.add(summary.source_id)
                     new += 1
                     yield summary
-            if self.theme.page_path:
+            if self.theme.page_param:
+                nxt = f"{search_url}{'&' if '?' in search_url else '?'}{self.theme.page_param}={page + 1}"
+            elif self.theme.page_path:
                 nxt = search_url.rstrip("/") + "/" + self.theme.page_path.format(n=page + 1)
             else:
                 nxt = next_url(soup, url)
@@ -162,7 +166,8 @@ class ThemedScraper(PlatformScraper):
         if not href:
             return None
         url = urljoin(page_url, href)
-        m = re.search(t.id_from_url, urlparse(url).path)
+        parsed = urlparse(url)
+        m = re.search(t.id_from_url, parsed.path + (f"?{parsed.query}" if parsed.query else ""))
         if m is None:
             return None
         address = t.address_sep.join(x for x in (_text(n) for n in card.select(t.address)) if x)
@@ -172,8 +177,11 @@ class ThemedScraper(PlatformScraper):
 
         def count(selector: str | None) -> int | None:
             node = card.select_one(selector) if selector else None
-            n = re.search(r"\d+", _text(node)) if node is not None else None
-            return int(n.group()) if n else None
+            text = _text(node) if node is not None else ""
+            n = re.search(r"\d+", text)
+            if n:
+                return int(n.group())
+            return 0 if re.search(r"\bstudio\b", text, re.IGNORECASE) else None
 
         img = card.select_one("img")
         thumb = (img.get("src") or img.get("data-src")) if img is not None else None
@@ -189,7 +197,8 @@ class ThemedScraper(PlatformScraper):
             bathrooms=count(t.baths),
             receptions=None,
             thumbnail_url=urljoin(page_url, thumb) if thumb else None,
-            status=_text(card.select_one(t.status)) or None if t.status else None,
+            status=(_text(card.select_one(t.status)) or None if t.status else None)
+            or (t.status_marker[1] if t.status_marker and card.select_one(t.status_marker[0]) else None),
         )
 
     def detail(self, agency: str, summary: ListingSummary) -> ListingDetail:

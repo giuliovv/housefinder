@@ -25,4 +25,15 @@ THEMES: dict[str, Theme] = {
         price=".PropertyCard__price", beds=".PropertyCard__icons li:nth-child(1)", baths=".PropertyCard__icons li:nth-child(2)",
         id_from_url=r"/property/([^/]+)/?$", page_path="page/{n}/",
     ),
+    # benhams.com (Benham & Reeves) — Bootstrap cards; the price block carries "£x per week (£y per month)"
+    "benhams": Theme(
+        card="div.card", link="a.btn-info", address="h2.card-title a", price="h3.price",
+        beds=".property-features li:nth-child(1)", baths=".property-features li:nth-child(2)",
+        id_from_url=r"/([^/]+)/?$", page_param="page",
+    ),
+    # hudsonsproperty.com — WordPress + Tailwind; one page of ~10 current lettings, no paging
+    "hudsons": Theme(
+        card="div.shadow-lg", link="a.group", address="h3, div.uppercase", price="span.font-light", beds=".text-body",
+        id_from_url=r"/property/([^/]+)/?$",
+    ),
 }

@@ -13,7 +13,7 @@ _NUMBER_RE = re.compile(r"[\d,]+(?:\.\d+)?")
 _WEEKS_PER_MONTH = 52 / 12  # standard convention for pw -> pcm conversion
 
 
-_STATUS_PREFIX = re.compile(r"^\s*(?:to\s+let|to\s+rent|for\s+rent|available|let)\s*[:\-–]\s*", re.IGNORECASE)
+_STATUS_PREFIX = re.compile(r"^\s*(?:to\s+let|to\s+rent|for\s+rent|long\s+let|short\s+let|available|let)\s*[:\-–]\s*", re.IGNORECASE)
 
 
 def clean_price_text(text: str | None) -> str:

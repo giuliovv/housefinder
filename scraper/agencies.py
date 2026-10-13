@@ -401,4 +401,12 @@ AGENCIES: dict[str, AgencyConfig] = {
         key="obprivate", name="OB Private", platform="themed", theme="obprivate",
         search_url="https://www.obprivate.co.uk/property/property-to-rent/", london_only=True,
     ),
+    "benhamandreeves": AgencyConfig(
+        key="benhamandreeves", name="Benham & Reeves", platform="themed", theme="benhams",
+        search_url="https://www.benhams.com/properties-to-rent/", london_only=True,
+    ),
+    "hudsons": AgencyConfig(
+        key="hudsons", name="Hudsons Property", platform="themed", theme="hudsons",
+        search_url="https://www.hudsonsproperty.com/property-lettings/", london_only=True,
+    ),
 }

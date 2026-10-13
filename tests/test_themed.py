@@ -61,3 +61,28 @@ def test_photos_named_after_one_reference_are_collected_across_cdn_size_variants
     <img src="https://cdn.test/o/tr:w-400/up/2024/10/shutterstock_209.jpg"></body></html>"""
     photos = gather_photos(BeautifulSoup(html, "html.parser"), "https://x.test/p/")
     assert photos == [f"https://cdn.test/o/up/2026/09/NHG260579_{n}.jpg" for n in ("01", "02", "08")]
+
+
+def test_benhams_cards_use_the_monthly_figure_and_the_reference_as_id(monkeypatch) -> None:
+    rows = _rows("benhams", "benhams", monkeypatch, "https://www.benhams.com/properties-to-rent/")
+    assert len(rows) >= 20
+    r = rows[0]
+    assert r.price_text.startswith("£") and "per week" in r.price_text and r.price_pcm and r.price_pcm > 300
+    m = re.search(r"\(£([\d,]+) per month\)", r.price_text)
+    assert m and r.price_pcm == float(m.group(1).replace(",", ""))  # the stated monthly figure, not the weekly one converted
+    assert re.fullmatch(r"[a-z]{3}\d{6}|\d+", r.source_id), r.source_id
+
+
+def test_studio_counts_as_zero_bedrooms(monkeypatch) -> None:
+    html = '<div class="card"><h2 class="card-title"><a href="/p/x/ab123/">Road, NW9</a></h2><h3 class="price">£300 pcm</h3><a class="btn-info" href="/p/x/ab123/">d</a><div class="property-features"><ul><li>Studio</li></ul></div></div>'
+    monkeypatch.setattr(http, "get", lambda u, **kw: html)
+    rows = list(ThemedScraper(THEMES["benhams"]).search("x", "https://x.test/p/", max_pages=1))
+    assert rows[0].bedrooms == 0
+
+
+def test_hudsons_card_with_both_prices(monkeypatch) -> None:
+    rows = _rows("hudsons", "hudsons", monkeypatch, "https://www.hudsonsproperty.com/property-lettings/")
+    assert len(rows) >= 5
+    r = rows[0]
+    assert "pcm" in r.price_text and r.price_pcm and r.price_pcm > 1000  # the stated monthly figure, not the weekly one
+    assert r.bedrooms is not None and r.address and r.source_id
