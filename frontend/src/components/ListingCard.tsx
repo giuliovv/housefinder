@@ -25,6 +25,7 @@ export function ListingCard({
   onRate,
   saved,
   onToggleSave,
+  isNew,
 }: {
   listing: Listing;
   matchScore?: number;
@@ -35,6 +36,8 @@ export function ListingCard({
   onRate?: (photoId: string, choice: SwipeChoice) => void;
   saved?: boolean;
   onToggleSave?: () => void;
+  /** first seen since this person last visited */
+  isNew?: boolean;
 }) {
   const { summary } = listing;
   const allPhotos = listing.photo_urls.length > 0
@@ -142,6 +145,7 @@ export function ListingCard({
 
         <div className="listing-card__tags">
           <span className="listing-card__agency">{listing.agency_name}</span>
+          {isNew && <span className="listing-card__new">New</span>}
           {summary.status && <span className="listing-card__status">{summary.status}</span>}
         </div>
         {matchScore != null && (

@@ -11,6 +11,7 @@ import { trackEvent, trackMilestone, trackVisit } from "./lib/stats";
 import { MatchCelebration } from "./components/MatchCelebration";
 import { loadMatchState, pickMatch, saveMatchState, shouldOffer } from "./lib/matchmoment";
 import { ReadyCard } from "./components/ReadyCard";
+import { browserStores, newKeys, newestDay, startVisit } from "./lib/newsince";
 import { matchesBedrooms, reconcileBedrooms } from "./lib/bedrooms";
 import { QuestionCard } from "./components/QuestionCard";
 import {
@@ -190,7 +191,7 @@ function App() {
     [preAreaFiltered, geo],
   );
 
-  const visible = useMemo(() => {
+  const filtered = useMemo(() => {
     let rows = preAreaFiltered;
     if (shapes.length > 0) {
       rows = rows.filter((l) => {
@@ -213,6 +214,32 @@ function App() {
       return sort === "price-asc" ? pa - pb : pb - pa;
     });
   }, [preAreaFiltered, sort, shapes, geo, matchScores]);
+
+  // "New since your last visit" (lib/newsince.ts): the day compared against is fixed for this visit
+  const [since, setSince] = useState<string | null | undefined>(undefined);
+  useEffect(() => {
+    if (!listings || since !== undefined) return;
+    const { local, session } = browserStores();
+    setSince(startVisit(newestDay(listings), local, session));
+  }, [listings, since]);
+  const newSet = useMemo(() => (listings && since ? newKeys(listings, since, listingKey) : new Set<string>()), [listings, since]);
+  const [newOnly, setNewOnly] = useState(false);
+  const [browseSeen, setBrowseSeen] = useState(false);
+  useEffect(() => {
+    if (tab === "browse") setBrowseSeen(true);
+  }, [tab]);
+  const newInView = useMemo(() => filtered.filter((l) => newSet.has(listingKey(l))), [filtered, newSet]);
+  const visible = useMemo(() => (newOnly ? newInView : filtered), [newOnly, newInView, filtered]);
+  // of the new homes, how many are among the top tenth of all matches for this person
+  const closeNew = useMemo(() => {
+    if (!matchScores || newInView.length === 0) return 0;
+    const all = Object.values(matchScores).sort((a, b) => b - a);
+    const threshold = all[Math.max(0, Math.ceil(all.length * 0.1) - 1)];
+    return newInView.filter((l) => (matchScores[listingKey(l)] ?? -Infinity) >= threshold).length;
+  }, [matchScores, newInView]);
+  useEffect(() => {
+    if (newOnly && newInView.length === 0) setNewOnly(false); // filters changed under it
+  }, [newOnly, newInView.length]);
 
   // Once a preference exists, default to showing matches first rather than
   // making the user notice the new sort option themselves. Depends on the
@@ -398,7 +425,7 @@ function App() {
           </button>
           <button className={`app__tab ${tab === "browse" ? "app__tab--active" : ""}`} onClick={() => setTab("browse")}>
             Browse
-            {!ready.browseOpened && <span className="app__tab-dot" aria-label="Your matches are ready" />}
+            {(!ready.browseOpened || (newSet.size > 0 && !browseSeen)) && <span className="app__tab-dot" aria-label="Your matches are ready" />}
           </button>
           <button className={`app__tab ${tab === "saved" ? "app__tab--active" : ""}`} onClick={() => setTab("saved")}>
             Saved{savedCount > 0 ? ` (${savedCount})` : ""}
@@ -560,6 +587,19 @@ function App() {
             </div>
           )}
 
+          {newInView.length > 0 && (
+            <div className="app__new">
+              <button className={`app__new-chip ${newOnly ? "app__new-chip--on" : ""}`} onClick={() => setNewOnly((v) => !v)}>
+                ★ {newInView.length >= 300 ? "300+" : newInView.length} new since your last visit
+                {closeNew > 0 ? ` · ${closeNew} close to your taste` : ""}
+              </button>
+              {newOnly && (
+                <button className="app__clear-btn" onClick={() => setNewOnly(false)}>
+                  Show all
+                </button>
+              )}
+            </div>
+          )}
           {pinned && (
             <div className="browse__pinned">
               <p className="browse__pinned-label">
@@ -592,6 +632,7 @@ function App() {
                 onRate={toggleSwipe}
                 saved={shortlist.saved.includes(listingKey(listing))}
                 onToggleSave={() => shortlist.toggleSave(listing)}
+                isNew={newSet.has(listingKey(listing))}
               />
             ))}
           </main>
