@@ -40,7 +40,7 @@ export function shareUrl(origin: string, boardId: string): string {
 
 export function whatsappLink(url: string, name: string | null): string {
   const who = name ? `${name} is` : "I'm";
-  const text = `${who} looking at London flats on House Finder. Here's our shared list, add the ones you like: ${url}`;
+  const text = `${who} looking at London flats on House Swipe. Here's our shared list, add the ones you like: ${url}`;
   return `https://wa.me/?text=${encodeURIComponent(text)}`;
 }
 

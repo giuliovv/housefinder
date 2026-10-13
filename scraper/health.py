@@ -97,7 +97,7 @@ def evaluate(*, history: dict, listings: list[dict], health: dict, agency_keys: 
              job_status: str, run_id: str, run_url: str, scraped: bool) -> list[Alert]:
     alerts: list[Alert] = []
     if job_status == "failure":
-        alerts.append(Alert(f"run-failed:{run_id}", "critical", "House Finder refresh run failed", f"Workflow run {run_id}: {run_url}"))
+        alerts.append(Alert(f"run-failed:{run_id}", "critical", "House Swipe refresh run failed", f"Workflow run {run_id}: {run_url}"))
     if scraped and job_status == "success":
         alerts += agency_alerts(history, agency_keys, today)
         if listings:

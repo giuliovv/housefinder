@@ -1,3 +1,4 @@
+import { FEATURES } from "../lib/features";
 type SortKey = "price-asc" | "price-desc" | "match";
 
 export function FilterSheet({
@@ -14,6 +15,8 @@ export function FilterSheet({
   setMinBedrooms,
   maxBedrooms,
   setMaxBedrooms,
+  features,
+  setFeatures,
   minBathrooms,
   setMinBathrooms,
   sort,
@@ -35,6 +38,8 @@ export function FilterSheet({
   setMinBedrooms: (v: string) => void;
   maxBedrooms: string;
   setMaxBedrooms: (v: string) => void;
+  features: string[];
+  setFeatures: (v: string[]) => void;
   minBathrooms: string;
   setMinBathrooms: (v: string) => void;
   sort: SortKey;
@@ -98,6 +103,20 @@ export function FilterSheet({
             </button>
           ))}
         </div>
+
+        <p className="sheet__label">Must have</p>
+        <div className="sheet__row sheet__row--wrap">
+          {FEATURES.map((f) => (
+            <button
+              key={f.key}
+              className={`sheet__opt ${features.includes(f.key) ? "sheet__opt--active" : ""}`}
+              onClick={() => setFeatures(features.includes(f.key) ? features.filter((k) => k !== f.key) : [...features, f.key])}
+            >
+              {f.label}
+            </button>
+          ))}
+        </div>
+        <p className="sheet__hint">Read from each listing's text. A home that doesn't mention a feature isn't shown.</p>
 
         <p className="sheet__label">Minimum bathrooms</p>
         <div className="sheet__row sheet__row--wrap">

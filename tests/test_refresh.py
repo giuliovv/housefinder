@@ -349,3 +349,28 @@ def test_new_homes_that_are_already_let_are_not_fetched_or_kept(monkeypatch):
     cfg = SimpleNamespace(key="a", name="A", london_only=False, platform="estatesit", search_url="x")
     rows, _ = export.scrape_agency(cfg, 50, 1, {})
     assert fetched == ["1", "4"] and [r["summary"]["source_id"] for r in rows] == ["1", "4"]
+
+
+def test_amenities_from_text_ignore_negations_and_address_words():
+    from scraper.attributes import detect_amenities
+
+    assert detect_amenities("Lovely flat with a private garden and off-street parking") == ["garden", "parking"]
+    assert detect_amenities("No garden, no parking. Pets not allowed.") == []
+    assert detect_amenities("Communal gardens and a roof terrace; lift and porter") == ["garden", "terrace", "lift", "concierge"]
+    assert detect_amenities("Garden Square, juliet balcony") == ["balcony"]
+    assert detect_amenities("Pets considered. Underground car park. Patio.") == ["terrace", "parking", "pets"]
+    assert detect_amenities("without a lift") == []
+
+
+def test_refresh_amenities_rewrites_old_values_from_stored_text():
+    from scraper.refresh import refresh_amenities
+
+    rows = [
+        {"description": "Bright flat with a roof terrace", "key_features": ["Garden"], "attributes": {"amenities": ["parking"]}},
+        {"description": "", "key_features": [], "attributes": {"amenities": ["lift"]}},
+        {"description": "Nice", "key_features": [], "attributes": {}},
+    ]
+    assert refresh_amenities(rows) == 2
+    assert rows[0]["attributes"]["amenities"] == ["garden", "terrace"]
+    assert "amenities" not in rows[1]["attributes"]
+    assert refresh_amenities(rows) == 0  # idempotent

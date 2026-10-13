@@ -89,6 +89,33 @@ def floor_area_sqft(text: str) -> int | None:
     return round(value) if 80 <= value <= 15000 else None
 
 
+# What the listing text says the home has. Matching is on words, not substrings, and a mention is ignored when it is
+# negated just before ("no garden", "without parking", "not allowed"). "garden" counts for private, rear, front or
+# unspecified gardens and for communal ones too: the filter is about outdoor space, the text says which kind.
+_AMENITIES: dict[str, str] = {
+    "garden": r"\b(?:private |rear |front |own |communal |shared |landscaped |walled |large |south[- ]facing )*gardens?\b(?!\s+(?:square|road|street|terrace|court|mews|house|villas?|gate|close|lane|way|row|walk|apartments?)\b)",
+    "terrace": r"\b(?:roof ?terrace|terraces?|patio|courtyard|decking|roof garden|sun ?deck)\b(?!\s+(?:house|road|street|mews|row|walk|place)\b)",
+    "balcony": r"\b(?:balcon(?:y|ies)|juliet(?:te)? balcon\w+)\b",
+    "parking": r"\b(?:parking|garage|driveway|off[- ]street|car ?port|car park|allocated space)\b",
+    "lift": r"\b(?:lifts?|elevator)\b",
+    "concierge": r"\b(?:concierge|porter(?:age)?|doorman)\b",
+    "pets": r"\bpet[- ]friendly\b|\bpets?\s+(?:are\s+)?(?:considered|allowed|accepted|welcome|negotiable|permitted)\b|\bsubject to (?:a )?pet",
+}
+_NEGATION = re.compile(r"(?:\bno|\bnot|\bwithout|\bnon|\bnever|\bunavailable|\bexcluding)\W+(?:\w+\W+){0,2}$", re.IGNORECASE)
+
+
+def detect_amenities(text: str) -> list[str]:
+    lowered = text.lower()
+    found = []
+    for name, pattern in _AMENITIES.items():
+        for m in re.finditer(pattern, lowered):
+            before = lowered[max(0, m.start() - 24) : m.start()]
+            if not _NEGATION.search(before):
+                found.append(name)
+                break
+    return found
+
+
 def extract_attributes(
     soup: BeautifulSoup | None,
     *,
@@ -153,15 +180,7 @@ def extract_attributes(
     if m:
         attrs["postcode"] = f"{m.group(1)} {m.group(2)}"
 
-    lowered = free.lower()
-    flags = {
-        "garden": r"\b(?:private |communal |rear |large |landscaped )?garden\b",
-        "balcony": r"\b(?:balcony|terrace|roof terrace)\b",
-        "parking": r"\b(?:parking|garage|driveway|off[- ]street)\b",
-        "lift": r"\b(?:lift|elevator)\b",
-        "concierge": r"\b(?:concierge|porter|doorman)\b",
-    }
-    found = [name for name, pattern in flags.items() if re.search(pattern, lowered)]
+    found = detect_amenities(free)
     if found:
         attrs["amenities"] = found
 

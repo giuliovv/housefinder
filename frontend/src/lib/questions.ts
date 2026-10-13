@@ -98,6 +98,7 @@ export interface StoredFilters {
   maxPrice: string;
   minBedrooms: string;
   maxBedrooms: string;
+  features: string[];
   minBathrooms: string;
   shapes: [number, number][][];
 }

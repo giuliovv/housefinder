@@ -1,4 +1,4 @@
-# House Finder
+# House Swipe
 
 Scrapes London rental listings from letting-agency websites, learns a user's
 interior-design style preference from a swipe-style like/dislike interface

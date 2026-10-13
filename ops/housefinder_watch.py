@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Host-side watcher: turns House Finder alerts into a message to Claude — in the
+"""Host-side watcher: turns House Swipe alerts into a message to Claude — in the
 *same* Telegram conversation — who investigates and reports back to the user.
 
 How it reaches "Claude in particular": the Telegram bridge on this host
@@ -87,7 +87,7 @@ def stale_scrape_alert(last_scrape: dict | None, now: dt.datetime) -> dict | Non
 def site_alert(status: int | None, listing_count: int | None, now: dt.datetime) -> dict | None:
     bucket = f"{now.date().isoformat()}-{now.hour // 6}"   # at most one site alert per 6h
     if status is None or status != 200:
-        return {"key": f"site-down:{bucket}", "severity": "critical", "title": "The House Finder site isn't answering",
+        return {"key": f"site-down:{bucket}", "severity": "critical", "title": "The House Swipe site isn't answering",
                 "detail": f"{SITE} returned {status}."}
     if listing_count is None or listing_count < MIN_LISTINGS:
         return {"key": f"site-empty:{bucket}", "severity": "critical", "title": "The live listings data looks wrong",
@@ -305,7 +305,7 @@ def main() -> int:
 
     ok, text = wake_claude(prompt)
     if not ok:  # the alert still has to reach the user, even if Claude couldn't be woken
-        text = "House Finder alert (Claude couldn't be woken to investigate — " + text + "):\n" + "\n".join(f"- {a['title']}: {a['detail']}" for a in new)
+        text = "House Swipe alert (Claude couldn't be woken to investigate — " + text + "):\n" + "\n".join(f"- {a['title']}: {a['detail']}" for a in new)
     try:
         send_telegram(text)
     except Exception as exc:  # noqa: BLE001

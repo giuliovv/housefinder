@@ -109,6 +109,25 @@ def merge(
     return out
 
 
+def refresh_amenities(existing: list[dict]) -> int:
+    """Re-derive each listing's amenities from its stored description and features (no requests), so improvements to the
+    detection reach homes scraped earlier. Returns how many listings changed."""
+    from .attributes import detect_amenities
+
+    changed = 0
+    for row in existing:
+        text = " ".join([row.get("description") or "", *(row.get("key_features") or [])])
+        found = detect_amenities(text)
+        attrs = row.setdefault("attributes", {})
+        if found != attrs.get("amenities", []):
+            if found:
+                attrs["amenities"] = found
+            else:
+                attrs.pop("amenities", None)
+            changed += 1
+    return changed
+
+
 def apply_price_checks(existing: list[dict]) -> int:
     """Run the price sanity check over stored rows (new scrapes already do it), so
     a fix to the rules reaches the dataset without re-requesting anything."""
@@ -258,6 +277,10 @@ def main() -> None:
         if restored:
             print(f"restored attributes for {restored} listings from history (no requests made)")
             changed = True
+    amenities_changed = refresh_amenities(existing)
+    if amenities_changed:
+        print(f"re-derived amenities for {amenities_changed} stored listings (no requests made)")
+        changed = True
     flagged = apply_price_checks(existing)
     if flagged:
         print(f"flagged {flagged} stored listings with implausible prices (no requests made)")
