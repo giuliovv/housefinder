@@ -379,7 +379,7 @@ function App() {
     }
     const total = swipeTotal + 1;
     const dislikes = dislikedCount + (choice === "dislike" ? 1 : 0);
-    if (!store || !matchScores || !rankingPreference || !shouldOffer(matchState, total, dislikes, tasteRead?.level ?? 0)) return;
+    if (!store || !matchScores || !rankingPreference || !shouldOffer(matchState, total, dislikes, tasteRead?.level ?? 0, ready.shownLevel >= 2 || visitStartLevel >= 2)) return;
     const excluded = new Set([...matchState.shown, ...shortlist.saved]);
     const key = pickMatch(
       visible.map((l) => ({ key: listingKey(l), score: matchScores[listingKey(l)] ?? -Infinity, price: l.summary.price_pcm })),

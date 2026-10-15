@@ -4,20 +4,23 @@ import { CHANCE, MIN_GAP, MIN_SWIPES, pickMatch, shouldOffer, type Candidate } f
 const fresh = { shown: [], lastAt: 0 };
 
 describe("shouldOffer", () => {
-  it("needs a real read first: enough swipes, some dislikes, a level", () => {
-    expect(shouldOffer(fresh, MIN_SWIPES - 1, 5, 2, () => 0)).toBe(false);
-    expect(shouldOffer(fresh, 30, 2, 2, () => 0)).toBe(false); // likes alone: scores aren't trustworthy
-    expect(shouldOffer(fresh, 30, 5, 0, () => 0)).toBe(false);
-    expect(shouldOffer(fresh, 30, 5, 1, () => 0)).toBe(true);
+  it("needs a real read first: enough swipes, some dislikes, a good level", () => {
+    expect(shouldOffer(fresh, MIN_SWIPES - 1, 5, 2, true, () => 0)).toBe(false);
+    expect(shouldOffer(fresh, 30, 2, 2, true, () => 0)).toBe(false); // likes alone: scores aren't trustworthy
+    expect(shouldOffer(fresh, 30, 5, 1, true, () => 0)).toBe(false); // "getting a feel" is not enough
+    expect(shouldOffer(fresh, 30, 5, 2, true, () => 0)).toBe(true);
+  });
+  it("never comes before the 'you're ready' card", () => {
+    expect(shouldOffer(fresh, 30, 5, 3, false, () => 0)).toBe(false);
   });
   it("is random, not on a schedule", () => {
-    expect(shouldOffer(fresh, 30, 5, 2, () => CHANCE - 0.001)).toBe(true);
-    expect(shouldOffer(fresh, 30, 5, 2, () => CHANCE + 0.001)).toBe(false);
+    expect(shouldOffer(fresh, 30, 5, 2, true, () => CHANCE - 0.001)).toBe(true);
+    expect(shouldOffer(fresh, 30, 5, 2, true, () => CHANCE + 0.001)).toBe(false);
   });
   it("keeps a gap after the last one, and survives a start-over", () => {
-    expect(shouldOffer({ shown: [], lastAt: 25 }, 25 + MIN_GAP - 1, 5, 2, () => 0)).toBe(false);
-    expect(shouldOffer({ shown: [], lastAt: 25 }, 25 + MIN_GAP, 5, 2, () => 0)).toBe(true);
-    expect(shouldOffer({ shown: [], lastAt: 90 }, 20, 5, 2, () => 0)).toBe(true); // count was reset below the marker
+    expect(shouldOffer({ shown: [], lastAt: 25 }, 25 + MIN_GAP - 1, 5, 2, true, () => 0)).toBe(false);
+    expect(shouldOffer({ shown: [], lastAt: 25 }, 25 + MIN_GAP, 5, 2, true, () => 0)).toBe(true);
+    expect(shouldOffer({ shown: [], lastAt: 90 }, 20, 5, 2, true, () => 0)).toBe(true); // count was reset below the marker
   });
 });
 

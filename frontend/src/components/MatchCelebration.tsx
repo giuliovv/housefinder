@@ -37,14 +37,15 @@ export function MatchCelebration({ photoUrl, price, address, matchPercent, onOpe
         ))}
       </div>
       <div className="match__card">
-        <p className="match__kicker">You and this home</p>
+        <p className="match__kicker">A home we think you'll love</p>
         <h2 className="match__title">It's a match!</h2>
         <img className="match__photo" referrerPolicy="no-referrer" src={normalizeImageUrl(photoUrl) ?? undefined} alt="" />
         <p className="match__price">{price}</p>
         <p className="match__address">{address}</p>
         {matchPercent !== null && <p className="match__score">{matchPercent}% match with your taste</p>}
+        <p className="match__more">One of the best fits so far. Browse has more like it, ranked for you.</p>
         <button className="question__continue" onClick={onOpen}>
-          See this home →
+          See it and more like it →
         </button>
         <button className="question__skip" onClick={onKeep}>
           Keep swiping

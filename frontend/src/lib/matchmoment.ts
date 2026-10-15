@@ -16,7 +16,7 @@ export interface MatchState {
 const KEY = "housefinder:matches:v1";
 export const MIN_SWIPES = 15; // enough of a read to predict from
 export const MIN_DISLIKES = 3; // likes alone give inflated, undiscriminating scores
-export const MIN_LEVEL = 1; // taste read at least "getting a feel"
+export const MIN_LEVEL = 2; // taste read at least "a good read": the same point the "you're ready" card announces
 export const MIN_GAP = 12; // swipes between moments
 export const CHANCE = 0.12; // per swipe once allowed: random, so they can't be predicted
 export const TOP_FRACTION = 0.05; // only listings in the top 5% of all matches qualify
@@ -37,10 +37,13 @@ export function shouldOffer(
   swipeTotal: number,
   dislikes: number,
   level: number,
+  readySeen: boolean,
   rand: () => number = Math.random,
 ): boolean {
   const lastAt = state.lastAt > swipeTotal ? 0 : state.lastAt; // "start over" resets the count
-  if (swipeTotal < MIN_SWIPES || dislikes < MIN_DISLIKES || level < MIN_LEVEL) return false;
+  // Matches come after the "you're ready, matches are in Browse" card, so "It's a match!" reads as a bonus and not as the
+  // moment the app finally works. (`readySeen`: that card was shown, or the person started this visit already past it.)
+  if (swipeTotal < MIN_SWIPES || dislikes < MIN_DISLIKES || level < MIN_LEVEL || !readySeen) return false;
   if (swipeTotal - lastAt < MIN_GAP) return false;
   return rand() < CHANCE;
 }
