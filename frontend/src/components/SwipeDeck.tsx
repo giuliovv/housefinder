@@ -131,13 +131,20 @@ export function SwipeDeck({
     <div className="swipe">
       {showIntro && (
         <div className="swipe__intro" role="note">
-          <p className="swipe__intro-text">
-            These are photos from a wide mix of real London homes. Swipe based on what catches your eye — we'll learn your
-            taste and find matching homes in Browse.
-          </p>
-          <p className="swipe__intro-hint">Right or ♥ = like · left or ✕ = pass</p>
+          <h2 className="swipe__intro-title">Find a London home that feels like you</h2>
+          <ol className="swipe__intro-steps">
+            <li>
+              <strong>Swipe</strong> on photos: ♥ or right to like, ✕ or left to pass
+            </li>
+            <li>
+              <strong>We learn</strong> your taste from what you like
+            </li>
+            <li>
+              <strong>You get</strong> real homes that match, ranked for you
+            </li>
+          </ol>
           <button className="swipe__intro-btn" onClick={dismissIntro}>
-            Got it
+            Start swiping
           </button>
         </div>
       )}
