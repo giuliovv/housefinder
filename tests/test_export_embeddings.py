@@ -154,3 +154,19 @@ def test_outdoor_features_come_from_the_photos():
     terrace = np.asarray([vec("terrace", "a photo of a roof terrace")], dtype=np.float32)
     assert "terrace" in photo_classes.outdoor_features(terrace)
     assert photo_classes.outdoor_features(np.asarray([room(2), room(3)], dtype=np.float32)) == []
+
+
+def test_browse_json_keeps_only_live_rows_and_the_fields_the_cards_use():
+    from scraper.export_embeddings import build_browse
+
+    def row(sid, **extra):
+        return {"summary": {"platform": "p", "source_id": sid, "agency": "a"}, "description": "d" * 500, "key_features": ["x"],
+                "photo_urls": [f"u{i}" for i in range(30)], "agency_name": "A", "first_seen": "2026-10-10", "last_seen": "2026-10-15",
+                "attributes": {"amenities": ["garden"], "seen_in_photos": ["terrace"], "lat": 51.5, "floor_area_sqft": 900}, **extra}
+
+    out = build_browse([row("1"), row("2", off_market=True), row("3", unverified=True)])
+    assert [o["summary"]["source_id"] for o in out] == ["1"]
+    o = out[0]
+    assert len(o["description"]) == 160 and len(o["photo_urls"]) == 12
+    assert o["attributes"] == {"amenities": ["garden"], "seen_in_photos": ["terrace"]}
+    assert "key_features" not in o and "last_seen" not in o

@@ -68,6 +68,32 @@ def is_browseable(row: dict) -> bool:
     return not row.get("off_market") and not row.get("unverified")
 
 
+BROWSE_DESCRIPTION_CHARS = 160   # the card shows 140
+BROWSE_PHOTOS = 12               # the card carousel; matches how many photos get embedded per listing
+
+
+def build_browse(listings: list[dict]) -> list[dict]:
+    """What the Browse tab needs, and nothing else: the live listings with the fields the cards use, trimmed.
+
+    The full listings.json (pipeline state: descriptions, every photo, off-market rows) is ~15 MB, above the 10 MB CloudFront
+    will compress, so it reached phones as 15 MB. This slim copy is ~5 MB raw and compresses to well under 1 MB."""
+    out = []
+    for row in listings:
+        if not is_browseable(row):
+            continue
+        attrs = row.get("attributes") or {}
+        slim_attrs = {k: attrs[k] for k in ("amenities", "seen_in_photos") if attrs.get(k)}
+        out.append({
+            "summary": row["summary"],
+            "description": (row.get("description") or "")[:BROWSE_DESCRIPTION_CHARS],
+            "photo_urls": (row.get("photo_urls") or [])[:BROWSE_PHOTOS],
+            "agency_name": row.get("agency_name"),
+            "first_seen": row.get("first_seen"),
+            **({"attributes": slim_attrs} if slim_attrs else {}),
+        })
+    return out
+
+
 def build(embeddings_path: pathlib.Path, listings: list[dict], out_dir: pathlib.Path, health=None) -> dict:
     """`health` is an optional photo_health.PhotoHealth: photos known to be dead are
     left out of the ranking matrix and the deck, and written to dead-photos.json so
@@ -211,6 +237,9 @@ def main() -> None:
     if stats["outdoor_changed"]:   # gardens / terraces / balconies seen in photos are part of the data the site filters on
         args.listings.write_text(json.dumps(listings, ensure_ascii=False, indent=2))
         print(f"outdoor features from photos updated for {stats['outdoor_changed']} listings")
+    browse = build_browse(listings)
+    (args.out_dir / "browse.json").write_text(json.dumps(browse, ensure_ascii=False, separators=(",", ":")))
+    print(f"browse.json: {len(browse)} live listings, {(args.out_dir / 'browse.json').stat().st_size / 1e6:.1f} MB")
     check_consistency(listings, args.out_dir)
     ranking = (args.out_dir / "ranking.bin").stat().st_size / 1e6
     print(f"ranking: {stats['listings']} listings, {stats['photos']} photos ({ranking:.1f} MB); deck: {stats['deck']} photos; dead photos hidden: {stats['dead']}; non-property photos left out of ranking: {stats['junk']}")

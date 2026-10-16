@@ -42,17 +42,20 @@ type Tab = "browse" | "style" | "saved";
 // Browse renders cards in pages: thousands of cards (each with a photo strip)
 // at once would make the page crawl.
 const PAGE_SIZE = 40;
+/** the big data files (listings, ranking matrix) are fetched once someone has swiped this many photos, or opens Browse/Saved */
+const NEED_DATA_AFTER_SWIPES = 10;
 
 function App() {
   const [rawStore, setStore] = useState<EmbeddingStore | null>(null);
   const [rawListings, setAllListings] = useState<Listing[] | null>(null);
   // agencies switched off (killswitch.json at the site root; see scraper/killswitch.py): hidden at once, no deploy needed
   const [killed, setKilled] = useState<string[]>([]);
+  const [rankingReady, setRankingReady] = useState(false);
   // the swipe deck also holds photos of let / unverified listings: drop a disabled agency's photos from it as well
   const store = useMemo(() => {
     if (!rawStore || killed.length === 0 || !rawListings) return rawStore;
     const hidden = new Set(rawListings.filter((l) => killed.includes(l.summary.agency)).map((l) => `${l.summary.platform}:${l.summary.source_id}`));
-    return { ...rawStore, deck: rawStore.deck.filter((p) => !hidden.has(p.listingKey)) };
+    return Object.create(rawStore, { deck: { value: rawStore.deck.filter((p) => !hidden.has(p.listingKey)) } }) as EmbeddingStore;
   }, [rawStore, rawListings, killed]);
   const allListings = useMemo(
     () => (rawListings && killed.length > 0 ? rawListings.filter((l) => !killed.includes(l.summary.agency)) : rawListings),
@@ -83,13 +86,7 @@ function App() {
   const resultsRef = useRef<HTMLElement>(null);
 
   useEffect(() => {
-    fetch("/data/listings.json")
-      .then((res) => {
-        if (!res.ok) throw new Error(`HTTP ${res.status}`);
-        return res.json();
-      })
-      .then(setAllListings)
-      .catch((err) => setError(err instanceof Error ? err.message : String(err)));
+    // (the home listings and the ranking matrix are fetched later, only once they're needed: see `needData`)
 
     // optional: the homes whose rent really changed (built by scraper/price_changes.py)
     fetch("/data/price-history.json")
@@ -147,7 +144,7 @@ function App() {
     setShownCount(PAGE_SIZE);
   }, [agencyFilter, shapes, minPrice, maxPrice, minBedrooms, maxBedrooms, minBathrooms, features, sort]);
 
-  const { undecided, markBroken, hidePhoto, swipes, swipe, toggleSwipe, reset, preferenceVector, rankingPreference, tasteRead, matchScores, likedCount, dislikedCount } = useStylePreferences(store);
+  const { undecided, markBroken, hidePhoto, swipes, swipe, toggleSwipe, reset, preferenceVector, rankingPreference, tasteRead, matchScores, likedCount, dislikedCount } = useStylePreferences(store, rankingReady);
 
   const styleDescription = useMemo(() => {
     if (!preferenceVector || styleLabels.length === 0) return null;
@@ -396,6 +393,33 @@ function App() {
   }
   const celebrated = celebration ? listingsByKey[celebration.listingKey] : undefined;
   const pinned = pinnedKey ? listingsByKey[pinnedKey] : undefined;
+
+  // The big files are fetched only when needed, so a first-time visitor reaches their first photo after ~1 MB instead of ~30 MB:
+  // the listings (browse.json, falling back to the full listings.json) and the ranking matrix load once someone opens Browse or
+  // Saved, or has swiped enough that matches are about to be wanted (match moments start at 15 swipes).
+  const [needData, setNeedData] = useState(false);
+  useEffect(() => {
+    if (tab !== "style" || swipeTotal >= NEED_DATA_AFTER_SWIPES) setNeedData(true);
+  }, [tab, swipeTotal]);
+  useEffect(() => {
+    if (!needData) return;
+    const get = (url: string) =>
+      fetch(url).then((res) => {
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+        return res.json();
+      });
+    get("/data/browse.json")
+      .catch(() => get("/data/listings.json"))
+      .then(setAllListings)
+      .catch((err) => setError(err instanceof Error ? err.message : String(err)));
+  }, [needData]);
+  useEffect(() => {
+    if (!needData || !rawStore) return;
+    rawStore
+      .ensureRanking()
+      .then(() => setRankingReady(true))
+      .catch((err) => console.error("ranking data failed to load", err));
+  }, [needData, rawStore]);
 
   // anonymous usage counters (see lib/stats.ts)
   useEffect(() => {

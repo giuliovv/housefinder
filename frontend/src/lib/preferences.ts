@@ -88,7 +88,7 @@ function seededShuffle<T>(items: T[], seed: number): T[] {
   return arr;
 }
 
-export function useStylePreferences(store: EmbeddingStore | null) {
+export function useStylePreferences(store: EmbeddingStore | null, rankingReady = false) {
   const [stored, setStored] = useState<Record<string, StoredSwipe>>(loadStored);
 
   useEffect(() => {
@@ -188,13 +188,13 @@ export function useStylePreferences(store: EmbeddingStore | null) {
   // Ranking uses the centred preference; `preferenceVector` (uncentred) is kept for describing taste in words,
   // which compares against text embeddings that live in a different space.
   const rankingPreference = useMemo(() => {
-    if (!store) return null;
+    if (!store || !rankingReady) return null; // the catalogue mean comes with the ranking matrix, which loads on demand
     const vectors = (choice: SwipeChoice) =>
       Object.values(stored)
         .filter((sw) => sw.c === choice)
         .map((sw) => dequantize(decodeInt8(sw.v), sw.s));
     return computeCenteredPreference(vectors("like"), vectors("dislike"), store.mean);
-  }, [stored, store]);
+  }, [stored, store, rankingReady]);
   const matchScores = useMemo<Record<ListingKey, number> | null>(
     () => (store && rankingPreference ? store.scoreListings(rankingPreference) : null),
     [store, rankingPreference],

@@ -431,3 +431,10 @@ seen in photos. Weak spots: communal gardens and parks count as gardens; balcony
 - 2026-10-14: price drops shipped. `scraper/price_changes.py` writes the slim public `price-history.json` (homes with a real >=2% change) on every
   scraping run; cards show "↓ £100" and a step chart (first and latest price labelled, one series, one axis); Filters > Must have > "Price dropped".
   67 of the first 73 changes were downwards (Stirling Ackroyd 29, Dexters 15): plausible (unlet homes get reduced) but worth watching for parser artefacts.
+
+## First-load weight (2026-10-16)
+A new visitor used to download ~30 MB before the first photo: `listings.json` 15 MB (CloudFront only compresses files up to 10 MB, so it went out
+uncompressed; it gzips to 1.8 MB) and `ranking.bin` 14 MB. Now: the first view needs `deck.json` only (~0.9 MB). `browse.json` (slim copy of the live
+listings built by `export_embeddings.build_browse`: 3,035 rows, 4.9 MB raw / 0.56 MB compressed) and the ranking matrix load once the visitor opens
+Browse/Saved or has swiped 10 photos (`EmbeddingStore.ensureRanking`; `rankingReady` gates match scores). The frontend falls back to `listings.json`
+if `browse.json` is missing. Still to do: `ranking.bin` (14 MB, binary, above the compression limit) could be split in two or trimmed.
