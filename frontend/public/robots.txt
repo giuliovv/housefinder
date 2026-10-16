@@ -1,0 +1,6 @@
+# House Swipe. Be kind to the data files: they are large and are the site's own, not a feed.
+User-agent: *
+Allow: /
+Disallow: /data/
+
+Sitemap: https://houseswipe.giuliovaccari.it/sitemap.xml

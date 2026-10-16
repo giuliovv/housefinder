@@ -1,0 +1,15 @@
+{
+  "name": "House Swipe",
+  "short_name": "House Swipe",
+  "description": "Swipe on London homes. We learn your taste and rank real rentals to match.",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "background_color": "#faf5ec",
+  "theme_color": "#faf5ec",
+  "icons": [
+    { "src": "/icon-192.png", "sizes": "192x192", "type": "image/png" },
+    { "src": "/icon-512.png", "sizes": "512x512", "type": "image/png" },
+    { "src": "/icon-maskable-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+  ]
+}
