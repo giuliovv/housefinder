@@ -14,10 +14,16 @@ export class InfraStack extends cdk.Stack {
     super(scope, id, props);
 
     const domainName = this.node.tryGetContext('domainName');
+    // Several names can point at the site (cdk.json): the first one is canonical, the others 301 to it
+    // (see the redirect function below). One certificate must cover every name.
+    const domainNames: string[] = this.node.tryGetContext('domainNames') ?? (domainName ? [domainName] : []);
+    const canonicalDomain: string | undefined = domainNames[0];
+    // Route 53 zone for the canonical name, when its DNS lives in AWS (houseswipe.uk): CDK adds the alias records.
+    const canonicalZoneId: string | undefined = this.node.tryGetContext('canonicalZoneId');
     const certificateArn = this.node.tryGetContext('certificateArn');
     const hostedZoneName = this.node.tryGetContext('hostedZoneName');
     const hostedZoneId = this.node.tryGetContext('hostedZoneId');
-    if (domainName && !certificateArn) {
+    if (domainNames.length > 0 && !certificateArn) {
       throw new Error(
         'certificateArn is required when domainName is set. For CloudFront, use an ACM certificate in us-east-1.',
       );
@@ -51,14 +57,41 @@ export class InfraStack extends cdk.Stack {
       ],
     });
 
+    // Any host other than the canonical one (the old houseswipe.giuliovaccari.it, www.) gets a permanent redirect to the same
+    // path and query on the canonical host, so old links, shared-list links (?board=...) and bookmarks keep working.
+    const redirectFunction = canonicalDomain
+      ? new cloudfront.Function(this, 'RedirectToCanonicalHost', {
+          comment: 'Redirect every other host name to the canonical one',
+          code: cloudfront.FunctionCode.fromInline(`
+function handler(event) {
+  var request = event.request;
+  var host = request.headers.host ? request.headers.host.value : '';
+  if (host === '${canonicalDomain}') return request;
+  var parts = [];
+  var q = request.querystring || {};
+  for (var key in q) {
+    var entry = q[key];
+    var values = entry.multiValue ? entry.multiValue.map(function (m) { return m.value; }) : [entry.value];
+    for (var i = 0; i < values.length; i++) parts.push(values[i] === '' ? key : key + '=' + values[i]);
+  }
+  var target = 'https://${canonicalDomain}' + request.uri + (parts.length ? '?' + parts.join('&') : '');
+  return { statusCode: 301, statusDescription: 'Moved Permanently', headers: { location: { value: target } } };
+}`),
+          runtime: cloudfront.FunctionRuntime.JS_2_0,
+        })
+      : undefined;
+
     const distribution = new cloudfront.Distribution(this, 'Distribution', {
-      comment: 'House Finder frontend',
-      domainNames: domainName ? [domainName] : undefined,
+      comment: 'House Swipe frontend',
+      domainNames: domainNames.length > 0 ? domainNames : undefined,
       certificate,
       defaultBehavior: {
         origin: origins.S3BucketOrigin.withOriginAccessControl(bucket),
         viewerProtocolPolicy: cloudfront.ViewerProtocolPolicy.REDIRECT_TO_HTTPS,
         cachePolicy: cloudfront.CachePolicy.CACHING_OPTIMIZED,
+        functionAssociations: redirectFunction
+          ? [{ function: redirectFunction, eventType: cloudfront.FunctionEventType.VIEWER_REQUEST }]
+          : undefined,
       },
       defaultRootObject: 'index.html',
       // No client-side routing yet (single page) — these just make it safe to
@@ -68,6 +101,16 @@ export class InfraStack extends cdk.Stack {
         { httpStatus: 404, responseHttpStatus: 200, responsePagePath: '/index.html' },
       ],
     });
+
+    if (canonicalDomain && canonicalZoneId) {
+      // houseswipe.uk and www.houseswipe.uk both point at CloudFront (IPv4 and IPv6); www then redirects to the apex.
+      const zone = route53.HostedZone.fromHostedZoneAttributes(this, 'CanonicalZone', { hostedZoneId: canonicalZoneId, zoneName: canonicalDomain });
+      const target = route53.RecordTarget.fromAlias(new targets.CloudFrontTarget(distribution));
+      new route53.ARecord(this, 'CanonicalA', { zone, target });
+      new route53.AaaaRecord(this, 'CanonicalAaaa', { zone, target });
+      new route53.ARecord(this, 'WwwA', { zone, recordName: 'www', target });
+      new route53.AaaaRecord(this, 'WwwAaaa', { zone, recordName: 'www', target });
+    }
 
     if (domainName && hostedZoneName) {
       const hostedZone = route53.HostedZone.fromHostedZoneAttributes(this, 'HostedZone', {
@@ -105,8 +148,8 @@ export class InfraStack extends cdk.Stack {
     });
 
     new cdk.CfnOutput(this, 'CloudFrontDomain', { value: distribution.distributionDomainName });
-    if (domainName) {
-      new cdk.CfnOutput(this, 'CustomUrl', { value: `https://${domainName}` });
+    if (canonicalDomain) {
+      new cdk.CfnOutput(this, 'CustomUrl', { value: `https://${canonicalDomain}` });
     }
     new cdk.CfnOutput(this, 'BucketName', { value: bucket.bucketName });
     new cdk.CfnOutput(this, 'DistributionId', { value: distribution.distributionId });

@@ -3,4 +3,4 @@ User-agent: *
 Allow: /
 Disallow: /data/
 
-Sitemap: https://houseswipe.giuliovaccari.it/sitemap.xml
+Sitemap: https://houseswipe.uk/sitemap.xml

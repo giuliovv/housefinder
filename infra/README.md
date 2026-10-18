@@ -176,3 +176,9 @@ No CloudWatch agent was installed, so RAM usage isn't directly observable
 after the fact for these jobs — only CPU/network are captured by default.
 Not investigated further since the same workload already ran fine in-process
 on the 1GB `t4g.micro` earlier in this project.
+
+### houseswipe.uk (canonical) and the old domain
+
+`cdk.json` context: `domainNames` (the first is canonical; every other name 301-redirects to it through a CloudFront Function,
+keeping path and query), one `certificateArn` covering all of them, and `canonicalZoneId` (the Route 53 zone for houseswipe.uk, where
+the apex and `www` alias records are created). The old `houseswipe.giuliovaccari.it` keeps its CNAME in Google DNS and so keeps working as a redirect.
