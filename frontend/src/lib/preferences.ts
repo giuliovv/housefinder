@@ -95,22 +95,30 @@ export function useStylePreferences(store: EmbeddingStore | null, rankingReady =
     localStorage.setItem(STORAGE_KEY, JSON.stringify(stored));
   }, [stored]);
 
-  // One-off: carry over swipes from the old format whose photo still has a
-  // vector in the current data (older ones can't be recovered).
+  // Carry over swipes that are stored as just an id and a choice (the old format, and swipes handed over from the old address
+  // whose vectors didn't fit in the URL): their vectors are re-derived from the photo data. The deck is available at once and
+  // the full ranking matrix later, so ones not found yet wait for it; once it has loaded, what's still missing can't be recovered.
   useEffect(() => {
-    if (!store || localStorage.getItem(LEGACY_KEY + ":migrated")) return;
+    if (!store) return;
     const legacy = loadLegacy();
+    const ids = Object.keys(legacy);
+    if (ids.length === 0) return;
     const migrated: Record<string, StoredSwipe> = {};
-    for (const [id, choice] of Object.entries(legacy)) {
+    const waiting: Record<string, SwipeChoice> = {};
+    for (const id of ids) {
       const vec = store.vectorOf(id);
       if (vec) {
         const { q, scale } = quantize(vec);
-        migrated[id] = { c: choice, v: encodeInt8(q), s: scale };
+        migrated[id] = { c: legacy[id], v: encodeInt8(q), s: scale };
+      } else if (!rankingReady) {
+        waiting[id] = legacy[id];
       }
     }
+    if (Object.keys(waiting).length > 0) localStorage.setItem(LEGACY_KEY, JSON.stringify(waiting));
+    else localStorage.removeItem(LEGACY_KEY);
     localStorage.setItem(LEGACY_KEY + ":migrated", "1");
     if (Object.keys(migrated).length > 0) setStored((prev) => ({ ...migrated, ...prev }));
-  }, [store]);
+  }, [store, rankingReady]);
 
   const swipes = useMemo<Record<string, SwipeChoice>>(
     () => Object.fromEntries(Object.entries(stored).map(([id, sw]) => [id, sw.c])),

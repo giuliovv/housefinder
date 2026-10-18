@@ -57,8 +57,12 @@ export class InfraStack extends cdk.Stack {
       ],
     });
 
-    // Any host other than the canonical one (the old houseswipe.giuliovaccari.it, www.) gets a permanent redirect to the same
-    // path and query on the canonical host, so old links, shared-list links (?board=...) and bookmarks keep working.
+    // Any host other than the canonical one gets a permanent redirect to the same path and query on the canonical host (www.), or
+    // serves the app so it can hand the visitor's data over first (the old address; see below), so old links, shared-list links
+    // (?board=...) and bookmarks keep working.
+    // Names that must serve the app instead of redirecting: the old address, whose copy of the app carries the visitor's saved
+    // data (localStorage is per address) over to the canonical address before leaving (frontend/src/lib/handoff.ts).
+    const handoffHosts = domainNames.filter((d) => d !== canonicalDomain && !d.startsWith('www.'));
     const redirectFunction = canonicalDomain
       ? new cloudfront.Function(this, 'RedirectToCanonicalHost', {
           comment: 'Redirect every other host name to the canonical one',
@@ -66,7 +70,7 @@ export class InfraStack extends cdk.Stack {
 function handler(event) {
   var request = event.request;
   var host = request.headers.host ? request.headers.host.value : '';
-  if (host === '${canonicalDomain}') return request;
+  if (host === '${canonicalDomain}' || ${JSON.stringify(handoffHosts)}.indexOf(host) >= 0) return request;
   var parts = [];
   var q = request.querystring || {};
   for (var key in q) {
