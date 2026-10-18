@@ -438,3 +438,23 @@ uncompressed; it gzips to 1.8 MB) and `ranking.bin` 14 MB. Now: the first view n
 listings built by `export_embeddings.build_browse`: 3,035 rows, 4.9 MB raw / 0.56 MB compressed) and the ranking matrix load once the visitor opens
 Browse/Saved or has swiped 10 photos (`EmbeddingStore.ensureRanking`; `rankingReady` gates match scores). The frontend falls back to `listings.json`
 if `browse.json` is missing. Still to do: `ranking.bin` (14 MB, binary, above the compression limit) could be split in two or trimmed.
+
+## Domain: houseswipe.uk (2026-10-18)
+Bought at Squarespace. Plan: DNS in a Route 53 hosted zone (`Z04695232HWJDPQPMVGTX`, ~$0.50/month; the Squarespace domain's nameservers are
+pointed at it, because Squarespace's apex ALIAS records are unreliable with external hosts), ACM cert in us-east-1
+`e030faef-0528-4ae1-b4a6-01fb2ee6d618` for houseswipe.uk + www + houseswipe.giuliovaccari.it (DNS validation records for the .uk names already in the
+zone; the old domain's validation record already exists in Google DNS). CDK change written (`infra/lib/infra-stack.ts`: `domainNames` context, alias A/AAAA for
+apex and www, a CloudFront Function that 301s every non-canonical host to houseswipe.uk keeping path and query, so old links and `?board=` shared lists
+keep working). **Not yet applied:** the new `cdk.json` context is in /tmp/cdk.json.new (domainNames, certificateArn, canonicalZoneId); apply it and push only
+after the nameservers are delegated and the cert shows ISSUED, otherwise the old domain would redirect to a name that doesn't resolve. Afterwards update
+canonical/og:url/og:image in index.html, sitemap.xml, robots.txt to houseswipe.uk. Domain email later: add MX/SPF/DKIM records to the Route 53 zone.
+
+## Politeness, request accounting and block grace (2026-10-19)
+Stirling Ackroyd (SiteGround captcha) blocked us again on 2026-10-16: the first block was on 2026-10-08 after ~600 requests in one day (repeated full test
+scrapes, lifted after a day), the second after ~9 days of ~45 requests a day (a ~430-request first scrape on day 1, then ~27-45 search pages + ~10 new-listing pages
+daily; the page also answers from this host's IP). Among 76 agencies probed on 2026-10-18 only SA challenges us, so it is specific to their protection.
+**Decision: we do not rotate IPs or otherwise get past a challenge.** Instead: (1) per-host request counters; `analytics/history.json` now has `requests[day][agency]`
+and `block_log[agency]` (requests that run and over 7 days at the time of each block) so thresholds can be learned; (2) `AgencyConfig.delay_seconds`,
+`scrape_every_days`, `max_details_per_run` (default 150 new pages per agency per run: a big new agency is onboarded over days, not in one burst); Stirling Ackroyd:
+5 s between requests, every 2 days, 60 pages per run; (3) a blocked agency's homes stay in Browse for 7 days (`BLOCK_GRACE_DAYS`) with "Last checked N days ago"
+on the card instead of vanishing after 3; (4) the agency can be asked to allowlist us once the domain email exists.

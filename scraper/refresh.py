@@ -40,11 +40,14 @@ import time
 from .agencies import AGENCIES
 from . import killswitch, history as history_mod
 from . import keys
-from .export import BLOCKED, scrape_agency
+from .export import BLOCKED, REQUEST_LOG, scrape_agency
 from .price import clean_price_text, implausible_reason
 
 MISS_THRESHOLD = 2
 VERIFY_WINDOW_DAYS = 3
+# An agency that is blocking us is not a reason to hide its homes at once: its last-known listings stay in Browse, with a
+# "last checked N days ago" note, for this long before they are treated as unverified.
+BLOCK_GRACE_DAYS = 7
 RETENTION_DAYS = 90
 MAX_INJECT_AGE_HOURS = 36
 BLOCK_BACKOFF_DAYS = 3
@@ -62,6 +65,7 @@ def merge(
     existing: list[dict],
     scraped: dict[str, tuple[list[dict], bool]],
     today: dt.date,
+    grace_agencies: frozenset[str] | set[str] = frozenset(),
 ) -> list[dict]:
     """`scraped` maps agency key -> (rows, truncated) for agencies whose
     search succeeded; agencies absent from it are left completely untouched."""
@@ -95,6 +99,7 @@ def merge(
             listing["off_market_since"] = today_s
 
     verify_cutoff = today - dt.timedelta(days=VERIFY_WINDOW_DAYS)
+    grace_cutoff = today - dt.timedelta(days=BLOCK_GRACE_DAYS)
     retention_cutoff = today - dt.timedelta(days=RETENTION_DAYS)
     out = []
     for l in by_key.values():
@@ -102,7 +107,8 @@ def merge(
         # today as their baseline so retention counts from now.
         l.setdefault("first_seen", today_s)
         last_seen = dt.date.fromisoformat(l["last_seen"]) if l.get("last_seen") else None
-        l["unverified"] = last_seen is None or last_seen < verify_cutoff
+        cutoff = grace_cutoff if l["summary"].get("agency") in grace_agencies else verify_cutoff   # a blocked agency gets longer
+        l["unverified"] = last_seen is None or last_seen < cutoff
         if dt.date.fromisoformat(l.get("last_seen") or l["first_seen"]) < retention_cutoff:
             continue
         out.append(l)
@@ -171,6 +177,22 @@ def restore_attributes(existing: list[dict], hist: dict) -> int:
             row["attributes"] = dict(attrs)
             restored += 1
     return restored
+
+
+def not_too_soon(agencies, hist: dict | None, today: dt.date, force: bool):
+    """Agencies configured to be scraped only every N days (scrape_every_days) are skipped until N days have passed since their
+    last successful scrape. Their homes stay live in between: nothing is marked missing for an agency that wasn't scraped."""
+    if hist is None or force:
+        return list(agencies)
+    out = []
+    for cfg in agencies:
+        every = getattr(cfg, "scrape_every_days", 1)
+        done = [d for d, counts in hist.get("runs", {}).items() if cfg.key in counts]
+        if every > 1 and done and (today - dt.date.fromisoformat(max(done))).days < every:
+            print(f"[{cfg.key}] scraped on {max(done)}; this agency is only scraped every {every} days")
+            continue
+        out.append(cfg)
+    return out
 
 
 def not_done_today(agencies, hist: dict | None, today: dt.date, force: bool):
@@ -289,7 +311,7 @@ def main() -> None:
         args.listings.write_text(json.dumps(existing, ensure_ascii=False, indent=2))
 
     candidates = [c for c in agencies if c.key not in injected]
-    waiting = not_backing_off(candidates, blocked, now.date())
+    waiting = not_too_soon(not_backing_off(candidates, blocked, now.date()), hist, now.date(), args.force)
     to_scrape = not_done_today(waiting, hist, now.date(), args.force)
     skipped_done = len(waiting) - len(to_scrape)
     deadline = time.monotonic() + args.max_minutes * 60 if args.max_minutes else None
@@ -304,6 +326,17 @@ def main() -> None:
         for key in scraped:
             failed.pop(key, None)
 
+    # How much we asked each site for, per day, and what a block cost: the data to tune politeness from (a block at ~600 requests
+    # in a day on 2026-10-08 and another after ~9 days at ~45 a day, both from Stirling Ackroyd, are what this was added for).
+    if hist is not None:
+        day = now.date().isoformat()
+        per_day = hist.setdefault("requests", {}).setdefault(day, {})
+        for key, n in REQUEST_LOG.items():
+            per_day[key] = per_day.get(key, 0) + n
+        for key in BLOCKED:
+            week = sum(d_counts.get(key, 0) for d, d_counts in hist["requests"].items() if d >= (now.date() - dt.timedelta(days=7)).isoformat())
+            hist.setdefault("block_log", {}).setdefault(key, []).append({"date": day, "requests_this_run": REQUEST_LOG.get(key, 0), "requests_last_7_days": week})
+            print(f"[{key}] blocked after {REQUEST_LOG.get(key, 0)} requests this run ({week} in the last 7 days)")
     for key in BLOCKED:
         blocked[key] = now.date().isoformat()
     for key in scraped:  # got through, so any earlier block is over
@@ -323,7 +356,8 @@ def main() -> None:
         ended = sum(1 for r in hist["listings"].values() if r.get("ended"))
         print(f"history: {len(hist['listings'])} listings tracked, {ended} ended; backing off from: {sorted(blocked) or 'none'}")
 
-    merged = merge(existing, scraped, now.date())
+    grace = {k for k, d in blocked.items() if now.date() - dt.date.fromisoformat(d) <= dt.timedelta(days=BLOCK_GRACE_DAYS)}
+    merged = merge(existing, scraped, now.date(), grace)
     args.listings.write_text(json.dumps(merged, ensure_ascii=False, indent=2))
     live = sum(1 for l in merged if not l.get("off_market"))
     print(f"wrote {len(merged)} listings ({live} on market) to {args.listings}")

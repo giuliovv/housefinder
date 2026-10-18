@@ -374,3 +374,64 @@ def test_refresh_amenities_rewrites_old_values_from_stored_text():
     assert rows[0]["attributes"]["amenities"] == ["garden", "terrace"]
     assert "amenities" not in rows[1]["attributes"]
     assert refresh_amenities(rows) == 0  # idempotent
+
+
+def test_blocked_agency_homes_stay_visible_for_a_grace_period():
+    import datetime as dt
+
+    from scraper.refresh import BLOCK_GRACE_DAYS, VERIFY_WINDOW_DAYS, merge
+
+    today = dt.date(2026, 10, 20)
+
+    def row(agency, last_seen):
+        return {"summary": {"platform": "p", "source_id": f"{agency}{last_seen}", "agency": agency, "status": None},
+                "first_seen": "2026-10-01", "last_seen": last_seen, "off_market": False}
+
+    old = (today - dt.timedelta(days=VERIFY_WINDOW_DAYS + 2)).isoformat()   # beyond the normal window, inside the grace one
+    very_old = (today - dt.timedelta(days=BLOCK_GRACE_DAYS + 2)).isoformat()
+    existing = [row("blocked", old), row("normal", old), row("blocked", very_old)]
+    out = {r["summary"]["source_id"]: r for r in merge(existing, {}, today, {"blocked"})}
+    assert out[f"blocked{old}"]["unverified"] is False       # still shown, labelled by the site as "last checked N days ago"
+    assert out[f"normal{old}"]["unverified"] is True         # an agency that isn't blocked gets no grace
+    assert out[f"blocked{very_old}"]["unverified"] is True   # but not forever
+
+
+def test_scrape_every_n_days_agencies_wait_their_turn():
+    import datetime as dt
+    from types import SimpleNamespace
+
+    from scraper.refresh import not_too_soon
+
+    hist = {"runs": {"2026-10-18": {"slow": 10, "fast": 10}}}
+    slow, fast = SimpleNamespace(key="slow", scrape_every_days=2), SimpleNamespace(key="fast", scrape_every_days=1)
+    new = SimpleNamespace(key="new", scrape_every_days=2)
+    assert [c.key for c in not_too_soon([slow, fast, new], hist, dt.date(2026, 10, 19), False)] == ["fast", "new"]
+    assert [c.key for c in not_too_soon([slow, fast], hist, dt.date(2026, 10, 20), False)] == ["slow", "fast"]
+    assert [c.key for c in not_too_soon([slow], hist, dt.date(2026, 10, 19), True)] == ["slow"]   # --force
+
+
+def test_details_budget_defers_the_rest_to_later_runs(monkeypatch):
+    from types import SimpleNamespace
+
+    from scraper import export
+    from scraper.models import ListingDetail, ListingSummary
+
+    def summary(i):
+        return ListingSummary(source_id=str(i), agency="a", platform="x", url=f"https://x/{i}", address="Road, London, SW1V", price_text="£2,000 pcm",
+                              price_pcm=2000.0, bedrooms=1, bathrooms=1, receptions=None, thumbnail_url=None)
+
+    fetched = []
+
+    class Fake:
+        def search(self, agency, url, max_pages=1):
+            return iter([summary(i) for i in range(10)])
+
+        def detail(self, agency, s):
+            fetched.append(s.source_id)
+            return ListingDetail(summary=s, description="", key_features=[], photo_urls=[], attributes={})
+
+    monkeypatch.setattr(export, "build_scraper", lambda cfg: Fake())
+    cfg = SimpleNamespace(key="a", name="A", london_only=False, platform="x", search_url="https://x/search", max_details_per_run=4)
+    rows, truncated = export.scrape_agency(cfg, 50, 1, {})
+    assert len(rows) == 4 and len(fetched) == 4
+    assert truncated is True   # an incomplete picture: nothing unseen may be treated as gone

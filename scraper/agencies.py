@@ -34,6 +34,12 @@ class AgencyConfig:
     london_only: bool = False
     # Only meaningful for platform="themed": the key of a selector config in scraper/themes.py.
     theme: str | None = None
+    # Politeness knobs for sites that push back: seconds between requests to this host (default scraper/http.py MIN_DELAY_SECONDS),
+    # scrape only every N days (the daily history keeps the listings alive in between), and how many *new* listings' pages
+    # may be fetched in one run (default export.DEFAULT_MAX_DETAILS_PER_RUN; the rest follow on later runs).
+    delay_seconds: float | None = None
+    scrape_every_days: int = 1
+    max_details_per_run: int | None = None
 
 
 AGENCIES: dict[str, AgencyConfig] = {
@@ -107,6 +113,9 @@ AGENCIES: dict[str, AgencyConfig] = {
         propertyhive_theme="stirlingackroyd",
         user_agent="house-finder/0.1 (personal rental search; not for resale)",
         london_only=True,
+        delay_seconds=5.0,        # slower than the default 1.5 s: this site pushes back (SiteGround captcha)
+        scrape_every_days=2,      # its stock moves slowly; homes stay live between scrapes
+        max_details_per_run=60,
     ),
     # --- Property Hive agencies on the plugin's stock templates (found via
     # scraper/discover.py, each live-checked: robots.txt allows us, our

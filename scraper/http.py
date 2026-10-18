@@ -17,6 +17,8 @@ MIN_DELAY_SECONDS = 1.5
 _last_request_at: dict[str, float] = {}
 # hosts that get a longer gap between requests than MIN_DELAY_SECONDS
 HOST_DELAY: dict[str, float] = {}
+# how many requests this process has made to each host (the scraper logs it per agency, see scraper/export.py)
+REQUESTS: dict[str, int] = {}
 
 
 def _throttle(host: str) -> None:
@@ -41,6 +43,7 @@ _CHALLENGE = re.compile(r"sgcaptcha|just a moment|cf_chl|challenge-platform|capt
 def _request(method: str, url: str, *, data: dict | None, timeout: float, user_agent: str | None, session) -> str:
     host = requests.utils.urlparse(url).netloc
     _throttle(host)
+    REQUESTS[host] = REQUESTS.get(host, 0) + 1
     send = session.request if session is not None else requests.request
     resp = send(method, url, data=data, headers={"User-Agent": user_agent or USER_AGENT}, timeout=timeout)
     # Some protections answer 200/202 with a tiny redirect-to-captcha page, which

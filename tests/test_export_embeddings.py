@@ -169,4 +169,4 @@ def test_browse_json_keeps_only_live_rows_and_the_fields_the_cards_use():
     o = out[0]
     assert len(o["description"]) == 160 and len(o["photo_urls"]) == 12
     assert o["attributes"] == {"amenities": ["garden"], "seen_in_photos": ["terrace"]}
-    assert "key_features" not in o and "last_seen" not in o
+    assert "key_features" not in o and o["last_seen"] == "2026-10-15"

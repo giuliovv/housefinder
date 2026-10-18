@@ -15,9 +15,11 @@ import itertools
 import json
 import pathlib
 import re
+from urllib.parse import urlparse
 
 from .agencies import AGENCIES
 from .cli import build_scraper
+from . import http
 from .http import Blocked
 from .keys import key_for, namespaced_source_id
 from .price import clean_price_text, implausible_reason
@@ -57,6 +59,8 @@ def _has_known(known: dict[str, dict], cfg) -> bool:
     return any(row.get("summary", {}).get("agency") == cfg.key for row in known.values())
 
 
+DEFAULT_MAX_DETAILS_PER_RUN = 150   # new listings' pages fetched per agency per run; a big new agency is onboarded over a few days, not in one burst
+REQUEST_LOG: dict[str, int] = {}    # agency key -> requests made to it in this process (saved to the history by refresh.py)
 _NOT_AVAILABLE = re.compile(r"^(let|let agreed|under offer|reserved|sstc|agreement signed)$", re.IGNORECASE)
 
 
@@ -72,6 +76,13 @@ def scrape_agency(cfg, per_agency: int, max_pages: int, known: dict[str, dict] |
     far fewer requests to the agency."""
     known = known or {}
     print(f"[{cfg.key}] searching...")
+    host = urlparse(cfg.search_url).netloc
+    if getattr(cfg, "delay_seconds", None):
+        http.HOST_DELAY[host] = cfg.delay_seconds
+    requests_before = http.REQUESTS.get(host, 0)
+    configured = getattr(cfg, "max_details_per_run", None)
+    detail_budget = configured if configured is not None else DEFAULT_MAX_DETAILS_PER_RUN
+    details_fetched = details_deferred = 0
     scraper = build_scraper(cfg)
     rows: list[dict] = []
     try:
@@ -116,6 +127,10 @@ def scrape_agency(cfg, per_agency: int, max_pages: int, known: dict[str, dict] |
                 row["summary"] = dataclasses.asdict(summary)
                 rows.append(_namespace(row))
                 continue
+            if details_fetched >= detail_budget:
+                details_deferred += 1   # picked up by a later run: we don't hit one site with hundreds of page loads at once
+                continue
+            details_fetched += 1
             print(f"[{cfg.key}] detail {i}/{len(summaries)}: {summary.address}")
             try:
                 detail = scraper.detail(cfg.key, summary)
@@ -132,8 +147,12 @@ def scrape_agency(cfg, per_agency: int, max_pages: int, known: dict[str, dict] |
             row["agency_name"] = cfg.name
             rows.append(_namespace(row))
     finally:
+        REQUEST_LOG[cfg.key] = http.REQUESTS.get(host, 0) - requests_before
         if hasattr(scraper, "close"):
             scraper.close()
+    if details_deferred:
+        print(f"[{cfg.key}] {details_deferred} new listings deferred to a later run (budget {detail_budget} pages per run)")
+        truncated = True   # not a complete picture, so nothing unseen may be treated as gone
     return rows, truncated
 
 

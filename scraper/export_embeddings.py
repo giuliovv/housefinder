@@ -89,6 +89,7 @@ def build_browse(listings: list[dict]) -> list[dict]:
             "photo_urls": (row.get("photo_urls") or [])[:BROWSE_PHOTOS],
             "agency_name": row.get("agency_name"),
             "first_seen": row.get("first_seen"),
+            "last_seen": row.get("last_seen"),   # lets the card say "last checked N days ago" for homes of an agency that is blocking us
             **({"attributes": slim_attrs} if slim_attrs else {}),
         })
     return out
