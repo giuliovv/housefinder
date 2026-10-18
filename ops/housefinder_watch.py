@@ -40,7 +40,7 @@ import sys
 import urllib.request
 
 BUCKET = "housefinder-frontend-854656252703"
-SITE = "https://houseswipe.giuliovaccari.it"
+SITE = "https://houseswipe.uk"
 HOME = pathlib.Path("/home/ubuntu")
 STATE = HOME / ".housefinder-watch-state.json"
 LOCK = HOME / ".housefinder-watch.lock"
