@@ -425,12 +425,29 @@ seen in photos. Weak spots: communal gardens and parks count as gardens; balcony
   params, commercial + non-London mixed): skip. Lexingtons / Charmill / Braithwait share the `wp-property-feed` plugin (`article.wppf_property_item*`)
   but are N11/N12: one theme would cover three agencies if ever wanted. The rest are bespoke sites, mostly-let pages or non-London.
   The real remaining gap is behind bot protection / private APIs (Hamptons, Chestertons, Knight Frank, Savills): needs permission emails.
+
 - Homeflow (John D Wood, Inner City, Tates, Aspire; ~164 homes) are still unverified/hidden: Cloudflare challenge also from this host (the 2026-10-07
   dump timed out). Not bypassed, by policy.
 - iOS Safari zoom-out on swipe right: the dragged card widened the page (scrollWidth 536 vs 390); fixed with `overflow-x: clip` on html/body/#root/.app.
 - 2026-10-14: price drops shipped. `scraper/price_changes.py` writes the slim public `price-history.json` (homes with a real >=2% change) on every
   scraping run; cards show "↓ £100" and a step chart (first and latest price labelled, one series, one axis); Filters > Must have > "Price dropped".
   67 of the first 73 changes were downwards (Stirling Ackroyd 29, Dexters 15): plausible (unlet homes get reduced) but worth watching for parser artefacts.
+
+## Chestertons recheck (2026-10-19)
+
+- Chestertons advertises London lettings on branch/location pages (for example
+  `/branches/putney/lettings?page=1`), and its public pages reference Homeflow
+  assets. That is a platform hint, **not** proof that either existing Homeflow
+  parser theme fits its search cards or pagination.
+- A single identifying HTTP request to `robots.txt` and a single request to a
+  lettings page both returned Cloudflare `403` challenges from this host. One
+  normal Playwright Chromium navigation to the lettings page also returned
+  `403 Just a moment...` with zero cards. We did not solve the challenge,
+  rotate IPs, or probe private APIs.
+- Do not add Chestertons to `AGENCIES` yet: the daily workflow would only
+  record failures. Ask Chestertons for a permitted listing feed/API or explicit
+  crawl access. If granted, capture a real search/detail fixture, verify
+  pagination and photos, then add a bounded adapter and tests before activation.
 
 ## First-load weight (2026-10-16)
 A new visitor used to download ~30 MB before the first photo: `listings.json` 15 MB (CloudFront only compresses files up to 10 MB, so it went out
