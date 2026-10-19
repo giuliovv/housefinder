@@ -18,6 +18,18 @@ STATE_KEY = 'inbox/stirling-state.json'
 RESULT_KEY = 'inbox/stirling.json'
 
 
+def alert(s3, bucket, status, detail, now):
+    day = now.date().isoformat()
+    key = f'agency-{status}:{AGENCY}:{day}'
+    payload = {
+        'key': key, 'severity': 'warning' if status == 'blocked' else 'critical',
+        'title': f'{AGENCY} Lambda {status}', 'detail': detail,
+        'created': now.isoformat() + 'Z', 'run_url': '',
+    }
+    s3.put_object(Bucket=bucket, Key=f'alerts/pending/{key}.json',
+                  Body=json.dumps(payload), ContentType='application/json')
+
+
 def read_json(s3, bucket, key, default=None):
     try:
         obj = s3.get_object(Bucket=bucket, Key=key)
@@ -45,6 +57,23 @@ def handler(event, context):
     bucket = os.environ['BUCKET']
     s3 = boto3.client('s3')
     now = dt.datetime.now(dt.timezone.utc).replace(tzinfo=None)
+    try:
+        result = run(s3, bucket, now, context)
+        if result['status'] in ('blocked', 'failed'):
+            alert(s3, bucket, result['status'],
+                  f"Stirling scrape {result['status']} after {result['requests']} requests; "
+                  f"next attempt {result['next_attempt_at']}. Check CloudWatch /aws/lambda/houseswipe-stirling-worker.", now)
+        return result
+    except Exception as exc:
+        LOG.exception('Stirling worker failed')
+        try:
+            alert(s3, bucket, 'failed', f'{type(exc).__name__}: {exc}; check CloudWatch /aws/lambda/houseswipe-stirling-worker.', now)
+        except Exception:
+            LOG.exception('Could not publish failure alert')
+        raise
+
+
+def run(s3, bucket, now, context):
     history, _ = read_json(s3, bucket, 'analytics/history.json')
     if history is None:
         raise RuntimeError('Missing shared history; refusing to reset backoff')
@@ -101,5 +130,9 @@ def handler(event, context):
         s3.put_object(Bucket=bucket, Key=STATE_KEY, Body=json.dumps(reservation), ContentType='application/json')
         LOG.info('finished %s', json.dumps(reservation))
         return reservation
+    except Exception:
+        reservation.update(status='failed', requests=count)
+        s3.put_object(Bucket=bucket, Key=STATE_KEY, Body=json.dumps(reservation), ContentType='application/json')
+        raise
     finally:
         http._request = original

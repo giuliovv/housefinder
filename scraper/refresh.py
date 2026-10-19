@@ -232,15 +232,29 @@ def _scrape(agencies, per_agency: int, max_pages: int, known: dict[str, dict] | 
 
 
 def _load_injected(path: pathlib.Path, now: dt.datetime) -> dict[str, tuple[list[dict], bool]]:
+    return _load_injected_payload(path, now)[0]
+
+
+def _load_injected_payload(path: pathlib.Path, now: dt.datetime) -> tuple[dict[str, tuple[list[dict], bool]], dt.date | None]:
     if not path.exists():
         print(f"no injected results at {path}")
-        return {}
+        return {}, None
     payload = json.loads(path.read_text())
-    age = now - dt.datetime.fromisoformat(payload["scraped_at"])
-    if age > dt.timedelta(hours=MAX_INJECT_AGE_HOURS):
-        print(f"ignoring injected results from {payload['scraped_at']} (older than {MAX_INJECT_AGE_HOURS}h)")
-        return {}
-    return {k: (v["rows"], v["truncated"]) for k, v in payload["agencies"].items()}
+    scraped_at = dt.datetime.fromisoformat(payload["scraped_at"])
+    if scraped_at.tzinfo is not None:
+        scraped_at = scraped_at.astimezone(dt.timezone.utc).replace(tzinfo=None)
+    age = now - scraped_at
+    if age < dt.timedelta(0):
+        print(f"ignoring future injected results from {payload['scraped_at']}")
+        return {}, None
+    fresh = {}
+    for key, value in payload["agencies"].items():
+        max_age = 72 if key == 'stirlingackroyd' else MAX_INJECT_AGE_HOURS
+        if age > dt.timedelta(hours=max_age):
+            print(f"ignoring {key} results from {payload['scraped_at']} (older than {max_age}h)")
+            continue
+        fresh[key] = (value["rows"], value["truncated"])
+    return fresh, scraped_at.date()
 
 
 def main() -> None:
@@ -254,7 +268,9 @@ def main() -> None:
     parser.add_argument("--killswitch", type=pathlib.Path, help="killswitch.json: agencies listed there are neither scraped nor kept (scraper/killswitch.py)")
     parser.add_argument("--force", action="store_true", help="scrape agencies even if they were already scraped today")
     parser.add_argument("--max-minutes", type=float, default=None, help="stop starting new agencies after this long; the rest are deferred to the next run")
-    parser.add_argument("--inject", type=pathlib.Path, help="pre-scraped results from --dump to merge in; agencies in it are not re-scraped")
+    parser.add_argument("--inject", type=pathlib.Path, action="append", help="pre-scraped results from --dump to merge in (repeatable)")
+    parser.add_argument("--exclude-agency", action="append", default=[], help="never scrape this agency locally (repeatable)")
+    parser.add_argument("--stirling-state", type=pathlib.Path, help="Lambda state file for block/failure backoff")
     args = parser.parse_args()
     if not args.dump and not args.listings:
         parser.error("--listings is required unless --dump is used")
@@ -277,8 +293,20 @@ def main() -> None:
         return
 
     existing = json.loads(args.listings.read_text()) if args.listings.exists() else []
-    injected = _load_injected(args.inject, now) if args.inject else {}
     hist = history_mod.load(args.history, now.date()) if args.history else None
+    injected = {}
+    injected_dates = {}
+    for path in args.inject or []:
+        loaded, scrape_date = _load_injected_payload(path, now)
+        for key, result in loaded.items():
+            if key in disabled:
+                continue
+            latest = max((dt.date.fromisoformat(day) for day, counts in hist.get('runs', {}).items() if key in counts), default=None) if hist else None
+            if latest is not None and scrape_date <= latest:
+                print(f"[{key}] inbox result from {scrape_date} already recorded; skipping")
+                continue
+            injected[key] = result
+            injected_dates[key] = scrape_date
     blocked = hist.setdefault("blocked", {}) if hist is not None else {}
 
     changed = False
@@ -310,7 +338,7 @@ def main() -> None:
     if changed:
         args.listings.write_text(json.dumps(existing, ensure_ascii=False, indent=2))
 
-    candidates = [c for c in agencies if c.key not in injected]
+    candidates = [c for c in agencies if c.key not in injected and c.key not in args.exclude_agency]
     waiting = not_too_soon(not_backing_off(candidates, blocked, now.date()), hist, now.date(), args.force)
     to_scrape = not_done_today(waiting, hist, now.date(), args.force)
     skipped_done = len(waiting) - len(to_scrape)
@@ -342,6 +370,21 @@ def main() -> None:
     for key in scraped:  # got through, so any earlier block is over
         blocked.pop(key, None)
 
+    if hist is not None and args.stirling_state and args.stirling_state.exists():
+        state = json.loads(args.stirling_state.read_text())
+        status = state.get('status')
+        started = state.get('started_at')
+        if started and status in ('blocked', 'failed'):
+            attempt_day = dt.datetime.fromisoformat(started).date()
+            latest_success = max((dt.date.fromisoformat(day) for day, counts in hist['runs'].items()
+                                  if 'stirlingackroyd' in counts), default=None)
+            if latest_success is None or attempt_day >= latest_success:
+                if status == 'blocked':
+                    blocked['stirlingackroyd'] = attempt_day.isoformat()
+                else:
+                    hist.setdefault('failed', {})['stirlingackroyd'] = attempt_day.isoformat()
+                print(f"[stirlingackroyd] Lambda {status} on {attempt_day}; preserving listing grace/backoff")
+
     if not scraped:
         if hist is not None:
             history_mod.save(args.history, hist)       # keep the block/failure records
@@ -351,13 +394,18 @@ def main() -> None:
         raise SystemExit("every agency failed — refusing to write an unchanged dataset as if it were refreshed")
 
     if hist is not None:
-        history_mod.update(hist, scraped, now.date())
+        for key, result in scraped.items():
+            history_mod.update(hist, {key: result}, injected_dates.get(key, now.date()))
         history_mod.save(args.history, hist)
         ended = sum(1 for r in hist["listings"].values() if r.get("ended"))
         print(f"history: {len(hist['listings'])} listings tracked, {ended} ended; backing off from: {sorted(blocked) or 'none'}")
 
     grace = {k for k, d in blocked.items() if now.date() - dt.date.fromisoformat(d) <= dt.timedelta(days=BLOCK_GRACE_DAYS)}
-    merged = merge(existing, scraped, now.date(), grace)
+    merged = existing
+    for key in sorted(injected, key=lambda k: injected_dates[k]):
+        merged = merge(merged, {key: injected[key]}, injected_dates[key], grace)
+    local_scraped = {key: result for key, result in scraped.items() if key not in injected}
+    merged = merge(merged, local_scraped, now.date(), grace)
     args.listings.write_text(json.dumps(merged, ensure_ascii=False, indent=2))
     live = sum(1 for l in merged if not l.get("off_market"))
     print(f"wrote {len(merged)} listings ({live} on market) to {args.listings}")

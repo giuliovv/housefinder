@@ -20,7 +20,7 @@ export class StirlingStack extends cdk.Stack {
       ].map(key => `arn:aws:s3:::${bucket}/${key}`),
     }));
     role.addToPolicy(new cdk.aws_iam.PolicyStatement({
-      actions: ['s3:PutObject'], resources: ['inbox/stirling-state.json', 'inbox/stirling.json']
+      actions: ['s3:PutObject'], resources: ['inbox/stirling-state.json', 'inbox/stirling.json', 'alerts/pending/*']
         .map(key => `arn:aws:s3:::${bucket}/${key}`),
     }));
     role.addToPolicy(new cdk.aws_iam.PolicyStatement({
@@ -31,7 +31,7 @@ export class StirlingStack extends cdk.Stack {
     const worker = new cdk.aws_lambda.DockerImageFunction(this, 'Worker', {
       functionName: 'houseswipe-stirling-worker',
       code: cdk.aws_lambda.DockerImageCode.fromEcr(repository, {
-        tagOrDigest: this.node.tryGetContext('stirlingImageDigest') ?? 'sha256:96829ecc9f125214d745bed8a03fac0b58d33f187ff854b492fcad26ab0be1dc',
+        tagOrDigest: this.node.tryGetContext('stirlingImageDigest') ?? 'sha256:d2afa6086a1741bd283637176b08048c904c8bec7f9e05323f7678b4169edf53',
       }),
       architecture: cdk.aws_lambda.Architecture.ARM_64,
       role, memorySize: 512, timeout: cdk.Duration.minutes(15),

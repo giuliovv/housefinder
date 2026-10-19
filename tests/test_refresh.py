@@ -109,6 +109,95 @@ def test_stale_injected_results_are_ignored(tmp_path):
     assert _load_injected(tmp_path / "missing.json", now) == {}
 
 
+def test_stirling_inbox_accepts_two_day_old_result_but_not_older(tmp_path):
+    import json
+    from scraper.refresh import _load_injected_payload
+
+    now = dt.datetime(2026, 10, 21, 8)
+    path = tmp_path / "stirling.json"
+    def write(hours):
+        path.write_text(json.dumps({"scraped_at": (now - dt.timedelta(hours=hours)).isoformat(),
+                                    "agencies": {"stirlingackroyd": {"rows": [], "truncated": True}}}))
+    write(55)
+    result, day = _load_injected_payload(path, now)
+    assert "stirlingackroyd" in result and day == dt.date(2026, 10, 19)
+    write(73)
+    assert _load_injected_payload(path, now)[0] == {}
+
+
+def test_excluded_stirling_is_not_scraped_without_inbox(monkeypatch, tmp_path):
+    import json
+    import sys
+    from scraper import refresh
+    from scraper.agencies import AgencyConfig
+
+    stirling = AgencyConfig(key="stirlingackroyd", name="Stirling", platform="propertyhive", search_url="x")
+    other = AgencyConfig(key="other", name="Other", platform="propertyhive", search_url="x")
+    listings = tmp_path / "listings.json"
+    listings.write_text("[]")
+    history = tmp_path / "history.json"
+    history.write_text(json.dumps({"version": 1, "started": "2026-10-19", "runs": {}, "listings": {}}))
+    called = []
+    monkeypatch.setattr(refresh, "AGENCIES", {c.key: c for c in (stirling, other)})
+    monkeypatch.setattr(refresh, "scrape_agency", lambda cfg, *a, **kw: (called.append(cfg.key) or ([], True)))
+    monkeypatch.setattr(sys, "argv", ["refresh", "--listings", str(listings), "--history", str(history),
+                                      "--inject", str(tmp_path / "missing.json"), "--exclude-agency", "stirlingackroyd"])
+    refresh.main()
+    assert called == ["other"]
+
+
+def test_stirling_lambda_block_enters_shared_history(monkeypatch, tmp_path):
+    import json
+    import sys
+    from scraper import refresh
+    from scraper.agencies import AgencyConfig
+
+    today = dt.datetime.now(dt.timezone.utc).date()
+    listings = tmp_path / "listings.json"
+    listings.write_text("[]")
+    history = tmp_path / "history.json"
+    history.write_text(json.dumps({"version": 1, "started": str(today), "runs": {
+        str(today - dt.timedelta(days=1)): {"stirlingackroyd": 391}}, "listings": {}}))
+    state = tmp_path / "state.json"
+    state.write_text(json.dumps({"status": "blocked", "started_at": today.isoformat() + "T00:00:00"}))
+    other = AgencyConfig(key="other", name="Other", platform="propertyhive", search_url="x")
+    monkeypatch.setattr(refresh, "AGENCIES", {"other": other})
+    monkeypatch.setattr(refresh, "scrape_agency", lambda *a, **kw: ([], True))
+    monkeypatch.setattr(sys, "argv", ["refresh", "--listings", str(listings), "--history", str(history),
+                                      "--stirling-state", str(state)])
+    refresh.main()
+    assert json.loads(history.read_text())["blocked"]["stirlingackroyd"] == today.isoformat()
+
+
+def test_stirling_inbox_is_imported_once_with_actual_scrape_date(monkeypatch, tmp_path):
+    import json
+    import sys
+    from scraper import refresh
+    from scraper.agencies import AgencyConfig
+
+    today = dt.datetime.now(dt.timezone.utc).date()
+    yesterday = today - dt.timedelta(days=1)
+    listings = tmp_path / "listings.json"
+    listings.write_text("[]")
+    history = tmp_path / "history.json"
+    history.write_text(json.dumps({"version": 1, "started": str(yesterday), "runs": {}, "listings": {}}))
+    item = row("1", agency="stirlingackroyd")
+    item["summary"].update(url="https://example.com/1", address="London")
+    inbox = tmp_path / "stirling.json"
+    inbox.write_text(json.dumps({"scraped_at": yesterday.isoformat() + "T12:00:00",
+                                 "agencies": {"stirlingackroyd": {"rows": [item], "truncated": True}}}))
+    other = AgencyConfig(key="other", name="Other", platform="propertyhive", search_url="x")
+    monkeypatch.setattr(refresh, "AGENCIES", {"other": other})
+    monkeypatch.setattr(refresh, "scrape_agency", lambda *a, **kw: ([], True))
+    monkeypatch.setattr(sys, "argv", ["refresh", "--listings", str(listings), "--history", str(history),
+                                      "--inject", str(inbox)])
+    refresh.main()
+    assert json.loads(listings.read_text())[0]["last_seen"] == str(yesterday)
+    assert json.loads(history.read_text())["runs"][str(yesterday)]["stirlingackroyd"] == 1
+    refresh.main()
+    assert json.loads(listings.read_text())[0]["last_seen"] == str(yesterday)
+
+
 def test_agreement_signed_counts_as_unavailable():
     out = by_id(merge([], {"a": ([row("1", status="Agreement Signed")], False)}, D1))
     assert out["1"]["off_market"] is True

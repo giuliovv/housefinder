@@ -126,9 +126,24 @@ jobs:
           mkdir -p analytics
           aws s3 cp "s3://$BUCKET/analytics/history.json" analytics/history.json || echo "no history yet"
 
+      # The Lambda enforces a durable 48-hour cooldown, so the daily workflow
+      # only triggers real Stirling requests every two days. Failures go into
+      # the same alert queue as scraper.health without stopping other agencies.
+      - name: Invoke Ireland Stirling worker
+        if: env.DO_SCRAPE == 'true'
+        run: |
+          aws s3 cp "s3://$BUCKET/inbox/stirling-state.json" /tmp/stirling-state.json || echo "no Stirling state file"
+          python3 -m ops.invoke_stirling --state /tmp/stirling-state.json --out-dir alerts
+
+      - name: Fetch Stirling Lambda results
+        if: env.DO_SCRAPE == 'true'
+        run: |
+          aws s3 cp "s3://$BUCKET/inbox/stirling.json" /tmp/stirling.json || echo "no Stirling inbox file"
+          aws s3 cp "s3://$BUCKET/inbox/stirling-state.json" /tmp/stirling-state.json || echo "no Stirling state file"
+
       - name: Re-scrape agencies and merge into listings.json
         if: env.DO_SCRAPE == 'true'
-        run: python -m scraper.refresh --listings frontend/public/data/listings.json --history analytics/history.json --per-agency 800 --max-pages 90 --max-minutes 100 --inject /tmp/homeflow.json --killswitch killswitch.json
+        run: python -m scraper.refresh --listings frontend/public/data/listings.json --history analytics/history.json --per-agency 800 --max-pages 90 --max-minutes 100 --inject /tmp/homeflow.json --inject /tmp/stirling.json --stirling-state /tmp/stirling-state.json --exclude-agency stirlingackroyd --killswitch killswitch.json
 
       # Right away, not at the end: history must survive a failed embed/deploy.
       - name: Save listing history
@@ -222,6 +237,11 @@ jobs:
         run: |
           npm ci
           NODE_OPTIONS="--max-old-space-size=3000" TS_NODE_TRANSPILE_ONLY=true npx cdk deploy HousefinderFrontend --require-approval never
+
+      # Keep the OIDC role's narrow Ireland invoke permission in reviewed CDK.
+      - name: Deploy GitHub role policy
+        working-directory: infra
+        run: NODE_OPTIONS="--max-old-space-size=3000" TS_NODE_TRANSPILE_ONLY=true npx cdk deploy HousefinderCi --require-approval never
 
       # Only reached if everything above succeeded: the deployed data/ now
       # contains this run's work, so the checkpoint is obsolete (and would

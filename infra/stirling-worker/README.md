@@ -1,4 +1,4 @@
-# Stirling Ackroyd Ireland worker (deployed, not scheduled)
+# Stirling Ackroyd Ireland worker
 
 Use Ireland as the sole default executor for this agency, not an automatic
 retry after a GitHub challenge. Multiple executors would undermine cooldowns.
@@ -12,11 +12,13 @@ Deploy the image as a Lambda in eu-west-1, Python image architecture matching th
 512 MB, timeout 900 seconds, BUCKET=housefinder-frontend-854656252703.
 This account cannot reserve one concurrency slot without dropping below AWS's
 minimum 10 unreserved slots; the conditional S3 reservation serializes requests.
-Use default Lambda networking; no NAT gateway is needed. No schedule is enabled.
+Use default Lambda networking; no NAT gateway is needed. The existing daily
+GitHub workflow invokes it when the S3 state says it is due, while the worker's durable S3 reservation enforces
+48 hours between actual site attempts, including manual invocations and failures.
 
 Execution role needs CloudWatch logs and s3:GetObject on analytics/history.json,
 killswitch.json, data/listings.json, inbox/stirling-state.json; s3:PutObject on
-inbox/stirling-state.json and inbox/stirling.json in that bucket. It also needs
+inbox/stirling-state.json, inbox/stirling.json, and alerts/pending/* in that bucket. It also needs
 s3:ListBucket scoped to the state and kill-switch keys to detect missing objects.
 
 Limits: at least 48 hours between attempts, 72 hours after a challenge, 5 seconds
@@ -27,26 +29,27 @@ a crash retains cooldown. Each request and final status are logged. Missing hist
 or listing cache fails closed. Results are always marked truncated to avoid declaring
 unseen listings removed after a capped scan.
 
-## Activation handoff
+## Actions handoff
 
-Before enabling: add an explicit exclusion for Stirling to the Actions scraper,
-even when the inbox is missing/stale. Extend injection to accept Homeflow AND Stirling.
-Import a result only once, preserving its actual collection date (the existing
-refresh importer stamps today's date, so blindly reusing inbox data is wrong).
-Merge worker block status into shared history so the seven-day stale-listing grace
-still applies. Never overwrite the whole shared history from the worker.
-Have Actions synchronously invoke the Ireland worker before fetching the inbox;
-the durable reservation handles repeated workflow runs. Check Lambda FunctionError
-and worker status, alert on blocked/failed, and preserve previously collected data.
-Only activate after offline integration tests cover missing/stale inbox, cooldown,
-concurrent invocation, and block propagation. No production workflow change yet.
+The daily GitHub workflow still scrapes the other agencies, but always excludes
+Stirling locally. It checks the worker state, invokes the Lambda only when due,
+downloads its inbox alongside Homeflow and imports
+each agency only when the result is newer than its last recorded history run.
+The original collection date is preserved in listings and history; missing or
+stale inbox data never causes a Stirling request from GitHub. A failed or blocked
+Lambda attempt writes a watcher-compatible alert to `alerts/pending/`, which the
+host watcher forwards to Claude and Telegram. Actions also imports the worker
+state into shared history, preserving the seven-day grace for blocked listings.
+A Lambda timeout cannot write an alert itself, but the workflow's invocation
+check and existing stale-agency alert catch missed data.
+The worker never overwrites shared history.
 
 ## Build verification
 
 ARM64 image built locally and handler import passed inside the Lambda Python 3.12
 container. The Lambda-compatible image is published to
-`854656252703.dkr.ecr.eu-west-1.amazonaws.com/houseswipe-stirling-worker:lambda-v2`.
-The worker image is pinned by digest in CDK and no schedule is created. The
+`854656252703.dkr.ecr.eu-west-1.amazonaws.com/houseswipe-stirling-worker`.
+The worker image is pinned by digest in CDK. The
 state object lives under `inbox/`, which the frontend deployment excludes from
 pruning, so the worker's cooldown survives site deployments.
 
@@ -55,7 +58,8 @@ pruning, so the worker's cooldown survives site deployments.
 The canonical infrastructure is now `infra/lib/stirling-stack.ts`, registered as
 `HouseSwipeStirlingWorker` in `infra/bin/infra.ts`, fixed to eu-west-1.
 The stack pins the tested ECR digest; change `-c stirlingImageDigest=sha256:...`
-when publishing a new build. No schedule is created.
+when publishing a new build. The existing Actions schedule is the trigger;
+no EventBridge rule or extra regional scheduler is needed.
 
 The EC2 role now has inline policy `HouseSwipeStirlingDeployment`; its source is
 `deployer-policy.json` alongside this file. PassRole is limited to the worker role
@@ -69,4 +73,4 @@ and CDK_DEFAULT_REGION=eu-west-1.
 Deployed 2026-10-19. A manual invocation completed with 59 requests and saved
 391 rows to `inbox/stirling.json`; no bot challenge was observed. The next
 invocation returned `cooldown` without making a site request. The next allowed
-attempt is 2026-10-21 00:12 UTC. The GitHub Actions handoff is still pending.
+attempt is 2026-10-21 00:12 UTC.

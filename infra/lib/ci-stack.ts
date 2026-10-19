@@ -60,6 +60,12 @@ export class CiStack extends cdk.Stack {
       resources: [`arn:aws:s3:::housefinder-frontend-${this.account}/cache/*`],
     }));
 
+    // Actions triggers the Ireland worker, but never makes Stirling site requests itself.
+    deployRole.addToPolicy(new iam.PolicyStatement({
+      actions: ['lambda:InvokeFunction'],
+      resources: [`arn:aws:lambda:eu-west-1:${this.account}:function:houseswipe-stirling-worker`],
+    }));
+
     // Read-only billing visibility for the dev host, so cost questions can
     // be answered without console access. Attached to the existing role
     // without modifying the ClaudeServer stack.
