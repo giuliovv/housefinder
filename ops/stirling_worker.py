@@ -14,7 +14,7 @@ from scraper.agencies import AGENCIES
 LOG = logging.getLogger(__name__)
 LOG.setLevel(logging.INFO)
 AGENCY = 'stirlingackroyd'
-STATE_KEY = 'workers/stirling/state.json'
+STATE_KEY = 'inbox/stirling-state.json'
 RESULT_KEY = 'inbox/stirling.json'
 
 

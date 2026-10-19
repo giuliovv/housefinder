@@ -1,17 +1,23 @@
-# Stirling Ackroyd Ireland worker (prepared, not enabled)
+# Stirling Ackroyd Ireland worker (deployed, not scheduled)
 
 Use Ireland as the sole default executor for this agency, not an automatic
 retry after a GitHub challenge. Multiple executors would undermine cooldowns.
 No IP rotation or CAPTCHA recovery is implemented.
 
-Build from the repository root with `docker build -f infra/stirling-worker/Dockerfile .`.
+Build from the repository root with `docker buildx build --platform linux/arm64
+--provenance=false --sbom=false --push -t <eu-west-1 ECR repo>:lambda
+-f infra/stirling-worker/Dockerfile .`. Lambda rejects multi-platform image
+indexes with Docker attestations; verify ECR reports a single image manifest.
 Deploy the image as a Lambda in eu-west-1, Python image architecture matching the build,
-512 MB, timeout 900 seconds, reserved concurrency 1, BUCKET=housefinder-frontend-854656252703.
-Use default Lambda networking; no NAT gateway is needed. Keep schedules disabled initially.
+512 MB, timeout 900 seconds, BUCKET=housefinder-frontend-854656252703.
+This account cannot reserve one concurrency slot without dropping below AWS's
+minimum 10 unreserved slots; the conditional S3 reservation serializes requests.
+Use default Lambda networking; no NAT gateway is needed. No schedule is enabled.
 
 Execution role needs CloudWatch logs and s3:GetObject on analytics/history.json,
-killswitch.json, data/listings.json, workers/stirling/state.json; s3:PutObject on
-workers/stirling/state.json and inbox/stirling.json in that bucket. No other write access.
+killswitch.json, data/listings.json, inbox/stirling-state.json; s3:PutObject on
+inbox/stirling-state.json and inbox/stirling.json in that bucket. It also needs
+s3:ListBucket scoped to the state and kill-switch keys to detect missing objects.
 
 Limits: at least 48 hours between attempts, 72 hours after a challenge, 5 seconds
 between requests, 60 total requests, at most 45 search pages and 15 detail pages.
@@ -35,17 +41,14 @@ and worker status, alert on blocked/failed, and preserve previously collected da
 Only activate after offline integration tests cover missing/stale inbox, cooldown,
 concurrent invocation, and block propagation. No production workflow change yet.
 
-## Build verification (2026-10-18)
+## Build verification
 
 ARM64 image built locally and handler import passed inside the Lambda Python 3.12
-container. Image published to `854656252703.dkr.ecr.eu-west-1.amazonaws.com/houseswipe-stirling-worker:prepared`.
+container. The Lambda-compatible image is published to
+`854656252703.dkr.ecr.eu-west-1.amazonaws.com/houseswipe-stirling-worker:lambda-v2`.
 The worker image is pinned by digest in CDK and no schedule is created. The
-state object was initialized conditionally in S3; existing cooldowns survive
-future deployments.
-
-Deployment attempt was denied at cloudformation:CreateStack for
-HouseSwipeStirlingWorker. No deployed Lambda or live handler invocation yet.
-The state object exists in S3, initialized empty; shared block history is unchanged.
+state object lives under `inbox/`, which the frontend deployment excludes from
+pruning, so the worker's cooldown survives site deployments.
 
 ## CDK deployment
 
@@ -59,6 +62,11 @@ The EC2 role now has inline policy `HouseSwipeStirlingDeployment`; its source is
 and Lambda. This policy is attached live; the ClaudeServer provisioning repository
 has not yet been updated to reattach it automatically on replacement.
 
-From infra/: `TS_NODE_TRANSPILE_ONLY=true npx cdk synth HouseSwipeStirlingWorker`.
-CDK bootstrap/deployment-role permissions are separate from these direct service
-permissions and still need validation at deployment time.
+From infra/: `TS_NODE_TRANSPILE_ONLY=true npx cdk deploy HouseSwipeStirlingWorker
+--method direct --require-approval never` with CDK_DEFAULT_ACCOUNT=854656252703
+and CDK_DEFAULT_REGION=eu-west-1.
+
+Deployed 2026-10-19. A manual invocation completed with 59 requests and saved
+391 rows to `inbox/stirling.json`; no bot challenge was observed. The next
+invocation returned `cooldown` without making a site request. The next allowed
+attempt is 2026-10-21 00:12 UTC. The GitHub Actions handoff is still pending.

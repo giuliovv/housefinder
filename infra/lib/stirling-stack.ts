@@ -16,22 +16,26 @@ export class StirlingStack extends cdk.Stack {
     logs.grantWrite(role);
     role.addToPolicy(new cdk.aws_iam.PolicyStatement({
       actions: ['s3:GetObject'], resources: [
-        'analytics/history.json', 'killswitch.json', 'data/listings.json', 'workers/stirling/state.json',
+        'analytics/history.json', 'killswitch.json', 'data/listings.json', 'inbox/stirling-state.json',
       ].map(key => `arn:aws:s3:::${bucket}/${key}`),
     }));
     role.addToPolicy(new cdk.aws_iam.PolicyStatement({
-      actions: ['s3:PutObject'], resources: ['workers/stirling/state.json', 'inbox/stirling.json']
+      actions: ['s3:PutObject'], resources: ['inbox/stirling-state.json', 'inbox/stirling.json']
         .map(key => `arn:aws:s3:::${bucket}/${key}`),
+    }));
+    role.addToPolicy(new cdk.aws_iam.PolicyStatement({
+      actions: ['s3:ListBucket'], resources: [`arn:aws:s3:::${bucket}`],
+      conditions: { StringEquals: { 's3:prefix': ['inbox/stirling-state.json', 'killswitch.json'] } },
     }));
     const repository = cdk.aws_ecr.Repository.fromRepositoryName(this, 'ImageRepo', 'houseswipe-stirling-worker');
     const worker = new cdk.aws_lambda.DockerImageFunction(this, 'Worker', {
       functionName: 'houseswipe-stirling-worker',
       code: cdk.aws_lambda.DockerImageCode.fromEcr(repository, {
-        tagOrDigest: this.node.tryGetContext('stirlingImageDigest') ?? 'sha256:699c90bfce0e27e8a378dab4f215e770efc0ebaa12d22503e669ed104e604e06',
+        tagOrDigest: this.node.tryGetContext('stirlingImageDigest') ?? 'sha256:96829ecc9f125214d745bed8a03fac0b58d33f187ff854b492fcad26ab0be1dc',
       }),
       architecture: cdk.aws_lambda.Architecture.ARM_64,
       role, memorySize: 512, timeout: cdk.Duration.minutes(15),
-      reservedConcurrentExecutions: 1, environment: { BUCKET: bucket },
+      environment: { BUCKET: bucket },
       logGroup: logs,
     });
     new cdk.CfnOutput(this, 'FunctionName', { value: worker.functionName });
