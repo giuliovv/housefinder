@@ -448,6 +448,17 @@ seen in photos. Weak spots: communal gardens and parks count as gardens; balcony
   record failures. Ask Chestertons for a permitted listing feed/API or explicit
   crawl access. If granted, capture a real search/detail fixture, verify
   pagination and photos, then add a bounded adapter and tests before activation.
+- 2026-10-19 one-page FlareSolverr experiment: an isolated eu-west-1 Spot
+  instance ran FlareSolverr 3.5.2 against the Putney lettings page. It reported
+  `Challenge solved!`, HTTP 200, and ~1.09 MB of HTML containing a lettings
+  marker. This establishes possible technical access, **not** a validated
+  Chestertons parser: the test did not save a card/detail fixture, confirm
+  listing counts, inspect pagination, or test repeated collection. The response
+  also contained a generic challenge-related string, so future tests must
+  confirm actual listing DOM rather than trusting the tool's success message.
+  No scheduled scraper or persistent FlareSolverr service was deployed. Using
+  challenge solving for collection would change this project's current
+  no-challenge-bypass policy and should be a deliberate decision.
 
 ## First-load weight (2026-10-16)
 A new visitor used to download ~30 MB before the first photo: `listings.json` 15 MB (CloudFront only compresses files up to 10 MB, so it went out
