@@ -59,6 +59,28 @@ def get(url: str, *, timeout: float = 15.0, user_agent: str | None = None, sessi
     return _request("GET", url, data=None, timeout=timeout, user_agent=user_agent, session=session)
 
 
+def get_page(url: str, *, user_agent: str | None = None, attempts: int = 3, pause: float = 5.0) -> str | None:
+    """A results page after the first: None if the site says there is no such page (404/410, i.e.
+    we are past the last one), otherwise the HTML. Anything else (timeout, 5xx, 429) is retried
+    and then raised, so a transient error can't be mistaken for the end of the results and
+    silently truncate the scrape. A bot challenge (Blocked) is never retried."""
+    for attempt in range(1, attempts + 1):
+        try:
+            return get(url, user_agent=user_agent)
+        except Blocked:
+            raise
+        except requests.HTTPError as exc:
+            if exc.response is not None and exc.response.status_code in (404, 410):
+                return None
+            if attempt == attempts:
+                raise
+        except requests.RequestException:
+            if attempt == attempts:
+                raise
+        time.sleep(pause * attempt)
+    return None  # pragma: no cover
+
+
 def post(url: str, data: dict, *, timeout: float = 15.0, user_agent: str | None = None, session=None) -> str:
     """Form POST (e.g. ASP.NET postback paging) — same throttle, UA and challenge detection as get()."""
     return _request("POST", url, data=data, timeout=timeout, user_agent=user_agent, session=session)

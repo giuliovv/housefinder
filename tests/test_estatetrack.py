@@ -9,8 +9,16 @@ SEARCH = (FIXTURES / "estatetrack_search.html").read_text()
 DETAIL = (FIXTURES / "estatetrack_detail.html").read_text()
 
 
+def _not_found(url, **kw):
+    import requests
+
+    resp = requests.Response()
+    resp.status_code = 404
+    raise requests.HTTPError(response=resp)
+
+
 def test_search_parses_cards(monkeypatch) -> None:
-    monkeypatch.setattr(http, "get", lambda url, **kw: SEARCH if url.endswith("/to-rent") else (_ for _ in ()).throw(RuntimeError("404")))
+    monkeypatch.setattr(http, "get", lambda url, **kw: SEARCH if url.endswith("/to-rent") else _not_found(url))
     rows = list(EstateTrackScraper().search("squires", "https://squiresestates.co.uk/properties/to-rent", max_pages=3))
 
     assert len(rows) == len({r.source_id for r in rows}) >= 8

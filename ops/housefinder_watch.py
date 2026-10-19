@@ -180,15 +180,32 @@ def pending_alerts() -> list[tuple[str, dict]]:
     return out
 
 
+def public_ip(host: str) -> str | None:
+    """Resolve through a public resolver: this host's own resolver caches stale answers (and has no IPv6)."""
+    for resolver in ("1.1.1.1", "8.8.8.8"):
+        for line in sh(["dig", "+short", "+time=3", "+tries=1", f"@{resolver}", "A", host]).stdout.split():
+            if re.fullmatch(r"\d+\.\d+\.\d+\.\d+", line):
+                return line
+    return None
+
+
 def fetch_site() -> tuple[int | None, int | None]:
-    try:
-        with urllib.request.urlopen(urllib.request.Request(f"{SITE}/data/listings.json", headers={"User-Agent": "house-finder-watch/0.1"}), timeout=30) as resp:
-            body = resp.read()
-            return resp.status, len(json.loads(body))
-    except urllib.error.HTTPError as e:
-        return e.code, None
-    except Exception:  # noqa: BLE001 - any failure to reach/parse is itself the finding
+    host = SITE.split("//", 1)[1]
+    cmd = ["curl", "-sS", "-4", "-m", "30", "-A", "house-finder-watch/0.1", "-w", "\n%{http_code}"]
+    ip = public_ip(host)
+    if ip:
+        cmd += ["--resolve", f"{host}:443:{ip}"]
+    out = sh(cmd + [f"{SITE}/data/listings.json"])
+    body, _, code = out.stdout.rpartition("\n")
+    if not code.isdigit() or int(code) == 0:
         return None, None
+    status = int(code)
+    if status != 200:
+        return status, None
+    try:
+        return status, len(json.loads(body))
+    except Exception:  # noqa: BLE001 - unparseable body is itself the finding
+        return status, None
 
 
 def busy() -> bool:

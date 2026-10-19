@@ -37,12 +37,12 @@ class EstateTrackScraper(PlatformScraper):
         seen: set[str] = set()
         for page in range(1, max_pages + 1):
             url = base if page == 1 else f"{base}/page/{page}"
-            try:
+            if page == 1:
                 html = http.get(url, user_agent=self.user_agent)
-            except Exception:  # noqa: BLE001 - past the last page the site 404s
-                if page == 1:
-                    raise
-                return
+            else:
+                html = http.get_page(url, user_agent=self.user_agent)
+                if html is None:  # 404: past the last page
+                    return
             new = 0
             for card in _cards(BeautifulSoup(html, "html.parser")):
                 summary = self._parse_card(agency, card, url)
