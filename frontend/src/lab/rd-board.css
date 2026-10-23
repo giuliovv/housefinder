@@ -278,3 +278,20 @@ html.rd-board {
 .rd-board .board-swipe__meter .board-swipe__read { font-size: 9.5px; line-height: 1.25; }
 .rd-board .board-swipe__actions button { min-height: 48px; font-size: 16px; }
 .rd-board .board-swipe__utility { margin-top: 0; }
+
+/* v3 browse: quieter type (v4 and v5 keep their own sizes) */
+.rd-board:not(.rd-board-v4) .app__result-count { font-size: clamp(26px, 6.5vw, 34px); }
+.rd-board:not(.rd-board-v4) .app__filter-btn, .rd-board:not(.rd-board-v4) .app__draw-btn { min-height: 38px; padding: 7px 13px; font-size: 12px; box-shadow: 2px 2px 0 var(--ink); }
+.rd-board:not(.rd-board-v4) .board__sort { min-height: 38px; }
+.rd-board:not(.rd-board-v4) .board-listing__body-link .listing-card__address { font-size: 14px; font-weight: 600; margin-top: 2px; }
+.rd-board:not(.rd-board-v4) .board-listing .listing-card__body { padding: 14px 16px 16px; }
+.rd-board:not(.rd-board-v4) .board-listing .listing-card__price { font-size: 23px; letter-spacing: -.04em; }
+.rd-board:not(.rd-board-v4) .board-listing__body-link .listing-card__rooms { font-size: 10px; margin-top: 3px; }
+.rd-board:not(.rd-board-v4) .board-listing__tags .listing-card__agency, .rd-board:not(.rd-board-v4) .board-listing__tags .listing-card__new, .rd-board:not(.rd-board-v4) .board-listing__tags .listing-card__match { padding: 5px 9px; font-size: 9.5px; }
+.rd-board:not(.rd-board-v4) .board-listing__gallery .listing-card__photo-count { padding: 4px 8px; font-size: 9.5px; }
+.rd-board:not(.rd-board-v4) .board-listing__save { min-height: 32px; padding: 0 12px; font-size: 12.5px; box-shadow: 2px 2px 0 var(--ink); }
+.rd-board:not(.rd-board-v4) .board-listing__history { margin: 8px 0 6px; padding: 6px 9px 0; }
+.rd-board:not(.rd-board-v4) .board-listing__history-head { font-size: 9.5px; }
+.rd-board:not(.rd-board-v4) .board-listing__history .price-chart__label { font-size: 10px; }
+.rd-board:not(.rd-board-v4) .board-listing__rate button { width: 30px; height: 30px; font-size: 13px; }
+.rd-board:not(.rd-board-v4) .board-listing__history .price-chart svg { display: block; max-width: 230px; }
