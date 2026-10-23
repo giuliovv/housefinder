@@ -24,6 +24,7 @@ export function ListingCard({
   matchScore,
   matchLabel,
   hideFreshness = false,
+  hideDescription = false,
   store,
   deadPhotos,
   swipes,
@@ -38,6 +39,7 @@ export function ListingCard({
   matchScore?: number;
   matchLabel?: string;
   hideFreshness?: boolean;
+  hideDescription?: boolean;
   store?: EmbeddingStore | null;
   /** photo URLs known to be gone (the agency deleted them) — never shown */
   deadPhotos?: ReadonlySet<string>;
@@ -219,7 +221,7 @@ export function ListingCard({
           {summary.bathrooms != null && <span>{summary.bathrooms} bath</span>}
           {summary.receptions != null && <span>{summary.receptions} reception</span>}
         </p>
-        {listing.description && (
+        {!hideDescription && listing.description && (
           <p className="listing-card__description">{listing.description.slice(0, 140)}…</p>
         )}
       </div>

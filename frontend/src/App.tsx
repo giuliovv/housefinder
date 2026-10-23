@@ -830,7 +830,7 @@ function App({ labVariant }: { labVariant?: "board" | "board-v4" } = {}) {
               </p>
               <div className={board ? undefined : "listing-grid"}>
                 {board && pinnedPhoto && pinnedPhotoId ? <BoardMatchCard listing={pinned} photoUrl={pinnedPhoto} onLike={() => rateBoardMatch(pinnedPhotoId, "like")} onPass={() => rateBoardMatch(pinnedPhotoId, "dislike")} />
-                  : <ListingCard listing={pinned} matchScore={cardMatchScore(pinned)} matchLabel={boardV4 ? "Nearer your taste" : undefined} hideFreshness={boardV4} store={store} deadPhotos={deadPhotos} swipes={swipes} onRate={toggleSwipe} saved={shortlist.saved.includes(listingKey(pinned))} onToggleSave={() => shortlist.toggleSave(pinned)} />}
+                  : <ListingCard listing={pinned} matchScore={cardMatchScore(pinned)} matchLabel={boardV4 ? "Nearer your taste" : undefined} hideFreshness={boardV4} hideDescription={boardV4} store={store} deadPhotos={deadPhotos} swipes={swipes} onRate={toggleSwipe} saved={shortlist.saved.includes(listingKey(pinned))} onToggleSave={() => shortlist.toggleSave(pinned)} />}
               </div>
             </div>
           )}
@@ -856,6 +856,7 @@ function App({ labVariant }: { labVariant?: "board" | "board-v4" } = {}) {
                 matchScore={cardMatchScore(listing)}
                 matchLabel={boardV4 ? "Nearer your taste" : undefined}
                 hideFreshness={boardV4}
+                hideDescription={boardV4}
                 store={store}
                 deadPhotos={deadPhotos}
                 swipes={swipes}
