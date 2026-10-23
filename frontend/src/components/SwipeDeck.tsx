@@ -268,9 +268,9 @@ export function SwipeDeck({
               <div className="board-swipe__read"><span>{label}</span><span>{decided}/30</span></div>
               <div className="board-swipe__arches" aria-label={`${decided} photos rated`}>{Array.from({ length: 5 }, (_, i) => <i key={i} className={i < progress ? "board-swipe__arch--on" : ""} />)}</div>
               <div className="board-swipe__actions">
-                <button onClick={() => commit("dislike")}>← Pass</button>
+                <button className={compactBoardControls ? "board-swipe__choice board-swipe__choice--pass" : undefined} aria-label={compactBoardControls ? "Not for me" : undefined} onClick={() => commit("dislike")}>{compactBoardControls ? "✕" : "← Pass"}</button>
                 {compactBoardControls && <button className="board-swipe__skip" onClick={() => { stopTeaching(); onHide(current.id); }}>Skip photo</button>}
-                <button onClick={() => commit("like")}>Like →</button>
+                <button className={compactBoardControls ? "board-swipe__choice board-swipe__choice--like" : undefined} aria-label={compactBoardControls ? "Like this" : undefined} onClick={() => commit("like")}>{compactBoardControls ? "♥" : "Like →"}</button>
               </div>
               <div className="board-swipe__utility">
                 {!compactBoardControls && <button onClick={() => { stopTeaching(); onHide(current.id); }}>Skip photo</button>}

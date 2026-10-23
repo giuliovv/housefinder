@@ -88,7 +88,9 @@ html.rd-board-v4 {
 .rd-board-v4 .board-swipe__actions { grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr); gap: 7px; }
 .rd-board-v4 .board-swipe__actions button { min-width: 0; border: 1px solid #d0d8cf; font: 600 16px/1 var(--sans); }
 .rd-board-v4 .board-swipe__actions .board-swipe__skip { width: 78px; padding: 0 5px; border-color: transparent; background: transparent; color: var(--muted-dark); font: 500 11px/1.15 var(--sans); }
-.rd-board-v4 .board-swipe__actions button:last-child { border-color: var(--forest); background: var(--forest); color: #fff; box-shadow: none; }
+.rd-board-v4 .board-swipe__actions .board-swipe__choice { justify-self: center; width: 58px; height: 58px; min-height: 58px; padding: 0; border-radius: 50%; font: 400 25px/1 var(--sans); box-shadow: 0 6px 16px -6px #26332d59; }
+.rd-board-v4 .board-swipe__actions .board-swipe__choice--pass { border-color: var(--border); background: #fff; color: var(--rust); }
+.rd-board.rd-board-v4 .board-swipe__actions .board-swipe__choice--like { border-color: var(--rust); background: var(--rust); color: #fff; box-shadow: 0 6px 16px -6px #26332d59; }
 .rd-board-v4 .board-swipe__utility { justify-content: flex-end; margin-top: 2px; }
 .rd-board-v4 .board-swipe__utility button { color: var(--muted); font-weight: 500; text-decoration: underline; text-underline-offset: 3px; }
 .rd-board-v4 .board-swipe__modal { background: #26332d88; }
