@@ -280,6 +280,80 @@ html.rd-board {
 .rd-board .board-swipe__utility { margin-top: 0; }
 
 /* v3 browse: quieter type (v4 and v5 keep their own sizes) */
+.rd-board:not(.rd-board-v4) .app:has(.board-welcome) .board-welcome {
+  display: flex;
+  flex-direction: column;
+  height: 100svh;
+  min-height: 570px;
+  padding: max(88px, calc(env(safe-area-inset-top) + 76px)) 22px 20px;
+  overflow: visible;
+  border-radius: 0;
+  background: #ff6a2b;
+  color: var(--ink);
+}
+.rd-board:not(.rd-board-v4) .board-welcome__copy { flex: none; }
+.rd-board:not(.rd-board-v4) .board-welcome__eyebrow,
+.rd-board:not(.rd-board-v4) .board-welcome__choices p {
+  margin: 0;
+  font: 500 10.5px/1.45 var(--mono);
+  letter-spacing: .06em;
+  text-transform: uppercase;
+}
+.rd-board:not(.rd-board-v4) .board-welcome__copy h1 {
+  max-width: 10ch;
+  margin: 14px 0 10px;
+  font: 800 clamp(50px, 14vw, 76px)/.88 var(--sans);
+  letter-spacing: -.06em;
+}
+.rd-board:not(.rd-board-v4) .board-welcome__copy h1 em {
+  font: italic 400 1.08em/.8 var(--serif);
+  letter-spacing: -.015em;
+}
+.rd-board:not(.rd-board-v4) .board-welcome__intro {
+  max-width: 34ch;
+  margin: 0;
+  font: 600 14px/1.35 var(--sans);
+}
+.rd-board:not(.rd-board-v4) .board-welcome__rooms {
+  display: flex;
+  flex: 1 1 auto;
+  align-items: flex-end;
+  gap: 9px;
+  min-height: 95px;
+  max-height: 225px;
+  margin: 14px 0 18px;
+}
+.rd-board:not(.rd-board-v4) .board-welcome__room {
+  flex: 1 1 0;
+  height: 82%;
+  overflow: hidden;
+  border: 2px solid var(--ink);
+  border-radius: 100px 100px 14px 14px;
+  background: repeating-linear-gradient(135deg, #e8c88e 0 1px, #f2eee4 1px 10px);
+  box-shadow: 3px 3px 0 var(--ink);
+}
+.rd-board:not(.rd-board-v4) .board-welcome__room:nth-child(2) { height: 100%; }
+.rd-board:not(.rd-board-v4) .board-welcome__room:nth-child(3) { height: 72%; }
+.rd-board:not(.rd-board-v4) .board-welcome__room img { width: 100%; height: 100%; object-fit: cover; }
+.rd-board:not(.rd-board-v4) .board-welcome__choices { display: grid; flex: none; gap: 8px; }
+.rd-board:not(.rd-board-v4) .board-welcome__choices p { margin-bottom: 3px; text-align: center; }
+.rd-board:not(.rd-board-v4) .board-welcome__choices button {
+  width: 100%;
+  min-height: 52px;
+  border: 2px solid var(--ink);
+  border-radius: 99px;
+  color: var(--ink);
+  font: 800 16px/1 var(--sans);
+  cursor: pointer;
+}
+.rd-board:not(.rd-board-v4) .board-welcome__start { background: var(--ink); color: var(--cream) !important; }
+.rd-board:not(.rd-board-v4) .board-welcome__browse { background: var(--cream); }
+@media (max-height: 670px) {
+  .rd-board:not(.rd-board-v4) .app:has(.board-welcome) .board-welcome { min-height: 520px; padding-top: max(75px, calc(env(safe-area-inset-top) + 68px)); padding-bottom: 12px; }
+  .rd-board:not(.rd-board-v4) .board-welcome__copy h1 { margin: 8px 0; font-size: clamp(43px, 12vw, 56px); }
+  .rd-board:not(.rd-board-v4) .board-welcome__rooms { margin: 8px 0 10px; }
+  .rd-board:not(.rd-board-v4) .board-welcome__choices button { min-height: 46px; }
+}
 .rd-board:not(.rd-board-v4) .app__result-count { font-size: clamp(26px, 6.5vw, 34px); }
 .rd-board:not(.rd-board-v4) .app__filter-btn, .rd-board:not(.rd-board-v4) .app__draw-btn { min-height: 38px; padding: 7px 13px; font-size: 12px; box-shadow: 2px 2px 0 var(--ink); }
 .rd-board:not(.rd-board-v4) .board__sort { min-height: 38px; }
@@ -295,3 +369,13 @@ html.rd-board {
 .rd-board:not(.rd-board-v4) .board-listing__history .price-chart__label { font-size: 10px; }
 .rd-board:not(.rd-board-v4) .board-listing__rate button { width: 30px; height: 30px; font-size: 13px; }
 .rd-board:not(.rd-board-v4) .board-listing__history .price-chart svg { display: block; max-width: 230px; }
+
+/* Like is the colour of a heart, with a heart on it; Pass stays neutral (no red/green pair, so it works for colour-blind people too).
+   v3 only: v4 keeps its green and its arrows. */
+.board-swipe__ico { display: none; }
+.rd-board:not(.rd-board-v4) .board-swipe__arrow { display: none; }
+.rd-board:not(.rd-board-v4) .board-swipe__ico { display: inline-block; vertical-align: -2px; margin-right: 4px; }
+.rd-board:not(.rd-board-v4) .board-swipe__actions button:last-child { background: #ff6f8f; color: var(--ink); }
+.rd-board:not(.rd-board-v4) .board-swipe__photo .swipe__stamp--like { border-color: #ff6f8f; color: #ff6f8f; }
+.rd-board:not(.rd-board-v4) .board-swipe__photo .swipe__stamp--pass { border-color: #f2eee4; color: #f2eee4; }
+.rd-board:not(.rd-board-v4) .board-listing__rate button[aria-pressed="true"]:nth-child(2) { background: #ff6f8f; color: var(--ink); }

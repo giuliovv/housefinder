@@ -288,9 +288,9 @@ export function SwipeDeck({
                   </div>
                 </div>
                 <div className="board-swipe__actions">
-                  <button onClick={() => commit("dislike")}>← Pass</button>
+                  <button onClick={() => commit("dislike")}><span className="board-swipe__arrow" aria-hidden="true">←</span><span className="board-swipe__ico" aria-hidden="true">✕</span> Pass</button>
                   {compactBoardControls && <button className="board-swipe__skip" onClick={() => { stopTeaching(); onHide(current.id); }}>Skip photo</button>}
-                  <button onClick={() => commit("like")}>Like →</button>
+                  <button onClick={() => commit("like")}><svg className="board-swipe__ico board-swipe__ico--heart" viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><path d="M12 21s-7.5-4.6-9.6-9.2C.9 8.4 2.6 5 6 5c2 0 3.4 1.1 4 2.4h4C14.6 6.1 16 5 18 5c3.4 0 5.1 3.4 3.6 6.8C19.5 16.4 12 21 12 21z" fill="currentColor"/></svg> Like<span className="board-swipe__arrow" aria-hidden="true"> →</span></button>
                 </div>
                 <div className="board-swipe__utility">
                   {!compactBoardControls && <button onClick={() => { stopTeaching(); onHide(current.id); }}>Skip photo</button>}
