@@ -130,6 +130,8 @@ export function useStylePreferences(store: EmbeddingStore | null, rankingReady =
   // the pipeline's dead-photo list handles the permanent cases.
   const [broken, setBroken] = useState<ReadonlySet<string>>(new Set());
   const markBroken = useCallback((id: string) => setBroken((prev) => (prev.has(id) ? prev : new Set(prev).add(id))), []);
+  const [skipped, setSkipped] = useState<ReadonlySet<string>>(new Set());
+  const skipPhoto = useCallback((id: string) => setSkipped((prev) => (prev.has(id) ? prev : new Set(prev).add(id))), []);
 
   const [seed, setSeed] = useState(loadSeed);
   const deck = useMemo<DeckPhoto[]>(() => (store ? seededShuffle(store.deck, seed) : []), [store, seed]);
@@ -147,7 +149,7 @@ export function useStylePreferences(store: EmbeddingStore | null, rankingReady =
       return next;
     });
   }, []);
-  const undecided = useMemo(() => deck.filter((p) => !(p.id in stored) && !broken.has(p.id) && !hidden.has(p.id)), [deck, stored, broken, hidden]);
+  const undecided = useMemo(() => deck.filter((p) => !(p.id in stored) && !broken.has(p.id) && !hidden.has(p.id) && !skipped.has(p.id)), [deck, stored, broken, hidden, skipped]);
 
   const record = useCallback(
     (id: string, choice: SwipeChoice) => {
@@ -211,7 +213,7 @@ export function useStylePreferences(store: EmbeddingStore | null, rankingReady =
   const likedCount = useMemo(() => Object.values(stored).filter((sw) => sw.c === "like").length, [stored]);
   const dislikedCount = useMemo(() => Object.values(stored).filter((sw) => sw.c === "dislike").length, [stored]);
 
-  return { deck, undecided, markBroken, hidePhoto, swipes, swipe, toggleSwipe, reset, preferenceVector, rankingPreference, tasteRead, matchScores, likedCount, dislikedCount };
+  return { deck, undecided, markBroken, hidePhoto, skipPhoto, swipes, swipe, toggleSwipe, reset, preferenceVector, rankingPreference, tasteRead, matchScores, likedCount, dislikedCount };
 }
 
 export { photoId };

@@ -167,7 +167,7 @@ function App({ labVariant }: { labVariant?: "board" } = {}) {
     setShownCount(PAGE_SIZE);
   }, [agencyFilter, shapes, minPrice, maxPrice, minBedrooms, maxBedrooms, minBathrooms, features, sort]);
 
-  const { undecided, markBroken, hidePhoto, swipes, swipe, toggleSwipe, reset, preferenceVector, rankingPreference, tasteRead, matchScores, likedCount, dislikedCount } = useStylePreferences(store, rankingReady);
+  const { undecided, markBroken, hidePhoto, skipPhoto, swipes, swipe, toggleSwipe, reset, preferenceVector, rankingPreference, tasteRead, matchScores, likedCount, dislikedCount } = useStylePreferences(store, rankingReady);
 
   const styleDescription = useMemo(() => {
     if (!preferenceVector || styleLabels.length === 0) return null;
@@ -619,7 +619,7 @@ function App({ labVariant }: { labVariant?: "board" } = {}) {
           styleDescription={styleDescription}
           tasteRead={tasteRead}
           onBroken={markBroken}
-          onHide={hidePhoto}
+          onHide={board ? skipPhoto : hidePhoto}
           paused={skipTip}
           interlude={
             announce !== null ? (

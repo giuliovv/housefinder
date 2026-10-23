@@ -132,9 +132,6 @@ html.rd-board {
 .rd-board .board-swipe__photo { position: absolute; inset: 0; touch-action: none; cursor: grab; transition: transform .38s cubic-bezier(.2,.8,.2,1); }
 .rd-board .board-swipe__photo:active { cursor: grabbing; }
 .rd-board .board-swipe__photo img { display: block; width: 100%; height: 100%; object-fit: cover; user-select: none; }
-.rd-board .board-swipe__edge { position: absolute; top: 35%; width: 54px; min-height: 108px; padding: 8px; border: 2px solid var(--ink); background: var(--cream); color: var(--ink); font: 800 13px/1 var(--sans); writing-mode: vertical-rl; cursor: pointer; }
-.rd-board .board-swipe__edge--pass { left: 0; border-left: 0; border-radius: 0 99px 99px 0; }
-.rd-board .board-swipe__edge--like { right: 0; border-right: 0; border-radius: 99px 0 0 99px; background: #ff6a2b; }
 .rd-board .question__skip { min-height: 44px; padding: 10px 16px; border: 2px solid var(--ink); border-radius: 99px; background: var(--cream); color: var(--ink); font-weight: 800; text-decoration: none; }
 .rd-board .board-swipe__panel { position: relative; z-index: 2; margin: -55px 12px 0; padding: 20px 18px 16px; border: 2px solid var(--ink); border-radius: 30px; background: var(--cream); box-shadow: 4px 4px 0 #ffd84a; }
 .rd-board .board-swipe__kicker, .rd-board .board-swipe__read, .rd-board .board-swipe__empty > span { font: 500 10.5px/1.2 var(--mono); letter-spacing: .06em; text-transform: uppercase; }
@@ -230,6 +227,3 @@ html.rd-board {
 .rd-board .saved--board .app__error button { min-height: 44px; border: 0; background: transparent; color: var(--ink); text-decoration: underline; font: 800 13px/1 var(--sans); cursor: pointer; }
 .rd-board .saved--board .saved__title { font-size: clamp(38px, 10vw, 54px); }
 .rd-board .saved--board .saved__by { display: inline-block; padding: 5px 10px; border: 2px solid var(--ink); border-radius: 99px; background: #ffd84a; color: var(--ink); font: 500 11px/1.2 var(--mono); }
-.rd-board .board-swipe__edge { top: 40%; width: 44px; min-height: 108px; padding: 9px 5px; font: 500 11px/1 var(--mono); }
-.rd-board .board-swipe__edge--pass { border-radius: 0 12px 12px 0; }
-.rd-board .board-swipe__edge--like { border-radius: 12px 0 0 12px; }

@@ -90,7 +90,7 @@ export function SwipeDeck({
   tasteRead: TasteRead | null;
   /** called for a card whose image fails to load or arrives as a tiny speck */
   onBroken: (id: string) => void;
-  /** the person says this photo isn't a room (a view, a plan, ...): hide it for them for good */
+  /** removes this photo without rating it (permanent in classic designs, session-only on Board) */
   onHide: (id: string) => void;
   /** a question card shown instead of the next photo; while it is up nothing can be swiped */
   interlude?: ReactNode;
@@ -210,8 +210,6 @@ export function SwipeDeck({
                   onError={() => onBroken(current.id)}
                   onLoad={(e) => { if (e.currentTarget.naturalWidth < 120 || e.currentTarget.naturalHeight < 120) onBroken(current.id); }} />
               </div>
-              <button className="board-swipe__edge board-swipe__edge--pass" onClick={() => commit("dislike")} aria-label="Pass on this interior">← Pass</button>
-              <button className="board-swipe__edge board-swipe__edge--like" onClick={() => commit("like")} aria-label="Like this interior">Like →</button>
             </div>
             <div className="board-swipe__panel">
               <p className="board-swipe__kicker">YOU LEAN TOWARD</p>
@@ -222,7 +220,7 @@ export function SwipeDeck({
                 <button onClick={() => commit("dislike")}>← Pass</button><button onClick={() => commit("like")}>Like →</button>
               </div>
               <div className="board-swipe__utility">
-                <button onClick={() => onHide(current.id)}>Hide photo</button>
+                <button onClick={() => onHide(current.id)}>Skip photo</button>
                 <button className="board-swipe__browse" onClick={onGoBrowse}>See {browseCount ?? "…"} homes ↑</button>
                 <button onClick={() => setConfirmReset(true)}>Reset</button>
               </div>
