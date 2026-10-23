@@ -75,9 +75,6 @@ html.rd-board {
 .rd-board .board-listing__body-link:focus-visible, .rd-board .board-listing__footer:focus-visible { outline: 3px solid #2b3bff; outline-offset: -4px; }
 .rd-board .listing-card__body { padding: 18px; }
 .rd-board .listing-card__price { font: 800 30px/1 var(--sans); letter-spacing: -.045em; }
-.rd-board .board-listing__drop { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin: 9px 0 4px; }
-.rd-board .board-listing__drop del { color: #675d50; font: 500 12px/1.3 var(--mono); }
-.rd-board .board-listing__drop span { padding: 6px 9px; border: 2px solid var(--ink); border-radius: 99px; background: #c8f060; color: var(--ink); font: 500 10px/1 var(--mono); }
 .rd-board .listing-card__price-flag { display: inline-block; margin: 8px 0; padding: 8px 10px; border: 2px solid var(--ink); border-radius: 8px; background: #ffd84a; color: var(--ink); font: 500 11px/1.3 var(--mono); }
 .rd-board .board-listing .price-chart__line { stroke: #2b3bff; }
 .rd-board .board-listing .price-chart__dot { fill: #2b3bff; }
@@ -245,18 +242,27 @@ html.rd-board {
 .rd-board .board-listing__tags .listing-card__agency, .rd-board .board-listing__tags .listing-card__new, .rd-board .board-listing__tags .listing-card__match { position: static; padding: 7px 10px; }
 .rd-board .board-listing__gallery .listing-card__photo-count { z-index: 3; top: 12px; bottom: auto; right: 12px; }
 .rd-board .board-listing__arrow { top: 38%; z-index: 3; }
-.rd-board .board-listing__side { position: absolute; z-index: 4; right: 12px; bottom: 14px; display: flex; flex-direction: column; gap: 8px; }
-.rd-board .board-listing__icon { width: 46px; height: 46px; min-height: 0; padding: 0; border: 2px solid var(--ink); border-radius: 50%; background: var(--cream); color: var(--ink); font: 800 18px/1 var(--sans); box-shadow: 2px 2px 0 var(--ink); cursor: pointer; }
-.rd-board .board-listing__icon--like { background: #ff6a2b; }
-.rd-board .board-listing__icon[aria-pressed="true"] { background: #c8f060; }
-.rd-board .board-listing__icon--like[aria-pressed="true"] { background: #ff6a2b; box-shadow: 0 0 0 3px #c8f060, 2px 2px 0 var(--ink); }
-.rd-board .board-listing__icon:disabled { opacity: .55; cursor: not-allowed; }
-.rd-board .board-listing__info { position: absolute; z-index: 3; left: 0; right: 70px; bottom: 0; display: flex; flex-direction: column; gap: 3px; padding: 0 0 16px 16px; color: #fff; text-decoration: none; }
+.rd-board .board-listing__info { position: absolute; z-index: 3; left: 0; right: 112px; bottom: 0; display: flex; flex-direction: column; gap: 3px; padding: 0 0 16px 16px; color: #fff; text-decoration: none; }
 .rd-board .board-listing__price { font: 800 32px/1 var(--sans); letter-spacing: -.045em; text-shadow: 0 2px 14px rgba(0, 0, 0, .5); }
-.rd-board .board-listing__drop { display: flex; align-items: center; gap: 8px; }
-.rd-board .board-listing__drop del { color: rgba(255, 255, 255, .75); font: 500 12px/1.3 var(--mono); }
-.rd-board .board-listing__drop span { padding: 5px 8px; border: 2px solid var(--ink); border-radius: 99px; background: #c8f060; color: var(--ink); font: 500 10px/1 var(--mono); }
 .rd-board .board-listing__address { display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2; overflow: hidden; font: 600 15px/1.25 var(--sans); }
 .rd-board .board-listing__rooms { font: 500 11px/1.4 var(--mono); opacity: .9; }
 .rd-board .board-listing__flag { margin-top: 4px; padding: 6px 8px; border: 2px solid var(--ink); border-radius: 8px; background: #ffd84a; color: var(--ink); font: 500 10.5px/1.3 var(--mono); }
 .rd-board .board-listing__info:focus-visible { outline: 3px solid #ffd84a; outline-offset: -4px; }
+
+/* freshness line above the list is gone */
+.rd-board .board__freshness { display: none; }
+/* save is the one clear button; rating is a quiet pair of small glass icons */
+.rd-board .board-listing__save { position: absolute; z-index: 4; right: 12px; bottom: 14px; min-height: 44px; padding: 0 16px; border: 2px solid var(--ink); border-radius: 99px; background: var(--cream); color: var(--ink); font: 800 14px/1 var(--sans); box-shadow: 2px 2px 0 var(--ink); cursor: pointer; }
+.rd-board .board-listing__save--on { background: #ff6a2b; }
+.rd-board .board-listing__rate { position: absolute; z-index: 4; top: 48px; right: 12px; display: flex; flex-direction: column; gap: 6px; }
+.rd-board .board-listing__rate button { width: 34px; height: 34px; padding: 0; border: 0; border-radius: 50%; background: rgba(18, 14, 10, .42); color: #fff; font: 600 14px/1 var(--sans); backdrop-filter: blur(6px); cursor: pointer; }
+.rd-board .board-listing__rate button[aria-pressed="true"] { background: #fff; color: var(--ink); }
+.rd-board .board-listing__rate button:disabled { opacity: .4; cursor: not-allowed; }
+.rd-board .board-listing__history { display: block; width: min(250px, 100%); margin: 0 0 8px; padding: 6px 10px 2px; border: 2px solid var(--ink); border-radius: 14px; background: var(--cream); color: var(--ink); }
+.rd-board .board-listing__history-head { display: flex; align-items: center; flex-wrap: wrap; gap: 6px; font: 500 10.5px/1.3 var(--mono); }
+.rd-board .board-listing__history-head b { font-weight: 700; }
+.rd-board .board-listing__history-head del { color: #675d50; }
+.rd-board .board-listing__history-head span { padding: 3px 7px; border: 2px solid var(--ink); border-radius: 99px; background: #c8f060; }
+.rd-board .board-listing__history .price-chart { margin: 0; }
+.rd-board .board-listing__history .price-chart__caption { display: none; }
+.rd-board .board-listing__history .price-chart__label { fill: var(--ink); }

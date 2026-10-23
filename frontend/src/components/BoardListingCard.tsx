@@ -5,6 +5,7 @@ import type { SwipeChoice } from "../lib/preferences";
 import { listingKey } from "../lib/listingKey";
 import { normalizeImageUrl } from "../lib/url";
 import { gbp, latestDrop, type PricePoint } from "../lib/priceHistory";
+import { PriceChart } from "./PriceChart";
 import { trackMilestone } from "../lib/stats";
 
 function checkedDay(day?: string): string | null {
@@ -17,7 +18,7 @@ function checkedDay(day?: string): string | null {
   return `checked ${days}d ago`;
 }
 
-export function BoardListingCard({ listing, store, deadPhotos, swipes, onRate, saved, onToggleSave, isNew, isTopRanked, priceSeries }: {
+export function BoardListingCard({ listing, store, deadPhotos, swipes, onRate, saved, onToggleSave, isNew, isTopRanked, priceSeries, today }: {
   listing: Listing;
   store?: EmbeddingStore | null;
   deadPhotos?: ReadonlySet<string>;
@@ -28,7 +29,6 @@ export function BoardListingCard({ listing, store, deadPhotos, swipes, onRate, s
   isNew?: boolean;
   isTopRanked?: boolean;
   priceSeries?: PricePoint[];
-  /** kept so existing callers still compile; the photo-led card no longer draws the price chart */
   today?: string;
 }) {
   const { summary } = listing;
@@ -89,15 +89,23 @@ export function BoardListingCard({ listing, store, deadPhotos, swipes, onRate, s
           {photos.length === 0 && <span className="board-listing__unranked">Not ranked: no photos</span>}
         </div>
 
-        <div className="board-listing__side">
-          <button className="board-listing__icon" disabled={!canRate} aria-label="Not for me" aria-pressed={currentId ? swipes?.[currentId] === "dislike" : false} onClick={() => currentId && onRate?.(currentId, "dislike")}>✕</button>
-          <button className="board-listing__icon board-listing__icon--like" disabled={!canRate} aria-label="I like this" aria-pressed={currentId ? swipes?.[currentId] === "like" : false} onClick={() => currentId && onRate?.(currentId, "like")}>♥</button>
-          <button className="board-listing__icon" disabled={!onToggleSave} aria-label={saved ? "Remove from saved" : "Save"} aria-pressed={Boolean(saved)} onClick={onToggleSave}>{saved ? "★" : "☆"}</button>
+        <div className="board-listing__rate">
+          <button disabled={!canRate} aria-label="Not for me" aria-pressed={currentId ? swipes?.[currentId] === "dislike" : false} onClick={() => currentId && onRate?.(currentId, "dislike")}>✕</button>
+          <button disabled={!canRate} aria-label="I like this" aria-pressed={currentId ? swipes?.[currentId] === "like" : false} onClick={() => currentId && onRate?.(currentId, "like")}>♥</button>
         </div>
+
+        <button className={`board-listing__save${saved ? " board-listing__save--on" : ""}`} disabled={!onToggleSave} aria-pressed={Boolean(saved)} onClick={onToggleSave}>
+          {saved ? "★ Saved" : "☆ Save"}
+        </button>
 
         <a className="board-listing__info" href={agencyUrl} target="_blank" rel="noopener noreferrer" onClick={agencyClick} aria-label={`View ${summary.address} on ${listing.agency_name}`}>
           <span className="board-listing__price">{price}</span>
-          {drop && <span className="board-listing__drop"><del>{gbp(drop.from)}</del><span>−{gbp(drop.amount)}</span></span>}
+          {drop && priceSeries && (
+            <span className="board-listing__history">
+              <span className="board-listing__history-head"><b>Price dropped</b><del>{gbp(drop.from)}</del><span>−{gbp(drop.amount)}</span></span>
+              <PriceChart series={priceSeries} today={today ?? new Date().toISOString().slice(0, 10)} />
+            </span>
+          )}
           <span className="board-listing__address">{summary.address}</span>
           <span className="board-listing__rooms">{rooms}{stale ? ` · ${stale}` : ""} · View ↗</span>
           {summary.price_flag && <span className="board-listing__flag">Rent looks unusually low. Check with the agency.</span>}
