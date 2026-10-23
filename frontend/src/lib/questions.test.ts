@@ -1,5 +1,15 @@
 import { describe, expect, it } from "vitest";
-import { readyToAnnounce, deckWarmedUp, EMPTY_STATE, gapAfter, nextQuestion, recordAnswered, recordDismissed } from "./questions";
+import { readyToAnnounce, deckWarmedUp, EMPTY_STATE, gapAfter, nextQuestion, recordAnswered, recordDismissed, BEDROOM_OPTIONS } from "./questions";
+
+it("labels bedroom choices as minimums and maps no minimum to any", () => {
+  expect(BEDROOM_OPTIONS).toEqual([
+    { label: "No minimum", value: "any" },
+    { label: "1+", value: "1" },
+    { label: "2+", value: "2" },
+    { label: "3+", value: "3" },
+    { label: "4+", value: "4" },
+  ]);
+});
 
 describe("when a question card appears", () => {
   it("never before 8 photo swipes, and not at 7", () => {

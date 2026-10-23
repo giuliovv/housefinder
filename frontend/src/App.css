@@ -1024,6 +1024,7 @@
   cursor: pointer;
 }
 .question__opt--on { background: var(--rust); border-color: var(--rust); color: #fff; }
+.question__selection { margin: -8px 0 16px; padding: 10px 12px; border: 1px solid var(--border); border-radius: 10px; background: var(--cream); color: var(--ink); font-size: 13px; font-weight: 600; }
 .question__map { position: relative; margin-bottom: 14px; }
 .question__map .neighbourhood-map { height: 250px; margin-bottom: 0; }
 .question__clean { position: absolute; top: 10px; right: 10px; z-index: 500; padding: 6px 12px; border-radius: 14px; border: 1px solid var(--rust); background: #fff; color: var(--rust); font-size: 12.5px; cursor: pointer; }

@@ -14,7 +14,7 @@ interface Props {
 }
 
 const QUESTIONS: Record<QuestionId, { title: string; hint: string }> = {
-  bedrooms: { title: "How many bedrooms do you need?", hint: "We'll show homes with at least this many." },
+  bedrooms: { title: "Minimum bedrooms?", hint: "Choose one. Larger homes are included." },
   budget: { title: "What's your monthly budget?", hint: "The most you'd like to pay per month." },
   location: { title: "Where would you like to live?", hint: "Draw a circle around the area you like on the map." },
 };
@@ -50,6 +50,7 @@ export function QuestionCard(p: Props) {
             <button
               key={o.label}
               className={`question__opt ${bedrooms === o.label ? "question__opt--on" : ""}`}
+              aria-pressed={bedrooms === o.label}
               onClick={() => setBedrooms(o.label)}
             >
               {o.label}
@@ -57,6 +58,10 @@ export function QuestionCard(p: Props) {
           ))}
         </div>
       )}
+
+      {p.id === "bedrooms" && bedrooms !== null && <p className="question__selection" role="status">
+        {bedrooms === "No minimum" ? "No minimum: studios can qualify." : `${bedrooms} means ${value(BEDROOM_OPTIONS, bedrooms)} or more.`}
+      </p>}
 
       {p.id === "budget" && (
         <div className="question__options">
