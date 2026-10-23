@@ -73,6 +73,11 @@ function Index() {
     <div className="lab lab--index">
       <h1>Design lab</h1>
       <p>Ideas for House Swipe on the real homes. The redesign is the whole app with every feature. The others are new ways to find a home: some need nothing from you up front, some learn as you like and pass and share what they learn with the main app.</p>
+      <section className="lab-original">
+        <h2>Current design, archived</h2>
+        <p>The original public interface, saved before the next design swap. It remains available for comparison and uses the current listings.</p>
+        <a href="/ui/original/index.html">Open original design ↗</a>
+      </section>
       <section className="lab-codex-callout">
         <span>NEW COLLECTION / CODEX</span>
         <h2>Five ways to make the hunt feel different.</h2>

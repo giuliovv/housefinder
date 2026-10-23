@@ -14,6 +14,10 @@
 .lab--index li b { display: block; font-size: 18px; margin-bottom: 3px; }
 .lab--index li span { font-size: 14px; line-height: 1.4; }
 .lab-home { color: inherit; font-size: 14px; }
+.lab-original { max-width: 560px; margin: 0 0 20px; padding: 20px 22px; border: 1px solid #bcb6a9; border-radius: 12px; background: #fffdf8; }
+.lab--index .lab-original h2 { margin: 0 0 9px; font: 700 20px/1.2 system-ui, sans-serif; }
+.lab-original p { max-width: 48ch; margin-bottom: 14px; font-size: 14px; line-height: 1.5; }
+.lab-original a { display: inline-flex; min-height: 44px; align-items: center; color: #153a30; font-size: 14px; font-weight: 700; }
 
 /* Codex collection: a gallery for complete-app directions. */
 .lab-codex-callout { max-width: 560px; padding: 24px; margin: 0 0 36px; background: #153a30; color: #f6f1df; border-radius: 2px; }
