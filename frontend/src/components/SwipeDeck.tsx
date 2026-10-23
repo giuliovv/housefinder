@@ -68,6 +68,7 @@ export function SwipeDeck({
   totalCount,
   onSwipe,
   browseCount,
+  compactBoardControls = false,
   teachSwipe,
   onTeachingEnd,
   onReset,
@@ -86,6 +87,7 @@ export function SwipeDeck({
   totalCount: number;
   onSwipe: (id: string, choice: "like" | "dislike") => void;
   browseCount?: number;
+  compactBoardControls?: boolean;
   teachSwipe?: boolean;
   onTeachingEnd?: () => void;
   onReset: () => void;
@@ -266,17 +268,19 @@ export function SwipeDeck({
               <div className="board-swipe__read"><span>{label}</span><span>{decided}/30</span></div>
               <div className="board-swipe__arches" aria-label={`${decided} photos rated`}>{Array.from({ length: 5 }, (_, i) => <i key={i} className={i < progress ? "board-swipe__arch--on" : ""} />)}</div>
               <div className="board-swipe__actions">
-                <button onClick={() => commit("dislike")}>← Pass</button><button onClick={() => commit("like")}>Like →</button>
+                <button onClick={() => commit("dislike")}>← Pass</button>
+                {compactBoardControls && <button className="board-swipe__skip" onClick={() => { stopTeaching(); onHide(current.id); }}>Skip photo</button>}
+                <button onClick={() => commit("like")}>Like →</button>
               </div>
               <div className="board-swipe__utility">
-                <button onClick={() => { stopTeaching(); onHide(current.id); }}>Skip photo</button>
-                <button className="board-swipe__browse" onClick={onGoBrowse}>See {browseCount ?? "…"} homes ↑</button>
-                <button onClick={() => setConfirmReset(true)}>Reset</button>
+                {!compactBoardControls && <button onClick={() => { stopTeaching(); onHide(current.id); }}>Skip photo</button>}
+                {!compactBoardControls && <button className="board-swipe__browse" onClick={onGoBrowse}>See {browseCount ?? "…"} homes ↑</button>}
+                <button onClick={() => setConfirmReset(true)}>{compactBoardControls ? "Reset taste" : "Reset"}</button>
               </div>
             </div>
           </>
-        ) : interlude ? <div className="board-swipe__interlude">{interlude}<button onClick={onGoBrowse}>Browse homes ↑</button></div>
-          : <div className="board-swipe__empty"><span>THE WHOLE SET</span><h2>That's the set.</h2><p>Ready to find a place that feels like you?</p><button onClick={onGoBrowse}>See {browseCount ?? ""} homes ↑</button><button onClick={() => setConfirmReset(true)}>Start over</button></div>}
+        ) : interlude ? <div className="board-swipe__interlude">{interlude}{!compactBoardControls && <button onClick={onGoBrowse}>Browse homes ↑</button>}</div>
+          : <div className="board-swipe__empty"><span>THE WHOLE SET</span><h2>That's the set.</h2><p>{compactBoardControls ? "Your style is ready. Browse homes whenever you like." : "Ready to find a place that feels like you?"}</p>{!compactBoardControls && <button onClick={onGoBrowse}>See {browseCount ?? ""} homes ↑</button>}<button onClick={() => setConfirmReset(true)}>Start over</button></div>}
         {confirmReset && <div className="board-swipe__modal" role="dialog" aria-modal="true" aria-label="Reset taste"><div><h2>Start fresh?</h2><p>This clears your photo likes and passes. Your Browse filters and saved homes stay.</p><button onClick={() => setConfirmReset(false)}>Keep my taste</button><button onClick={() => { onReset(); setConfirmReset(false); }}>Reset taste</button></div></div>}
       </section>
     );

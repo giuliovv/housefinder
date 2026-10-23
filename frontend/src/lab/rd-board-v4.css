@@ -80,6 +80,7 @@ html.rd-board-v4 {
 .rd-board-v4 .board-listing__body-link:focus-visible, .rd-board-v4 .board-listing__footer:focus-visible { outline-color: var(--forest); }
 
 .rd-board-v4 .board-swipe__stage { border-radius: 0 0 32px 32px; background: #d8dfd5; }
+.rd-board-v4 .app:has(.board-swipe__stage) .board-swipe__stage { height: clamp(420px, calc(100svh - 310px), 780px); }
 .rd-board-v4 .board-swipe__photo .swipe__stamp { border-width: 2px; border-radius: 10px; background: #26332dda; font: 600 clamp(20px, 6vw, 29px)/1 var(--sans); }
 .rd-board-v4 .board-swipe__photo .swipe__stamp--pass { border-color: #eccabb; color: #f4d9cd; }
 .rd-board-v4 .board-swipe__photo .swipe__stamp--like { border-color: #d3e7d2; color: #e3f1de; }
@@ -87,10 +88,12 @@ html.rd-board-v4 {
 .rd-board-v4 .board-swipe__panel h2 { font: 600 clamp(34px, 8vw, 49px)/1.02 var(--sans); letter-spacing: -.055em; }
 .rd-board-v4 .board-swipe__arches i { border: 1px solid #cad5ca; background: #f0f3ed; }
 .rd-board-v4 .board-swipe__arches i.board-swipe__arch--on { background: #729780; }
-.rd-board-v4 .board-swipe__actions button { border: 1px solid #d0d8cf; font: 600 17px/1 var(--sans); }
+.rd-board-v4 .board-swipe__actions { grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr); gap: 7px; }
+.rd-board-v4 .board-swipe__actions button { min-width: 0; border: 1px solid #d0d8cf; font: 600 16px/1 var(--sans); }
+.rd-board-v4 .board-swipe__actions .board-swipe__skip { width: 78px; padding: 0 5px; border-color: transparent; background: transparent; color: var(--muted-dark); font: 500 11px/1.15 var(--sans); }
 .rd-board-v4 .board-swipe__actions button:last-child { border-color: var(--forest); background: var(--forest); color: #fff; box-shadow: none; }
-.rd-board-v4 .board-swipe__utility button { color: var(--muted-dark); font-weight: 500; }
-.rd-board-v4 .board-swipe__utility .board-swipe__browse { border: 1px solid var(--forest); background: #e6eee5; color: var(--forest); }
+.rd-board-v4 .board-swipe__utility { justify-content: flex-end; margin-top: 2px; }
+.rd-board-v4 .board-swipe__utility button { color: var(--muted); font-weight: 500; text-decoration: underline; text-underline-offset: 3px; }
 .rd-board-v4 .board-swipe__modal { background: #26332d88; }
 .rd-board-v4 .board-swipe__modal > div, .rd-board-v4 .board-swipe__empty, .rd-board-v4 .board-swipe__interlude,
 .rd-board-v4 .saved__gone, .rd-board-v4 .question, .rd-board-v4 .tip, .rd-board-v4 .sheet__panel, .rd-board-v4 .match__card {
@@ -137,6 +140,9 @@ html.rd-board-v4 {
 .rd-board-v4 .board__skeleton-card button { border: 1px solid #d4dcd1; font-weight: 600; }
 .rd-board-v4 .board__browse-loading-photo, .rd-board-v4 .board__skeleton-photo { background: #e2e8df; }
 .rd-board-v4 .neighbourhood-map { border: 1px solid #d6ded4; }
+@media (max-width: 699px) {
+  .rd-board-v4 .rd-back { top: 72px; bottom: auto; }
+}
 @media (min-width: 700px) {
   .rd-board-v4 .app { border: 1px solid #dde3da; box-shadow: 0 20px 65px #26332d20; }
 }
