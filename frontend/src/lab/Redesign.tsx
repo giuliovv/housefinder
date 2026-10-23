@@ -1,4 +1,4 @@
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import App from "../App";
 import { useFont } from "./common";
 import "./rd-navy.css";
@@ -39,6 +39,45 @@ export type RedesignName = keyof typeof REDESIGNS;
 const DECK: Partial<Record<RedesignName, DeckVariant>> = { bleed: "bleed", fan: "fan", ritual: "ritual", dig: "dig", stamp: "stamp", board: "board", "board-v4": "board" };
 const EXTRA: Partial<Record<RedesignName, string[]>> = { bleed: ["rd-dusk"], "board-v4": ["rd-board"] };
 
+const DEBUG_PALETTES = [
+  { name: "Sage", accent: "#355c48", soft: "#e5eee3", softInk: "#294d39" },
+  { name: "Clay", accent: "#99523d", soft: "#f5e6df", softInk: "#783b2b" },
+  { name: "Slate blue", accent: "#36566c", soft: "#e3ecf1", softInk: "#29475b" },
+  { name: "Oxblood", accent: "#763e47", soft: "#f2e5e7", softInk: "#65333b" },
+  { name: "Charcoal", accent: "#343e41", soft: "#e6e9e9", softInk: "#30383a" },
+] as const;
+
+function BoardV4Debug() {
+  const [open, setOpen] = useState(false);
+  const [selected, setSelected] = useState(0);
+  const palette = DEBUG_PALETTES[selected];
+
+  useEffect(() => {
+    const root = document.documentElement;
+    root.style.setProperty("--forest", palette.accent);
+    root.style.setProperty("--accent-soft", palette.soft);
+    root.style.setProperty("--accent-ink", palette.softInk);
+    return () => {
+      root.style.removeProperty("--forest");
+      root.style.removeProperty("--accent-soft");
+      root.style.removeProperty("--accent-ink");
+    };
+  }, [palette]);
+
+  return <div className="rd-v4-debug">
+    <button className="rd-v4-debug__toggle" aria-expanded={open} aria-controls="rd-v4-debug-panel" onClick={() => setOpen(!open)}>DEBUG · COLORS</button>
+    {open && <div className="rd-v4-debug__panel" id="rd-v4-debug-panel" role="region" aria-label="Debug-only color options">
+      <div className="rd-v4-debug__heading"><strong>Color preview</strong><button aria-label="Close debug colors" onClick={() => setOpen(false)}>×</button></div>
+      <p>DEBUG ONLY · NOT FOR PRODUCTION<br />Session preview. Resets on refresh.</p>
+      <div className="rd-v4-debug__options">
+        {DEBUG_PALETTES.map((option, index) => <button key={option.name} aria-pressed={selected === index} onClick={() => setSelected(index)}>
+          <span className="rd-v4-debug__swatch" style={{ background: option.accent }} />{option.name}
+        </button>)}
+      </div>
+    </div>}
+  </div>;
+}
+
 /** The whole real app, every feature, wearing a different design: a re-skin through colour variables plus layout rules. */
 export default function Redesign({ name }: { name: RedesignName }) {
   useFont(REDESIGNS[name]);
@@ -55,6 +94,7 @@ export default function Redesign({ name }: { name: RedesignName }) {
       <DeckVariantContext.Provider value={DECK[name] ?? "classic"}>
         <App labVariant={name === "board" || name === "board-v4" ? name : undefined} />
       </DeckVariantContext.Provider>
+      {name === "board-v4" && <BoardV4Debug />}
     </>
   );
 }

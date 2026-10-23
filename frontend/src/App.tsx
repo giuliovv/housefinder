@@ -592,7 +592,7 @@ function App({ labVariant }: { labVariant?: "board" | "board-v4" } = {}) {
 
         <div className="app__tabs">
           <button className={`app__tab ${tab === "style" ? "app__tab--active" : ""}`} onClick={() => setTab("style")}>
-            {boardV4 ? "Find your style" : board ? "Style" : "Find your style"}
+            {board ? "Style" : "Find your style"}
           </button>
           <button className={`app__tab ${tab === "browse" ? "app__tab--active" : ""}`} onClick={() => setTab("browse")}>
             Browse
