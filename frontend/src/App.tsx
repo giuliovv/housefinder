@@ -3,6 +3,7 @@ import type { Listing, StyleLabel } from "./types";
 import { loadEmbeddingStore, photoId, type EmbeddingStore } from "./lib/embeddingStore";
 import { ListingCard } from "./components/ListingCard";
 import { BoardListingCard } from "./components/BoardListingCard";
+import { BoardMatchCard } from "./components/BoardMatchCard";
 import { catalogueAge } from "./lib/catalogueFreshness";
 import { removalSuggestions } from "./lib/boardZero";
 import { SwipeDeck } from "./components/SwipeDeck";
@@ -440,7 +441,7 @@ function App({ labVariant }: { labVariant?: "board" } = {}) {
   const [matchCard, setMatchCard] = useState<{ id: string; listingKey: string; url: string } | null>(null);
   const [celebration, setCelebration] = useState<{ listingKey: string; url: string } | null>(null);
   const [pinnedKey, setPinnedKey] = useState<string | null>(null);
-  const [boardMatchToast, setBoardMatchToast] = useState<string | null>(null);
+  const [boardMatchToast, setBoardMatchToast] = useState<{ id: string; key: string } | null>(null);
   const [matchState, setMatchState] = useState(loadMatchState);
   function swipeInDeck(id: string, choice: "like" | "dislike") {
     swipe(id, choice); // always an ordinary swipe: it trains the taste model like any other
@@ -475,6 +476,8 @@ function App({ labVariant }: { labVariant?: "board" } = {}) {
   }
   const celebrated = celebration ? listingsByKey[celebration.listingKey] : undefined;
   const pinned = pinnedKey ? listingsByKey[pinnedKey] : undefined;
+  const pinnedPhoto = pinned && store && rankingPreference ? store.bestPhoto(listingKey(pinned), rankingPreference) : null;
+  const pinnedPhotoId = pinned && pinnedPhoto ? photoId(listingKey(pinned), pinnedPhoto) : null;
   useEffect(() => {
     if (!board || tab !== "browse" || !listings || !matchScores || (tasteRead?.level ?? 0) < 2) return;
     const key = "housefinder:board-inline-match:v1";
@@ -483,10 +486,10 @@ function App({ labVariant }: { labVariant?: "board" } = {}) {
       visible.map((l) => ({ key: listingKey(l), score: matchScores[listingKey(l)] ?? -Infinity, price: l.summary.price_pcm })),
       Object.values(matchScores), new Set(shortlist.saved),
     );
-    if (!candidate) return;
+    if (!candidate || !store || !rankingPreference || !store.bestPhoto(candidate, rankingPreference)) return;
     setPinnedKey(candidate);
     try { sessionStorage.setItem(key, "1"); } catch { /* session-only best effort */ }
-  }, [board, tab, listings, matchScores, tasteRead?.level, visible, shortlist.saved]);
+  }, [board, tab, listings, matchScores, tasteRead?.level, visible, shortlist.saved, store, rankingPreference]);
   useEffect(() => {
     if (!board || tab !== "browse" || !pinnedKey) return;
     const start = window.scrollY;
@@ -501,7 +504,10 @@ function App({ labVariant }: { labVariant?: "board" } = {}) {
   }, [boardMatchToast]);
   function rateBoardMatch(id: string, choice: "like" | "dislike") {
     toggleSwipe(id, choice);
-    if (choice === "like") setBoardMatchToast(id);
+    if (choice === "like" && pinned) {
+      shortlist.toggleSave(pinned);
+      setBoardMatchToast({ id, key: listingKey(pinned) });
+    }
     setPinnedKey(null);
   }
 
@@ -577,7 +583,7 @@ function App({ labVariant }: { labVariant?: "board" } = {}) {
 
         <div className="app__tabs">
           <button className={`app__tab ${tab === "style" ? "app__tab--active" : ""}`} onClick={() => setTab("style")}>
-            Find your style
+            {board ? "Style" : "Find your style"}
           </button>
           <button className={`app__tab ${tab === "browse" ? "app__tab--active" : ""}`} onClick={() => setTab("browse")}>
             Browse
@@ -591,7 +597,7 @@ function App({ labVariant }: { labVariant?: "board" } = {}) {
       </header>
 
       {error && !board && <p className="app__error">Couldn't load the homes just now — give it a refresh in a moment.</p>}
-      {!error && !listings && tab === "browse" && (board ? <div className="board__browse-loading" role="status" aria-label="Loading homes"><div /><div /><div /></div> : <LoadingMessage kind="listings" />)}
+      {!error && !listings && tab === "browse" && (board ? <div className="board__browse-loading" role="status" aria-label="Loading homes"><div className="board__browse-loading-title" /><div className="board__browse-loading-subtitle" /><div className="board__browse-loading-card"><div className="board__browse-loading-photo" /><div className="board__browse-loading-line" /><div className="board__browse-loading-line" /></div><div className="board__browse-loading-card"><div className="board__browse-loading-photo" /></div><p>Fetching the latest listings…</p></div> : <LoadingMessage kind="listings" />)}
 
       {tab === "style" && store && (
         <DeckNeighboursContext.Provider value={neighbours}>
@@ -659,7 +665,7 @@ function App({ labVariant }: { labVariant?: "board" } = {}) {
           onKeep={() => setCelebration(null)}
         />
       )}
-      {board && boardMatchToast && <div className="board__match-toast" role="status">Saved to your taste · <button onClick={() => { toggleSwipe(boardMatchToast, "like"); setBoardMatchToast(null); }}>Undo</button></div>}
+      {board && boardMatchToast && <div className="board__match-toast" role="status">Saved to your shortlist. <button onClick={() => { toggleSwipe(boardMatchToast.id, "like"); const listing = listingsByKey[boardMatchToast.key]; if (listing && shortlist.saved.includes(boardMatchToast.key)) shortlist.toggleSave(listing); setBoardMatchToast(null); }}>Undo</button> <button onClick={() => { setTab("saved"); setBoardMatchToast(null); }}>View</button></div>}
       {skipTip && (
         <div className="sheet__overlay sheet__overlay--center" onClick={() => setSkipTip(false)}>
           <div className="tip" role="dialog" aria-label="Filters tip" onClick={(e) => e.stopPropagation()}>
@@ -679,7 +685,7 @@ function App({ labVariant }: { labVariant?: "board" } = {}) {
         : <LoadingMessage kind="style" />
       )}
       {tab === "style" && styleFailed && (board ?
-        <div className="board__style-failed"><span>PHOTO DECK UNAVAILABLE</span><h2>Style photos paused.</h2><p>You can still browse every available home, sorted by price.</p><button onClick={() => setTab("browse")}>Browse homes ↑</button><button onClick={retryStyle}>Retry photos</button></div>
+        <div className="board__style-failed"><span>PHOTO DECK UNAVAILABLE</span><h2>Style photos <em>paused</em></h2><p>Taste ranking is off for now. Every home is still here, sorted by price.</p><button onClick={() => setTab("browse")}>Browse {listings?.length ?? ""} homes →</button><button onClick={retryStyle}>Retry style photos</button></div>
         : <p className="app__error">Couldn't load the style cards just now — you can still browse; try a refresh in a moment.</p>
       )}
 
@@ -706,11 +712,12 @@ function App({ labVariant }: { labVariant?: "board" } = {}) {
           onStartBoard={shortlist.startBoard}
           onJoin={shortlist.joinInvite}
           onLeave={shortlist.leaveBoard}
+          onRetry={shortlist.retryBoard}
           onBrowse={() => setTab("browse")}
         />
       )}
 
-      {tab === "browse" && board && error && <div className="board__browse-error"><span>HOMES UNAVAILABLE</span><h2>Browse is taking a break.</h2><p>Your style photos still work. Try the homes again in a moment.</p><button onClick={() => { setError(null); setListingsAttempt((n) => n + 1); }}>Try again</button><button onClick={() => setTab("style")}>Open Style</button></div>}
+      {tab === "browse" && board && error && <div className="board__browse-error"><span>HOMES UNAVAILABLE</span><h2>Can't load homes <em>right now</em></h2><p>Your filters and saved homes are safe on this device. Style photos still work.</p><button onClick={() => { setError(null); setListingsAttempt((n) => n + 1); }}>Try again</button><button onClick={() => setTab("style")}>Open Style instead</button>{catalogueRefreshedAt && <small>Last good catalogue update · {freshness.label.toLowerCase()}</small>}</div>}
 
       {tab === "browse" && (!board || (listings && !error)) && (
         <div className="app__browse">
@@ -806,16 +813,16 @@ function App({ labVariant }: { labVariant?: "board" } = {}) {
           {pinned && (
             <div className="browse__pinned">
               <p className="browse__pinned-label">
-                <span>{board ? "LIKELY MATCH · NEARER YOUR TASTE" : "♥ It's a match!"}</span>
+                {!board && <span>♥ It's a match!</span>}
                 <button onClick={() => setPinnedKey(null)}>Dismiss</button>
               </p>
-              <div className="listing-grid">
-                {board ? <BoardListingCard listing={pinned} store={store} deadPhotos={deadPhotos} swipes={swipes} onRate={rateBoardMatch} saved={shortlist.saved.includes(listingKey(pinned))} onToggleSave={() => shortlist.toggleSave(pinned)} isTopRanked={topScoreThreshold !== null && (matchScores?.[listingKey(pinned)] ?? -Infinity) >= topScoreThreshold} priceSeries={priceHistory[listingKey(pinned)]} today={todayIso} />
+              <div className={board ? undefined : "listing-grid"}>
+                {board && pinnedPhoto && pinnedPhotoId ? <BoardMatchCard listing={pinned} photoUrl={pinnedPhoto} onLike={() => rateBoardMatch(pinnedPhotoId, "like")} onPass={() => rateBoardMatch(pinnedPhotoId, "dislike")} />
                   : <ListingCard listing={pinned} matchScore={matchScores?.[listingKey(pinned)]} store={store} deadPhotos={deadPhotos} swipes={swipes} onRate={toggleSwipe} saved={shortlist.saved.includes(listingKey(pinned))} onToggleSave={() => shortlist.toggleSave(pinned)} />}
               </div>
             </div>
           )}
-          {board && visible.length === 0 && <div className="board__zero"><span>NO HOMES IN THIS SEARCH</span><h2>Try a little wider.</h2><p>Your saved homes and style are still here. Remove one limit to see what comes back.</p>{zeroSuggestions.map((s) => <button key={s.key} onClick={() => removeOneFilter(s.key)}>Remove {s.label} · +{s.count}</button>)}{activeFilterCount > 0 && <button onClick={clearFilters}>Clear all filters</button>}</div>}
+          {board && visible.length === 0 && <div className="board__zero"><span>NO HOMES IN THIS SEARCH</span><h2>Nothing fits <em>all</em> of that</h2><p>{zeroSuggestions.length > 0 ? `Drop ${zeroSuggestions[0].label} to see ${zeroSuggestions[0].count} ${zeroSuggestions[0].count === 1 ? "home" : "homes"}.` : "Try widening your search. Your saved homes and style are still here."}</p>{zeroSuggestions.map((s) => <button key={s.key} onClick={() => removeOneFilter(s.key)}>Remove {s.label} · +{s.count}</button>)}{activeFilterCount > 0 && <button onClick={clearFilters}>Clear all filters</button>}</div>}
           <main className="listing-grid app__results" ref={resultsRef}>
             {visible.filter((l) => listingKey(l) !== pinnedKey).slice(0, shownCount).map((listing) => (
               board ? <BoardListingCard

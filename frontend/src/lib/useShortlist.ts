@@ -48,6 +48,7 @@ export function useShortlist(listingsByKey: Record<string, Listing>) {
   const [sharingAvailable, setSharingAvailable] = useState(false);
   const [items, setItems] = useState<BoardItem[]>([]);
   const [status, setStatus] = useState<BoardStatus>("off");
+  const [retry, setRetry] = useState(0);
   const listingsRef = useRef(listingsByKey);
   listingsRef.current = listingsByKey;
 
@@ -62,7 +63,7 @@ export function useShortlist(listingsByKey: Record<string, Listing>) {
     loadBackend()
       .then((b) => (b ? setBackend(b) : setStatus("error")))
       .catch(() => setStatus("error"));
-  }, [needBackend, backend]);
+  }, [needBackend, backend, retry]);
   useEffect(() => {
     // is sharing configured at all? (cheap check, no SDK)
     fetchConfig().then((c) => setSharingAvailable(c !== null));
@@ -82,7 +83,12 @@ export function useShortlist(listingsByKey: Record<string, Listing>) {
       },
       () => setStatus("error"),
     );
-  }, [boardId, backend]);
+  }, [boardId, backend, retry]);
+
+  const retryBoard = useCallback(() => {
+    setStatus("connecting");
+    setRetry((n) => n + 1);
+  }, []);
 
   const mirror = useCallback(
     (key: string, isSaved: boolean, me_: Me, board: string | null) => {
@@ -152,5 +158,5 @@ export function useShortlist(listingsByKey: Record<string, Listing>) {
 
   const board = useMemo(() => sortBoard(items), [items]);
 
-  return { saved, me, boardId, invite, status, board, sharingAvailable, toggleSave, setName, startBoard, joinInvite, leaveBoard };
+  return { saved, me, boardId, invite, status, board, sharingAvailable, toggleSave, setName, startBoard, joinInvite, leaveBoard, retryBoard };
 }

@@ -33,6 +33,7 @@ interface Props {
   onStartBoard: (name: string) => string;
   onJoin: (name: string) => void;
   onLeave: () => void;
+  onRetry?: () => void;
   onBrowse: () => void;
 }
 
@@ -142,7 +143,7 @@ export function SavedView(p: Props) {
 
   if (p.invite) {
     return (
-      <div className="app__browse saved">
+      <div className={`app__browse saved${p.boardDesign ? " saved--board" : ""}`}>
         <h2 className="saved__title">You've been invited to a shared list</h2>
         <p className="app__map-hint">
           You'll see the homes people saved, and the ones you save here will appear on it too. Your swipes and taste stay
@@ -163,8 +164,8 @@ export function SavedView(p: Props) {
   const mine = p.saved.map((k) => p.listingsByKey[k]).filter((l): l is Listing => Boolean(l));
 
   return (
-    <div className="app__browse saved">
-      <h2 className="saved__title">{inBoard ? "Our shared list" : "Saved homes"}</h2>
+    <div className={`app__browse saved${p.boardDesign ? " saved--board" : ""}`}>
+      <h2 className="saved__title">{p.boardDesign ? <>Short<em>list</em></> : inBoard ? "Our shared list" : "Saved homes"}</h2>
 
       {live && (
         <p className="saved__people">
@@ -173,16 +174,12 @@ export function SavedView(p: Props) {
       )}
       {inBoard && p.status === "connecting" && <p className="app__map-hint">Connecting to the shared list…</p>}
       {inBoard && p.status === "error" && (
-        <p className="app__error">Couldn't reach the shared list just now. Your saved homes are safe on this device.</p>
+        <p className="app__error">{p.boardDesign ? <><strong>Can't reach the shared list.</strong> Showing what's saved on this device. {p.onRetry && <button onClick={p.onRetry}>Retry</button>}</> : "Couldn't reach the shared list just now. Your saved homes are safe on this device."}</p>
       )}
 
-      {p.saved.length === 0 && !inBoard && (
-        <p className="app__map-hint">
-          Nothing saved yet. Tap “☆ Save” on a home in Browse to keep it here.{" "}
-          <button className="app__link-btn" onClick={p.onBrowse}>
-            Go to Browse
-          </button>
-        </p>
+      {p.saved.length === 0 && !inBoard && (p.boardDesign ?
+        <div className="saved__empty"><h3>Nothing saved <em>yet</em></h3><p>Tap Save on any home. Share the list to shortlist together.</p><button onClick={p.onBrowse}>Browse homes</button></div> :
+        <p className="app__map-hint">Nothing saved yet. Tap “☆ Save” on a home in Browse to keep it here. <button className="app__link-btn" onClick={p.onBrowse}>Go to Browse</button></p>
       )}
 
       <main className="listing-grid">
@@ -206,7 +203,7 @@ export function SavedView(p: Props) {
                       {...cardProps}
                     />
                   ) : (
-                    <a className="saved__gone" href={item.snap.url} target="_blank" rel="noreferrer">
+                    <a className="saved__gone" href={item.snap.url} target="_blank" rel="noopener noreferrer">
                       {item.snap.thumb && <img referrerPolicy="no-referrer" src={normalizeImageUrl(item.snap.thumb) ?? undefined} alt="" />}
                       <div>
                         <strong>{item.snap.price}</strong>
