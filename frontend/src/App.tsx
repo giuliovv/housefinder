@@ -607,7 +607,6 @@ function App({ labVariant }: { labVariant?: "board" } = {}) {
           dislikedCount={dislikedCount}
           totalCount={undecided.length + likedCount + dislikedCount}
           onSwipe={swipeInDeck}
-          onUndo={board ? toggleSwipe : undefined}
           browseCount={board && listings ? visible.length : undefined}
           injected={matchCard}
           onReset={() => {

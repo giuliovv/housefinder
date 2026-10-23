@@ -17,8 +17,6 @@ interface Drag {
   dy: number;
 }
 
-type LastBoardSwipe = { id: string; choice: "like" | "dislike" };
-
 const DRAG_THRESHOLD = 90;
 const INTRO_SEEN_KEY = "housefinder:swipe-intro-seen:v1";
 
@@ -69,7 +67,6 @@ export function SwipeDeck({
   dislikedCount,
   totalCount,
   onSwipe,
-  onUndo,
   browseCount,
   onReset,
   onGoBrowse,
@@ -86,7 +83,6 @@ export function SwipeDeck({
   dislikedCount: number;
   totalCount: number;
   onSwipe: (id: string, choice: "like" | "dislike") => void;
-  onUndo?: (id: string, choice: "like" | "dislike") => void;
   browseCount?: number;
   onReset: () => void;
   onGoBrowse: () => void;
@@ -131,20 +127,13 @@ export function SwipeDeck({
   const [drag, setDrag] = useState<Drag>({ active: false, dx: 0, dy: 0 });
   const [start, setStart] = useState<{ x: number; y: number } | null>(null);
   const [startedAt, setStartedAt] = useState(0);
-  const [lastBoardSwipe, setLastBoardSwipe] = useState<LastBoardSwipe | null>(null);
   const [confirmReset, setConfirmReset] = useState(false);
-  useEffect(() => {
-    if (!lastBoardSwipe) return;
-    const timeout = window.setTimeout(() => setLastBoardSwipe(null), 4000);
-    return () => window.clearTimeout(timeout);
-  }, [lastBoardSwipe]);
 
   useEffect(() => {
     function onKey(e: KeyboardEvent) {
       if (!current || interlude || paused) return;
       if (e.key === "ArrowRight" || e.key === "ArrowLeft") {
         const choice = e.key === "ArrowRight" ? "like" : "dislike";
-        if (variant === "board") setLastBoardSwipe({ id: current.id, choice });
         onSwipe(current.id, choice);
       }
     }
@@ -155,7 +144,6 @@ export function SwipeDeck({
   function commit(choice: "like" | "dislike") {
     if (!current) return;
     if (variant === "ritual") touchStreak();
-    if (variant === "board") setLastBoardSwipe({ id: current.id, choice });
     onSwipe(current.id, choice);
     setDrag({ active: false, dx: 0, dy: 0 });
   }
@@ -242,8 +230,7 @@ export function SwipeDeck({
           </>
         ) : interlude ? <div className="board-swipe__interlude">{interlude}<button onClick={onGoBrowse}>Browse homes ↑</button></div>
           : <div className="board-swipe__empty"><span>THE WHOLE SET</span><h2>That's the set.</h2><p>Ready to find a place that feels like you?</p><button onClick={onGoBrowse}>See {browseCount ?? ""} homes ↑</button><button onClick={() => setConfirmReset(true)}>Start over</button></div>}
-        {lastBoardSwipe && <div className="board-swipe__toast" role="status">{lastBoardSwipe.choice === "like" ? "Liked" : "Passed"} · <button onClick={() => { onUndo?.(lastBoardSwipe.id, lastBoardSwipe.choice); setLastBoardSwipe(null); }}>Undo</button></div>}
-        {confirmReset && <div className="board-swipe__modal" role="dialog" aria-modal="true" aria-label="Reset taste"><div><h2>Start fresh?</h2><p>This clears your photo likes and passes. Your Browse filters and saved homes stay.</p><button onClick={() => setConfirmReset(false)}>Keep my taste</button><button onClick={() => { onReset(); setConfirmReset(false); setLastBoardSwipe(null); }}>Reset taste</button></div></div>}
+        {confirmReset && <div className="board-swipe__modal" role="dialog" aria-modal="true" aria-label="Reset taste"><div><h2>Start fresh?</h2><p>This clears your photo likes and passes. Your Browse filters and saved homes stay.</p><button onClick={() => setConfirmReset(false)}>Keep my taste</button><button onClick={() => { onReset(); setConfirmReset(false); }}>Reset taste</button></div></div>}
       </section>
     );
   }
