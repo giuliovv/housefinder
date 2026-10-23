@@ -19,6 +19,11 @@ interface Drag {
 
 const DRAG_THRESHOLD = 90;
 const INTRO_SEEN_KEY = "housefinder:swipe-intro-seen:v1";
+const BOARD_WELCOME_PHOTOS = [
+  "https://a19c53f45b440f049d21-3f2703e71e5f5fed646a243f2d21abcb.ssl.cf3.rackcdn.com/property_image.858cm626.v1/to-rent/Bradley-Gardens-London-W13/262211/262211_ct2w2m540s3fsasrcxmtgrw4v.jpg",
+  "https://alto4-alto-media.s3.amazonaws.com/TURglMdgLXknBMTMSX1xrjUSGYQ/2zRdw6EzEUlD3dc1x7pIiS-FeEU/Photo/[3]/2DyGfciGb5aKMztMbwyqSdXh5dc.jpg",
+  "https://a19c53f45b440f049d21-3f2703e71e5f5fed646a243f2d21abcb.ssl.cf3.rackcdn.com/property_image.858cm626.v1/to-rent/Corringway-London-W5/200502/200502_1wcyems5oak5a7zkoe9p348zf.jpg",
+];
 
 function introAlreadySeen(): boolean {
   try {
@@ -70,6 +75,8 @@ export function SwipeDeck({
   browseCount,
   compactBoardControls = false,
   minimalBoardControls = false,
+  showBoardWelcome = false,
+  onDismissBoardWelcome,
   teachSwipe,
   onTeachingEnd,
   onReset,
@@ -90,6 +97,8 @@ export function SwipeDeck({
   browseCount?: number;
   compactBoardControls?: boolean;
   minimalBoardControls?: boolean;
+  showBoardWelcome?: boolean;
+  onDismissBoardWelcome?: () => void;
   teachSwipe?: boolean;
   onTeachingEnd?: () => void;
   onReset: () => void;
@@ -235,6 +244,25 @@ export function SwipeDeck({
     const reducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
     const styleWords = likedCount >= 3 ? styleDescription?.[0]?.trim().split(/\s+/) : null;
     const progress = Math.min(5, Math.floor(decided / 6));
+    if (showBoardWelcome && current) return (
+      <section className="board-swipe board-swipe--welcome" aria-label="Welcome to House Swipe">
+        <div className="board-swipe__stage board-welcome">
+          <div className="board-welcome__copy">
+            <p className="board-welcome__eyebrow">HOUSE SWIPE · LONDON RENTALS</p>
+            <h1>Would I <em>like</em> living here?</h1>
+            <p className="board-welcome__intro">Like or pass room photos. We learn your taste and bring the London homes closest to it to the top.</p>
+          </div>
+          <div className="board-welcome__rooms" aria-hidden="true">
+            {BOARD_WELCOME_PHOTOS.map((url) => <div key={url} className="board-welcome__room"><img src={url} alt="" referrerPolicy="no-referrer" onError={(event) => { event.currentTarget.style.display = "none"; }} /></div>)}
+          </div>
+          <div className="board-welcome__choices">
+            <p>Your choices stay on this device. Browse works without swiping.</p>
+            <button className="board-welcome__start" onClick={onDismissBoardWelcome}>Find my style →</button>
+            <button className="board-welcome__browse" onClick={onGoBrowse}>Just browse{browseCount == null ? " homes" : ` ${browseCount} homes`}</button>
+          </div>
+        </div>
+      </section>
+    );
     return (
       <section className="board-swipe" aria-label="Find your style">
         {current && !interlude ? (

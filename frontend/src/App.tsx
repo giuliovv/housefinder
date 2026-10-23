@@ -49,6 +49,7 @@ type Tab = "browse" | "style" | "saved";
 const PAGE_SIZE = 40;
 /** the big data files (listings, ranking matrix) are fetched once someone has swiped this many photos, or opens Browse/Saved */
 const NEED_DATA_AFTER_SWIPES = 10;
+const BOARD_WELCOME_KEY = "housefinder:board-v3-welcome:v1";
 
 function App({ labVariant }: { labVariant?: "board" | "board-v4" | "board-v5" } = {}) {
   const board = labVariant === "board" || labVariant === "board-v4" || labVariant === "board-v5";
@@ -94,6 +95,13 @@ function App({ labVariant }: { labVariant?: "board" | "board-v4" | "board-v5" } 
   const [features, setFeatures] = useState<string[]>(stored.features ?? []);
   const [minBathrooms, setMinBathrooms] = useState<string>(stored.minBathrooms ?? "any");
   const [tab, setTab] = useState<Tab>(() => (new URLSearchParams(window.location.search).has("board") ? "saved" : "style"));
+  const [boardWelcomeSeen, setBoardWelcomeSeen] = useState(() => {
+    try { return localStorage.getItem(BOARD_WELCOME_KEY) === "1"; } catch { return false; }
+  });
+  function dismissBoardWelcome() {
+    setBoardWelcomeSeen(true);
+    try { localStorage.setItem(BOARD_WELCOME_KEY, "1"); } catch { /* storage may be unavailable */ }
+  }
   const [filterSheetOpen, setFilterSheetOpen] = useState(false);
   const [areaPanelOpen, setAreaPanelOpen] = useState(false);
   const [drawing, setDrawing] = useState(false);
@@ -597,12 +605,12 @@ function App({ labVariant }: { labVariant?: "board" | "board-v4" | "board-v5" } 
           <button className={`app__tab ${tab === "style" ? "app__tab--active" : ""}`} onClick={() => setTab("style")}>
             {board ? "Style" : "Find your style"}
           </button>
-          <button className={`app__tab ${tab === "browse" ? "app__tab--active" : ""}`} onClick={() => setTab("browse")}>
+          <button className={`app__tab ${tab === "browse" ? "app__tab--active" : ""}`} onClick={() => { if (labVariant === "board") dismissBoardWelcome(); setTab("browse"); }}>
             Browse
             {board && listings && <span className="board__tab-count">{visible.length}</span>}
             {(!ready.browseOpened || (newSet.size > 0 && !browseSeen)) && <span className="app__tab-dot" aria-label="Your matches are ready" />}
           </button>
-          <button className={`app__tab ${tab === "saved" ? "app__tab--active" : ""}`} onClick={() => setTab("saved")}>
+          <button className={`app__tab ${tab === "saved" ? "app__tab--active" : ""}`} onClick={() => { if (labVariant === "board") dismissBoardWelcome(); setTab("saved"); }}>
             Saved{savedCount > 0 ? ` (${savedCount})` : ""}
           </button>
         </div>
@@ -622,16 +630,19 @@ function App({ labVariant }: { labVariant?: "board" | "board-v4" | "board-v5" } 
           browseCount={board && listings ? visible.length : undefined}
           compactBoardControls={board}
           minimalBoardControls={boardV5}
+          showBoardWelcome={labVariant === "board" && !boardWelcomeSeen && swipeTotal === 0}
+          onDismissBoardWelcome={dismissBoardWelcome}
           teachSwipe={board && !introWigglePlayed}
           onTeachingEnd={markIntroWigglePlayed}
           injected={matchCard}
           onReset={() => {
+            if (labVariant === "board") dismissBoardWelcome();
             reset();
             const fresh = { shownLevel: 0, browseOpened: true };
             setReady(fresh);
             saveReady(fresh);
           }}
-          onGoBrowse={() => setTab("browse")}
+          onGoBrowse={() => { if (labVariant === "board") dismissBoardWelcome(); setTab("browse"); }}
           styleDescription={styleDescription}
           tasteRead={tasteRead}
           onBroken={markBroken}
