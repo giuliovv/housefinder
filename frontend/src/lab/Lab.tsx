@@ -12,8 +12,6 @@ import "./lab.css";
 const DESIGNS: { id: string; name: string; line: string; cold?: boolean; whole?: RedesignName; C: ComponentType<{ lab: Lab }> }[] = [
   { id: "2", name: "Navy", whole: "navy", line: "Photos take the screen, navy and raspberry, tabs under your thumb.", C: () => null },
   { id: "9", name: "Sticker", whole: "postcard", line: "Thick outlines, hard shadows, flat bright colour. Playful and loud.", C: () => null },
-  { id: "10", name: "Dusk", whole: "dusk", line: "A dark theme for evening scrolling: plum canvas, violet accent, glass bars.", C: () => null },
-  { id: "12", name: "Light table", whole: "table", line: "Photos are prints. Flick them into the Bin or onto your Keep pile and watch the pile grow.", C: () => null },
   { id: "13", name: "Full bleed", whole: "bleed", line: "The photo is the whole screen. The screen washes green or pink as you drag, and every ten photos fill the strip.", C: () => null },
   { id: "14", name: "Hand", whole: "fan", line: "Photos are dealt as a fanned hand of cards. Play the front card left or right and the hand re-deals.", C: () => null },
   { id: "15", name: "Daily ten", whole: "ritual", line: "Swiping as a daily ritual: a streak, a ring that fills across ten photos, and a round card that names your style.", C: () => null },

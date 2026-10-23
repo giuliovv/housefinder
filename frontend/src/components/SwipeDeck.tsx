@@ -57,12 +57,6 @@ function touchStreak() {
   }
 }
 
-function hash(text: string): number {
-  let h = 0;
-  for (let i = 0; i < text.length; i++) h = (h * 31 + text.charCodeAt(i)) >>> 0;
-  return h;
-}
-
 function clamp(v: number, lo: number, hi: number): number {
   return Math.max(lo, Math.min(hi, v));
 }
@@ -105,9 +99,6 @@ export function SwipeDeck({
 }) {
   const variant = useContext(DeckVariantContext);
   const current = injected ?? undecided[0];
-  // table: the photos you kept this visit, newest last, shown as a pile
-  const [pile, setPile] = useState<string[]>([]);
-  const [binned, setBinned] = useState(0);
   const neighbours = useContext(DeckNeighboursContext);
   // dig: a swipe up likes the photo and offers the photos most like it
   const [dig, setDig] = useState<{ id: string; url: string }[] | null>(null);
@@ -147,8 +138,6 @@ export function SwipeDeck({
   function commit(choice: "like" | "dislike") {
     if (!current) return;
     if (variant === "ritual") touchStreak();
-    if (choice === "like") setPile((p) => [...p, current.url].slice(-6));
-    else setBinned((n) => n + 1);
     onSwipe(current.id, choice);
     setDrag({ active: false, dx: 0, dy: 0 });
   }
@@ -242,23 +231,6 @@ export function SwipeDeck({
         </>
       ) : current ? (
         <>
-          {variant === "table" && (
-            <div className="swipe__zones" aria-hidden>
-              <div className="swipe__zone swipe__zone--bin" style={{ opacity: 0.35 + passOpacity * 0.65, transform: `scale(${1 + passOpacity * 0.12})` }}>
-                <b>Bin</b>
-                <span>{binned}</span>
-              </div>
-              <div className="swipe__zone swipe__zone--keep" style={{ opacity: 0.35 + likeOpacity * 0.65, transform: `scale(${1 + likeOpacity * 0.12})` }}>
-                <div className="swipe__pile">
-                  {pile.slice(-4).map((u, k) => (
-                    <img key={u + k} src={normalizeImageUrl(u) ?? undefined} alt="" referrerPolicy="no-referrer" style={{ transform: `rotate(${(k % 2 ? 1 : -1) * (k + 1) * 3}deg)` }} />
-                  ))}
-                </div>
-                <b>Keep</b>
-                <span>{likedCount}</span>
-              </div>
-            </div>
-          )}
           {variant === "bleed" && (
             <div className="swipe__wash" aria-hidden style={{ ["--like" as string]: likeOpacity, ["--pass" as string]: passOpacity }}>
               <span className="swipe__glyph swipe__glyph--like">♥</span>
@@ -287,12 +259,6 @@ export function SwipeDeck({
                 tx = side * step * 22;
                 ty = step * 6;
                 scale = 1 - step * 0.03;
-              } else if (variant === "table" && !isTop) {
-                // prints lying on the table, each a little askew
-                rot = ((hash(card.id) % 7) - 3) * 1.1;
-                tx = ((hash(card.id + "x") % 9) - 4) * 2;
-                ty = i * 5;
-                scale = 1 - i * 0.02;
               } else if (variant === "bleed") {
                 tx = isTop ? drag.dx : 0;
                 ty = isTop ? drag.dy * 0.2 : 0;
@@ -327,7 +293,6 @@ export function SwipeDeck({
                         if (e.currentTarget.naturalWidth < 120 || e.currentTarget.naturalHeight < 120) onBroken(card.id);
                       }}
                     />
-                    {variant === "table" && <span className="swipe__caption">Would you live here?</span>}
                     {isTop && (
                       <>
                         <div className="swipe__stamp swipe__stamp--like" style={{ opacity: likeOpacity }}>{variant === "stamp" ? "MOVE IN" : "LIKE"}</div>
