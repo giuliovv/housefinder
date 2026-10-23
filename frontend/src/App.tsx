@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import type { Listing, StyleLabel } from "./types";
 import { loadEmbeddingStore, photoId, type EmbeddingStore } from "./lib/embeddingStore";
 import { ListingCard } from "./components/ListingCard";
@@ -482,7 +482,9 @@ function App({ labVariant }: { labVariant?: "board" | "board-v4" | "board-v5" } 
   const pinned = pinnedKey ? listingsByKey[pinnedKey] : undefined;
   const pinnedPhoto = pinned && store && rankingPreference ? store.bestPhoto(listingKey(pinned), rankingPreference) : null;
   const pinnedPhotoId = pinned && pinnedPhoto ? photoId(listingKey(pinned), pinnedPhoto) : null;
-  useEffect(() => {
+  // A layout effect, so the inline match is already in the first paint of Browse: as a normal effect it popped in a moment
+  // after the list had appeared and pushed everything down.
+  useLayoutEffect(() => {
     if (!board || tab !== "browse" || !listings || !matchScores || (tasteRead?.level ?? 0) < 2) return;
     const key = "housefinder:board-inline-match:v1";
     try { if (sessionStorage.getItem(key)) return; } catch { /* still show if storage is unavailable */ }
