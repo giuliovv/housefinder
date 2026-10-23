@@ -288,7 +288,7 @@ html.rd-board {
   padding: max(88px, calc(env(safe-area-inset-top) + 76px)) 22px 20px;
   overflow: visible;
   border-radius: 0;
-  background: #ff6a2b;
+  background: radial-gradient(circle at 85% 12%, #ffd8b8 0, transparent 38%), linear-gradient(165deg, #fff5e9 0%, #f2eee4 68%, #f6dfca 100%);
   color: var(--ink);
 }
 .rd-board:not(.rd-board-v4) .board-welcome__copy { flex: none; }
@@ -308,6 +308,7 @@ html.rd-board {
 .rd-board:not(.rd-board-v4) .board-welcome__copy h1 em {
   font: italic 400 1.08em/.8 var(--serif);
   letter-spacing: -.015em;
+  color: #b53a0c;
 }
 .rd-board:not(.rd-board-v4) .board-welcome__intro {
   max-width: 34ch;
