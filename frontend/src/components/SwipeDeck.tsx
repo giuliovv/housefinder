@@ -234,10 +234,6 @@ export function SwipeDeck({
     const styleWords = likedCount >= 3 ? styleDescription?.[0]?.trim().split(/\s+/) : null;
     const label = likedCount < 3 ? "Learning your taste" : tasteRead?.level === 3 ? "Strong read" : "Getting there";
     const progress = Math.min(5, Math.floor(decided / 6));
-    const readout = <>
-      <div className="board-swipe__read"><span>{label}</span><span>{decided}/30</span></div>
-      <div className="board-swipe__arches" aria-label={`${decided} photos rated`}>{Array.from({ length: 5 }, (_, i) => <i key={i} className={i < progress ? "board-swipe__arch--on" : ""} />)}</div>
-    </>;
     return (
       <section className="board-swipe" aria-label="Find your style">
         {current && !interlude ? (
@@ -265,12 +261,12 @@ export function SwipeDeck({
                 <div className="swipe__stamp swipe__stamp--pass" style={{ opacity: teaching ? undefined : passOpacity }} aria-hidden="true">PASS</div>
                 <div className="swipe__stamp swipe__stamp--like" style={{ opacity: teaching ? undefined : likeOpacity }} aria-hidden="true">LIKE</div>
               </div>
-              {compactBoardControls && <div className="board-swipe__readout">{readout}</div>}
             </div>
             <div className="board-swipe__panel">
               <p className="board-swipe__kicker">YOU LEAN TOWARD</p>
               <h2>{styleWords?.length ? <>{styleWords.slice(0, -1).join(" ")} <em>{styleWords.at(-1)}</em></> : <><em>Your</em> next place</>}</h2>
-              {!compactBoardControls && readout}
+              <div className="board-swipe__read"><span>{label}</span><span>{decided}/30</span></div>
+              <div className="board-swipe__arches" aria-label={`${decided} photos rated`}>{Array.from({ length: 5 }, (_, i) => <i key={i} className={i < progress ? "board-swipe__arch--on" : ""} />)}</div>
               <div className="board-swipe__actions">
                 <button onClick={() => commit("dislike")}>← Pass</button>
                 {compactBoardControls && <button className="board-swipe__skip" onClick={() => { stopTeaching(); onHide(current.id); }}>Skip photo</button>}

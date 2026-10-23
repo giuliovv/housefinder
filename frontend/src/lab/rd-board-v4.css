@@ -81,9 +81,6 @@ html.rd-board-v4 {
 .rd-board-v4 .board-swipe__photo .swipe__stamp { border-width: 2px; border-radius: 10px; background: #26332dda; font: 600 clamp(20px, 6vw, 29px)/1 var(--sans); }
 .rd-board-v4 .board-swipe__photo .swipe__stamp--pass { border-color: #eccabb; color: #f4d9cd; }
 .rd-board-v4 .board-swipe__photo .swipe__stamp--like { border-color: var(--accent-soft); color: #fff; }
-.rd-board-v4 .board-swipe__readout { position: absolute; z-index: 3; bottom: 44px; left: 16px; width: min(260px, calc(100% - 32px)); padding: 11px 13px 10px; border: 1px solid #dce3da; border-radius: 14px; background: #fffefae8; box-shadow: 0 8px 24px #26332d24; backdrop-filter: blur(8px); pointer-events: none; }
-.rd-board-v4 .board-swipe__readout .board-swipe__read { gap: 10px; color: var(--ink); }
-.rd-board-v4 .board-swipe__readout .board-swipe__arches { height: 8px; margin: 7px 0 0; }
 .rd-board-v4 .board-swipe__panel { border: 1px solid #e4e7df; border-radius: 26px; background: #fffefa; box-shadow: 0 16px 42px #26332d24; }
 .rd-board-v4 .board-swipe__panel h2 { font: 600 clamp(34px, 8vw, 49px)/1.02 var(--sans); letter-spacing: -.055em; }
 .rd-board-v4 .board-swipe__arches i { border: 1px solid #cad5ca; background: #f0f3ed; }
