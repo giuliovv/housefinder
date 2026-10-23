@@ -45,39 +45,32 @@ html.rd-board-v4 {
 }
 .rd-board-v4 .listing-card:hover { box-shadow: 0 16px 40px #26332d20; }
 .rd-board-v4 .listing-card__photo-wrap { border-bottom: 0; background: #e0e5dd; }
-.rd-board-v4 .board-listing__no-photo { background: #e8ebe4; color: var(--muted); }
-.rd-board-v4 .board-listing__arrow { width: 44px; height: 44px; border: 1px solid #d7ddd3; border-radius: 50%; background: #fffefaef; font-size: 23px; box-shadow: 0 3px 12px #26332d20; }
-.rd-board-v4 .board-listing__arrow--prev { left: 10px; }
-.rd-board-v4 .board-listing__arrow--next { right: 10px; }
+.rd-board-v4 .listing-card:not(.board-listing) { border-radius: 14px; box-shadow: 0 5px 18px #26332d12; }
+.rd-board-v4 .listing-card:not(.board-listing) .listing-card__photo-wrap { height: 190px; }
+.rd-board-v4 .listing-card:not(.board-listing) .listing-card__body { padding: 14px 16px 16px; }
+.rd-board-v4 .listing-card:not(.board-listing) .listing-card__price { font: 600 21px/1.15 var(--serif); letter-spacing: 0; }
+.rd-board-v4 .listing-card:not(.board-listing) .listing-card__address { font: 600 13.5px/1.35 var(--sans); }
+.rd-board-v4 .listing-card:not(.board-listing) .listing-card__rooms { display: flex; gap: 10px; font: 400 12px/1.3 var(--sans); }
+.rd-board-v4 .listing-card:not(.board-listing) .listing-card__description { font: 400 12.5px/1.5 var(--sans); }
+.rd-board-v4 .listing-card:not(.board-listing) .listing-card__agency { background: #fffefae8; color: var(--ink); font: 500 10px/1 var(--sans); }
+.rd-board-v4 .listing-card:not(.board-listing) .listing-card__photo-count { background: #26332dbb; border-color: transparent; color: #fff; }
+.rd-board-v4 .listing-card:not(.board-listing) .listing-card__save { min-height: 44px; padding: 0 12px; border: 1px solid #d3ddd1; background: #fffefa; color: var(--forest); font: 600 12px/1 var(--sans); }
+.rd-board-v4 .listing-card:not(.board-listing) .listing-card__save--on { border-color: var(--forest); background: #e5eee3; }
+.rd-board-v4 .listing-card:not(.board-listing) .listing-card__rate-btn { width: 44px; height: 44px; border: 1px solid #dbe2da; background: #fffefaf2; color: var(--ink); font-size: 18px; font-weight: 600; box-shadow: 0 3px 10px #26332d30; }
+.rd-board-v4 .listing-card:not(.board-listing) .listing-card__rate-btn--active.listing-card__rate-btn--like { border-color: var(--forest); background: var(--forest); color: #fff; }
+.rd-board-v4 .listing-card:not(.board-listing) .listing-card__rate-btn--active.listing-card__rate-btn--dislike { border-color: var(--ink); background: var(--ink); color: #fff; }
 .rd-board-v4 .listing-card__body { padding: 19px 19px 16px; }
 .rd-board-v4 .listing-card__price { font: 600 30px/1.05 var(--sans); letter-spacing: -.055em; }
 .rd-board-v4 .listing-card__address { font: 600 16px/1.3 var(--sans); }
 .rd-board-v4 .listing-card__rooms, .rd-board-v4 .listing-card__description { color: var(--muted); }
-.rd-board-v4 .board-listing__drop span, .rd-board-v4 .listing-card__status, .rd-board-v4 .listing-card__new,
+.rd-board-v4 .listing-card__status, .rd-board-v4 .listing-card__new,
 .rd-board-v4 .listing-card__drop, .rd-board-v4 .listing-card__match, .rd-board-v4 .listing-card__agency,
-.rd-board-v4 .listing-card__photo-count, .rd-board-v4 .board-listing__unranked {
+.rd-board-v4 .listing-card__photo-count {
   border: 1px solid #d6dfd4; box-shadow: none; background: #f8faf4; color: var(--ink);
 }
 .rd-board-v4 .listing-card__new, .rd-board-v4 .listing-card__status { border-color: #d8b6a5; background: #f1dfd4; color: #75412f; }
-.rd-board-v4 .listing-card__match, .rd-board-v4 .listing-card__drop, .rd-board-v4 .board-listing__drop span { background: #e5eee3; color: #294d39; }
+.rd-board-v4 .listing-card__match, .rd-board-v4 .listing-card__drop { background: #e5eee3; color: #294d39; }
 .rd-board-v4 .listing-card__price-flag { border: 1px solid #e4d4b2; background: #f8efdd; }
-.rd-board-v4 .board-listing .price-chart__line { stroke: var(--forest); }
-.rd-board-v4 .board-listing .price-chart__dot { fill: var(--forest); }
-.rd-board-v4 .board-listing__actions { gap: 9px; padding: 0 19px 18px; }
-.rd-board-v4 .board-listing__actions button { border: 1px solid #d5ddd3; background: #fbfbf7; font: 600 13px/1 var(--sans); }
-.rd-board-v4 .board-listing__actions button:nth-child(2) { border-color: var(--forest); background: var(--forest); color: #fff; }
-.rd-board-v4 .board-listing__actions button[aria-pressed="true"] { border-color: #bdd0be; background: #e2ebdf; color: var(--forest); }
-.rd-board-v4 .board-listing__photo-actions { position: absolute; z-index: 3; left: 12px; bottom: 12px; display: flex; align-items: center; gap: 5px; padding: 4px 5px 4px 10px; border: 1px solid #ffffffa8; border-radius: 99px; background: #fffefaf2; box-shadow: 0 3px 14px #26332d30; }
-.rd-board-v4 .board-listing__photo-actions span { margin-right: 3px; color: var(--muted-dark); font: 500 10px/1 var(--mono); white-space: nowrap; }
-.rd-board-v4 .board-listing__photo-actions button { width: 44px; height: 44px; border: 0; border-radius: 50%; background: transparent; color: var(--ink); font: 500 21px/1 var(--sans); cursor: pointer; }
-.rd-board-v4 .board-listing__photo-actions button[aria-pressed="true"] { background: #dce9dc; color: var(--forest); }
-.rd-board-v4 .board-listing__photo-actions button:focus-visible, .rd-board-v4 .board-listing__save-row button:focus-visible { outline: 2px solid var(--forest); outline-offset: 2px; }
-.rd-board-v4 .board-listing__save-row { display: flex; justify-content: flex-end; padding: 0 19px 17px; }
-.rd-board-v4 .board-listing__save-row button { min-height: 44px; padding: 0 15px; border: 1px solid #cad7ca; border-radius: 99px; background: #f2f6ef; color: var(--forest); font: 600 12px/1 var(--sans); cursor: pointer; }
-.rd-board-v4 .board-listing__save-row button[aria-pressed="true"] { background: var(--forest); color: #fff; }
-.rd-board-v4 .board-listing__footer { border-top: 1px solid #e7e9e2; background: #f5f6f0; color: var(--muted); }
-.rd-board-v4 .board-listing__footer strong { color: var(--forest); }
-.rd-board-v4 .board-listing__body-link:focus-visible, .rd-board-v4 .board-listing__footer:focus-visible { outline-color: var(--forest); }
 
 .rd-board-v4 .board-swipe__stage { border-radius: 0 0 32px 32px; background: #d8dfd5; }
 .rd-board-v4 .app:has(.board-swipe__stage) .board-swipe__stage { height: clamp(420px, calc(100svh - 310px), 780px); }

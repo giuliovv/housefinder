@@ -22,6 +22,8 @@ function displayPrice(text: string): string {
 export function ListingCard({
   listing,
   matchScore,
+  matchLabel,
+  hideFreshness = false,
   store,
   deadPhotos,
   swipes,
@@ -34,6 +36,8 @@ export function ListingCard({
 }: {
   listing: Listing;
   matchScore?: number;
+  matchLabel?: string;
+  hideFreshness?: boolean;
   store?: EmbeddingStore | null;
   /** photo URLs known to be gone (the agency deleted them) — never shown */
   deadPhotos?: ReadonlySet<string>;
@@ -161,8 +165,8 @@ export function ListingCard({
           {summary.status && <span className="listing-card__status">{summary.status}</span>}
         </div>
         {matchScore != null && (
-          <span className="listing-card__match" title="Relative match to your swiped style — higher is better, compare listings to each other rather than reading it as an absolute percentage">
-            {Math.round(matchScore * 100)}% match
+          <span className="listing-card__match" title={matchLabel ? "A relative ranking from photos, not a prediction." : "Relative match to your swiped style — higher is better, compare listings to each other rather than reading it as an absolute percentage"}>
+            {matchLabel ?? `${Math.round(matchScore * 100)}% match`}
           </span>
         )}
         {canRate && (
@@ -209,7 +213,7 @@ export function ListingCard({
           <p className="listing-card__price-flag">Price looks off — check with the agency</p>
         )}
         <p className="listing-card__address">{summary.address}</p>
-        {staleDays !== null && <p className="listing-card__stale">Last checked {staleDays} days ago</p>}
+        {!hideFreshness && staleDays !== null && <p className="listing-card__stale">Last checked {staleDays} days ago</p>}
         <p className="listing-card__rooms">
           {summary.bedrooms != null && <span>{summary.bedrooms} bed</span>}
           {summary.bathrooms != null && <span>{summary.bathrooms} bath</span>}

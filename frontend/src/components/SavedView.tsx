@@ -13,7 +13,7 @@ import type { PriceHistory } from "../lib/priceHistory";
 
 interface Props {
   boardDesign?: boolean;
-  compactActions?: boolean;
+  originalCards?: boolean;
   swipes?: Record<string, SwipeChoice>;
   onRate?: (photoId: string, choice: SwipeChoice) => void;
   topScoreThreshold?: number | null;
@@ -140,7 +140,24 @@ export function SavedView(p: Props) {
   const inBoard = p.boardId !== null;
   const live = inBoard && p.status === "live"; // until it connects (or if it can't), show my own saves
   const cardProps = { store: p.store, deadPhotos: p.deadPhotos };
-  const boardCard = (listing: Listing, saved: boolean) => <BoardListingCard listing={listing} saved={saved} onToggleSave={() => p.onToggleSave(listing)} isTopRanked={p.topScoreThreshold != null && (p.matchScores?.[listingKey(listing)] ?? -Infinity) >= p.topScoreThreshold} swipes={p.swipes} onRate={p.onRate} priceSeries={p.priceHistory?.[listingKey(listing)]} today={p.today} compactActions={p.compactActions} {...cardProps} />;
+  const boardCard = (listing: Listing, saved: boolean) => <BoardListingCard listing={listing} saved={saved} onToggleSave={() => p.onToggleSave(listing)} isTopRanked={p.topScoreThreshold != null && (p.matchScores?.[listingKey(listing)] ?? -Infinity) >= p.topScoreThreshold} swipes={p.swipes} onRate={p.onRate} priceSeries={p.priceHistory?.[listingKey(listing)]} today={p.today} {...cardProps} />;
+  const originalCard = (listing: Listing, saved: boolean) => {
+    const score = p.matchScores?.[listingKey(listing)];
+    const topScore = p.topScoreThreshold != null && (score ?? -Infinity) >= p.topScoreThreshold ? score : undefined;
+    return <ListingCard
+      listing={listing}
+      matchScore={topScore}
+      matchLabel="Nearer your taste"
+      hideFreshness
+      saved={saved}
+      onToggleSave={() => p.onToggleSave(listing)}
+      swipes={p.swipes}
+      onRate={p.onRate}
+      priceSeries={p.priceHistory?.[listingKey(listing)]}
+      today={p.today}
+      {...cardProps}
+    />;
+  };
 
   if (p.invite) {
     return (
@@ -195,7 +212,7 @@ export function SavedView(p: Props) {
                     {both ? "Saved by both: " : "Saved by "}
                     {names.join(" & ")}
                   </p>
-                  {listing ? p.boardDesign ? boardCard(listing, p.saved.includes(item.key)) : (
+                  {listing ? p.boardDesign ? p.originalCards ? originalCard(listing, p.saved.includes(item.key)) : boardCard(listing, p.saved.includes(item.key)) : (
                     <ListingCard
                       listing={listing}
                       matchScore={p.matchScores?.[listingKey(listing)]}
@@ -216,7 +233,7 @@ export function SavedView(p: Props) {
                 </div>
               );
             })
-          : mine.map((listing) => p.boardDesign ? <div key={listingKey(listing)}>{boardCard(listing, true)}</div> : (
+          : mine.map((listing) => p.boardDesign ? <div key={listingKey(listing)}>{p.originalCards ? originalCard(listing, true) : boardCard(listing, true)}</div> : (
               <ListingCard
                 key={listingKey(listing)}
                 listing={listing}

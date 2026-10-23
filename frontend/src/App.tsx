@@ -575,6 +575,12 @@ function App({ labVariant }: { labVariant?: "board" | "board-v4" } = {}) {
     if (announce !== null) trackMilestone("m_ready_shown");
   }, [announce]);
 
+  const cardMatchScore = (listing: Listing) => {
+    const score = matchScores?.[listingKey(listing)];
+    if (!boardV4) return score;
+    return topScoreThreshold !== null && (score ?? -Infinity) >= topScoreThreshold ? score : undefined;
+  };
+
   return (
     <div className={`app${board ? " app--board" : ""}`}>
       <header className="app__header">
@@ -709,7 +715,7 @@ function App({ labVariant }: { labVariant?: "board" | "board-v4" } = {}) {
           deadPhotos={deadPhotos}
           onToggleSave={shortlist.toggleSave}
           boardDesign={board}
-          compactActions={boardV4}
+          originalCards={boardV4}
           swipes={swipes}
           onRate={toggleSwipe}
           topScoreThreshold={topScoreThreshold}
@@ -824,16 +830,15 @@ function App({ labVariant }: { labVariant?: "board" | "board-v4" } = {}) {
               </p>
               <div className={board ? undefined : "listing-grid"}>
                 {board && pinnedPhoto && pinnedPhotoId ? <BoardMatchCard listing={pinned} photoUrl={pinnedPhoto} onLike={() => rateBoardMatch(pinnedPhotoId, "like")} onPass={() => rateBoardMatch(pinnedPhotoId, "dislike")} />
-                  : <ListingCard listing={pinned} matchScore={matchScores?.[listingKey(pinned)]} store={store} deadPhotos={deadPhotos} swipes={swipes} onRate={toggleSwipe} saved={shortlist.saved.includes(listingKey(pinned))} onToggleSave={() => shortlist.toggleSave(pinned)} />}
+                  : <ListingCard listing={pinned} matchScore={cardMatchScore(pinned)} matchLabel={boardV4 ? "Nearer your taste" : undefined} hideFreshness={boardV4} store={store} deadPhotos={deadPhotos} swipes={swipes} onRate={toggleSwipe} saved={shortlist.saved.includes(listingKey(pinned))} onToggleSave={() => shortlist.toggleSave(pinned)} />}
               </div>
             </div>
           )}
           {board && visible.length === 0 && <div className="board__zero"><span>NO HOMES IN THIS SEARCH</span><h2>Nothing fits <em>all</em> of that</h2><p>{zeroSuggestions.length > 0 ? `Drop ${zeroSuggestions[0].label} to see ${zeroSuggestions[0].count} ${zeroSuggestions[0].count === 1 ? "home" : "homes"}.` : "Try widening your search. Your saved homes and style are still here."}</p>{zeroSuggestions.map((s) => <button key={s.key} onClick={() => removeOneFilter(s.key)}>Remove {s.label} · +{s.count}</button>)}{activeFilterCount > 0 && <button onClick={clearFilters}>Clear all filters</button>}</div>}
           <main className="listing-grid app__results" ref={resultsRef}>
             {visible.filter((l) => listingKey(l) !== pinnedKey).slice(0, shownCount).map((listing) => (
-              board ? <BoardListingCard
+              board && !boardV4 ? <BoardListingCard
                 key={listingKey(listing)}
-                compactActions={boardV4}
                 listing={listing}
                 store={store}
                 deadPhotos={deadPhotos}
@@ -848,7 +853,9 @@ function App({ labVariant }: { labVariant?: "board" | "board-v4" } = {}) {
               /> : <ListingCard
                 key={`${listing.summary.platform}-${listing.summary.source_id}`}
                 listing={listing}
-                matchScore={matchScores?.[listingKey(listing)]}
+                matchScore={cardMatchScore(listing)}
+                matchLabel={boardV4 ? "Nearer your taste" : undefined}
+                hideFreshness={boardV4}
                 store={store}
                 deadPhotos={deadPhotos}
                 swipes={swipes}
