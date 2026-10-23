@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import type { Listing } from "../types";
 import { loadEmbeddingStore, type EmbeddingStore } from "../lib/embeddingStore";
 import { useStylePreferences } from "../lib/preferences";
@@ -6,6 +6,7 @@ import { useShortlist } from "../lib/useShortlist";
 import { listingKey } from "../lib/listingKey";
 import type { ListingGeo } from "../lib/geo";
 import { photoId } from "../lib/embeddingStore";
+import { diverse, EXPLORE_UNTIL } from "./suggest";
 import type { StyleLabel } from "../types";
 
 /**
@@ -37,6 +38,35 @@ export function useLab() {
   }, [store]);
 
   const prefs = useStylePreferences(store, rankingReady);
+
+  // which homes this person has already judged in a lab design: they are never suggested again
+  const [choices, setChoices] = useState<Record<string, "like" | "dislike">>(() => {
+    try {
+      return JSON.parse(localStorage.getItem("lab:home-choices") ?? "{}");
+    } catch {
+      return {};
+    }
+  });
+  const { swipe } = prefs;
+  /** judge one photo of a home: that photo teaches the taste model, and the home stops being suggested */
+  const rate = useCallback(
+    (listing: Listing, url: string, choice: "like" | "dislike") => {
+      const key = listingKey(listing);
+      // the shown photo teaches the model; if it has no vector yet (a home newer than the photo data) another photo of the home stands in
+      const teach = [url, ...listing.photo_urls].find((u) => store?.vectorOf(photoId(key, u)));
+      if (teach) swipe(photoId(key, teach), choice);
+      setChoices((c) => {
+        const next = { ...c, [key]: choice };
+        try {
+          localStorage.setItem("lab:home-choices", JSON.stringify(next));
+        } catch {
+          /* ignore */
+        }
+        return next;
+      });
+    },
+    [swipe, store],
+  );
 
   const listings = useMemo(
     () => (raw ? raw.filter((l) => !l.off_market && !l.unverified && !killed.includes(l.summary.agency) && l.photo_urls.length > 0) : null),
@@ -95,7 +125,16 @@ export function useLab() {
     return { out, far };
   }, [store, rankingReady, listings]);
 
-  return { store, rankingReady, listings, ranked, byKey, geo, labels, homeVectors, homeDistance, shortlist, ...prefs, swipeCount: prefs.likedCount + prefs.dislikedCount };
+  /** the next n homes to show: spread wide while we know little, the best matches once we know more; never ones already judged or in `exclude` */
+  const suggest = (n: number, exclude: ReadonlySet<string> = new Set(), seed = 1): Listing[] => {
+    // homes whose photos aren't in the photo data yet can't be learned from, so they are not suggested
+    const known = homeVectors.size > 0;
+    const fresh = ranked.filter((l) => !(listingKey(l) in choices) && !exclude.has(listingKey(l)) && (!known || homeVectors.has(listingKey(l))));
+    if (prefs.matchScores && prefs.likedCount + prefs.dislikedCount >= EXPLORE_UNTIL) return fresh.slice(0, n);
+    return homeVectors.size > 0 ? diverse(fresh.slice(0, 600), homeVectors, n, seed) : fresh.slice(0, n);
+  };
+
+  return { store, rankingReady, choices, rate, suggest, listings, ranked, byKey, geo, labels, homeVectors, homeDistance, shortlist, ...prefs, swipeCount: prefs.likedCount + prefs.dislikedCount };
 }
 export type Lab = ReturnType<typeof useLab>;
 
@@ -106,7 +145,7 @@ export function matchPct(score: number | undefined): number | null {
 }
 
 export function money(l: Listing): string {
-  return l.summary.price_pcm ? `£${l.summary.price_pcm.toLocaleString("en-GB")}` : l.summary.price_text || "Price on request";
+  return l.summary.price_pcm ? `£${Math.round(l.summary.price_pcm).toLocaleString("en-GB")}` : l.summary.price_text || "Price on request";
 }
 
 export function bedsLabel(l: Listing): string {

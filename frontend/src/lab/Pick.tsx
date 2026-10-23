@@ -3,38 +3,10 @@ import type { Listing } from "../types";
 import { listingKey } from "../lib/listingKey";
 import { area, money, type Lab } from "./useLab";
 import { Loading, Photo, useFont } from "./common";
+import { diverse, dot } from "./suggest";
 
 const ROUNDS = 3;
 const TILES = 9;
-
-const dot = (a: Float32Array, b: Float32Array) => {
-  let s = 0;
-  for (let i = 0; i < a.length; i++) s += a[i] * b[i];
-  return s;
-};
-
-/** Farthest-point sampling: each next home is the one least like those already chosen, so a round shows real variety. */
-function diverse(pool: Listing[], vecs: Map<string, Float32Array>, n: number, seed: number): Listing[] {
-  const usable = pool.filter((l) => vecs.has(listingKey(l)));
-  if (usable.length <= n) return usable;
-  const start = usable[(seed * 7919) % usable.length];
-  const chosen = [start];
-  const best = usable.map((l) => dot(vecs.get(listingKey(l))!, vecs.get(listingKey(start))!));
-  while (chosen.length < n) {
-    let at = -1;
-    let low = Infinity;
-    best.forEach((b, i) => {
-      if (b < low && !chosen.includes(usable[i])) {
-        low = b;
-        at = i;
-      }
-    });
-    chosen.push(usable[at]);
-    const v = vecs.get(listingKey(usable[at]))!;
-    usable.forEach((l, i) => (best[i] = Math.max(best[i], dot(vecs.get(listingKey(l))!, v))));
-  }
-  return chosen;
-}
 
 /** A wall of nine very different homes. Pick the one you would rather come home to; the next wall is nine variations on it. */
 export function Pick({ lab }: { lab: Lab }) {

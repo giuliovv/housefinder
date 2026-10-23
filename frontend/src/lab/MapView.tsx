@@ -4,7 +4,8 @@ import "leaflet/dist/leaflet.css";
 import type { Listing } from "../types";
 import { listingKey } from "../lib/listingKey";
 import { area, bedsLabel, money, type Lab } from "./useLab";
-import { Loading, Photo, useFont } from "./common";
+import { Loading, Photo, TasteBar, useFont } from "./common";
+import { diverse, EXPLORE_UNTIL } from "./suggest";
 
 /** Dark to light plum by how well a home matches: the pale dots are just homes, the deep ones are yours. */
 const RAMP = ["#c9c3d6", "#a28fc2", "#7b52a8", "#55267f", "#2e0a4f"];
@@ -22,10 +23,10 @@ export function MapView({ lab }: { lab: Lab }) {
     const n = lab.ranked.length || 1;
     return lab.ranked.flatMap((l, i) => {
       const g = lab.geo[listingKey(l)];
-      if (!g || (cap && (l.summary.price_pcm ?? Infinity) > cap)) return [];
+      if (!g || (cap && (l.summary.price_pcm ?? Infinity) > cap) || lab.choices[listingKey(l)] === "dislike") return [];
       return [{ l, lat: g[0], lon: g[1], t: lab.matchScores ? 1 - i / n : 0 }];
     });
-  }, [lab.ranked, lab.geo, lab.matchScores, cap]);
+  }, [lab.ranked, lab.geo, lab.matchScores, cap, lab.choices]);
 
   useEffect(() => {
     if (!el.current || map.current) return;
@@ -66,6 +67,28 @@ export function MapView({ lab }: { lab: Lab }) {
     });
   }, [points, lab.matchScores]);
 
+  const taught = lab.likedCount + lab.dislikedCount;
+
+  /** the next home to look at inside the part of the map on screen: the best match once we know the taste, otherwise a spread */
+  function nextInView(after?: Listing) {
+    const b = map.current?.getBounds();
+    if (!b) return;
+    const inView = points.filter((p) => b.contains([p.lat, p.lon]) && !(listingKey(p.l) in lab.choices) && p.l !== after);
+    if (inView.length === 0) return;
+    const known = lab.matchScores !== null && taught >= EXPLORE_UNTIL;
+    const pick = known || lab.homeVectors.size === 0 ? inView[0].l : (diverse(inView.slice(0, 200).map((p) => p.l), lab.homeVectors, 1, taught + 1)[0] ?? inView[0].l);
+    const at = inView.find((p) => p.l === pick) ?? inView[0];
+    setSel(pick);
+    setPhoto(0);
+    map.current?.panTo([at.lat, at.lon]);
+  }
+
+  function rate(choice: "like" | "dislike") {
+    if (!sel) return;
+    lab.rate(sel, sel.photo_urls[photo] ?? sel.photo_urls[0], choice);
+    nextInView(sel);
+  }
+
   const saved = sel ? lab.shortlist.saved.includes(listingKey(sel)) : false;
   return (
     <div className="mp">
@@ -84,6 +107,9 @@ export function MapView({ lab }: { lab: Lab }) {
           </select>
         </label>
         <span>{points.length.toLocaleString("en-GB")} homes</span>
+        <button className="mp__start" onClick={() => nextInView()} disabled={!lab.listings || !lab.rankingReady}>
+          Show me one
+        </button>
         {lab.matchScores ? (
           <i className="mp__key" aria-label="Darker is a better match">
             {RAMP.map((c) => (
@@ -91,8 +117,11 @@ export function MapView({ lab }: { lab: Lab }) {
             ))}
           </i>
         ) : (
-          <span className="mp__hint">Swipe in the main app to colour this by match.</span>
+          <span className="mp__hint">Like a few homes and the dots darken where you will like them.</span>
         )}
+      </div>
+      <div className="mp__taste">
+        <TasteBar lab={lab} />
       </div>
       {sel && (
         <aside className="mp__sheet">
@@ -108,6 +137,14 @@ export function MapView({ lab }: { lab: Lab }) {
           <div className="mp__info">
             <strong>{money(sel)}</strong>
             <span>{[bedsLabel(sel), area(sel)].filter(Boolean).join(", ")}</span>
+            <div className="mp__rate">
+              <button onClick={() => rate("dislike")} disabled={!lab.rankingReady} aria-label="Not for me">
+                ✕ Pass
+              </button>
+              <button className="mp__like" onClick={() => rate("like")} disabled={!lab.rankingReady} aria-label="I like this">
+                ♥ Like
+              </button>
+            </div>
             <div>
               <button onClick={() => lab.shortlist.toggleSave(sel)} aria-pressed={saved}>
                 {saved ? "Saved" : "Save"}

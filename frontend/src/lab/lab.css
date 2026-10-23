@@ -104,8 +104,6 @@
 .bd__rail li img { width: 100%; height: 100%; object-fit: cover; display: block; }
 .bd__tag { position: absolute; left: 0; top: 12px; padding: 5px 10px; background: #12203a; font: 800 17px/1 'Bricolage Grotesque', sans-serif; }
 .bd__where { position: absolute; left: 0; right: 0; bottom: 0; padding: 26px 10px 9px; font-size: 14px; font-weight: 600; background: linear-gradient(transparent, rgba(0,0,0,.7)); }
-.bd__rail li button { position: absolute; right: 8px; top: 8px; font: 700 12px/1 'Bricolage Grotesque', sans-serif; padding: 7px 10px; border: 0; background: #fff; color: #12203a; cursor: pointer; }
-.bd__rail li button.on { background: #e4572e; color: #fff; }
 .bd__none { padding: 0 18px; margin: 0; font-size: 15px; opacity: .75; }
 
 /* ── 5 Plum map ───────────────────────────────────────────────────────── */
@@ -194,3 +192,48 @@
 .wd__strip a { position: relative; flex: 0 0 104px; height: 84px; display: block; }
 .wd__strip img { width: 100%; height: 100%; object-fit: cover; display: block; }
 .wd__strip b { position: absolute; left: 0; bottom: 0; padding: 2px 5px; font: 600 11px/1.2 'DM Sans', sans-serif; color: #1b1a2e; background: #3be8b0; }
+
+/* learning controls shared by the designs that adapt */
+.taste { display: flex; align-items: center; gap: 10px; padding: 7px 12px; border-radius: 999px; font: 600 12px/1 system-ui, sans-serif; background: rgba(0,0,0,.55); color: #fff; backdrop-filter: blur(8px); }
+.taste i { width: 54px; height: 5px; border-radius: 3px; background: rgba(255,255,255,.3); position: relative; flex: none; }
+.taste i::after { content: ''; position: absolute; inset: 0 auto 0 0; width: var(--s); border-radius: 3px; background: #ffd23f; transition: width .4s; }
+.taste b { font-weight: 600; opacity: .85; }
+.rate { display: flex; flex-direction: column; gap: 12px; }
+.rate button { width: 58px; height: 58px; border-radius: 50%; border: 2px solid #fff; background: rgba(0,0,0,.4); color: #fff; font-size: 26px; line-height: 1; cursor: pointer; backdrop-filter: blur(6px); transition: transform .15s; }
+.rate button:active { transform: scale(.9); }
+.rate button:disabled { opacity: .4; cursor: wait; }
+.rate__like.on { background: #ff3b5c; border-color: #ff3b5c; }
+.reel__taste { position: fixed; z-index: 40; top: max(10px, env(safe-area-inset-top)); right: 10px; }
+.reel__side { position: absolute; z-index: 3; right: 12px; bottom: max(150px, 22svh); }
+.reel__burst { position: absolute; left: 50%; top: 45%; font-size: 120px; color: #ff3b5c; transform: translate(-50%, -50%); animation: burst .7s ease-out forwards; pointer-events: none; text-shadow: 0 4px 30px rgba(0,0,0,.4); }
+@keyframes burst { from { opacity: 1; transform: translate(-50%, -50%) scale(.5); } to { opacity: 0; transform: translate(-50%, -80%) scale(1.3); } }
+@media (prefers-reduced-motion: reduce) { .reel__burst { animation: none; opacity: 0; } }
+
+.cs__head .taste { margin-top: 14px; display: inline-flex; background: #1f1c18; color: #e9a23b; backdrop-filter: none; }
+.cs__head .taste i::after { background: #e23a22; }
+.cs__frame figcaption { align-items: center; }
+.cs__marks { display: flex; gap: 3px; margin-left: auto; }
+.cs__marks button { width: 26px; height: 22px; padding: 0; border: 1px solid #5a5247; background: transparent; color: #e9a23b; font-size: 13px; line-height: 1; cursor: pointer; }
+.cs__marks button[aria-pressed='true'] { background: #e23a22; border-color: #e23a22; color: #fff; }
+.cs__marks button:disabled { opacity: .35; }
+.cs__frame { animation: develop 1.1s ease-out; }
+@keyframes develop { from { filter: brightness(0.15) sepia(1); } to { filter: none; } }
+@media (prefers-reduced-motion: reduce) { .cs__frame { animation: none; } }
+
+.bd__head .taste { background: #12203a; margin: 2px 0 6px; display: inline-flex; backdrop-filter: none; }
+.bd__rate { display: flex; gap: 6px; padding-top: 6px; }
+.bd__rate button { flex: 1; padding: 9px 0; font: 700 14px/1 'Bricolage Grotesque', sans-serif; border: 2px solid #12203a; background: transparent; color: #12203a; cursor: pointer; }
+.bd__rate button:nth-child(2) { background: #12203a; color: #fff; }
+.bd__rate button:last-child { flex: 2; border-color: #cbd8ce; }
+.bd__rate button.on { background: #e4572e; border-color: #e4572e; color: #fff; }
+.bd__rate button:disabled { opacity: .4; }
+
+.mp__start { font: 700 13px/1 'Figtree', sans-serif; padding: 8px 12px; border: 0; border-radius: 8px; background: #55267f; color: #fff; cursor: pointer; }
+.mp__start:disabled { opacity: .5; }
+.mp__taste { position: absolute; z-index: 1000; left: 10px; bottom: 14px; }
+.mp__info .mp__rate { display: flex; gap: 10px; margin: 8px 0 0; }
+.mp__rate button { flex: 1; padding: 14px 0; font-size: 16px; }
+.mp__rate .mp__like { background: #55267f; color: #fff; }
+.mp__rate button:disabled { opacity: .45; }
+.mp .taste { background: rgba(255,255,255,.94); color: #2e0a4f; backdrop-filter: none; box-shadow: 0 2px 14px rgba(46,10,79,.18); }
+.mp .taste i { background: #e3dcee; } .mp .taste i::after { background: #55267f; }

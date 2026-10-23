@@ -15,11 +15,11 @@ const DESIGNS: { id: string; name: string; line: string; cold?: boolean; C: Comp
   { id: "6", name: "Words", cold: true, line: "Tap a few words like Cosy or Industrial. Homes appear at once, no swiping.", C: Words },
   { id: "7", name: "Pick a wall", cold: true, line: "Nine very different homes. Choose one, get nine variations. Three choices and you are done.", C: Pick },
   { id: "8", name: "Shelves", cold: true, line: "Gardens the advert forgot, terraces in the photos, rents that just dropped. Nothing to teach it.", C: Shelves },
-  { id: "1", name: "Reel", line: "One home per screen, best match first. Tap the photo to look through it.", C: Reel },
-  { id: "2", name: "Contact sheet", line: "The 36 best matches as film frames. Circle the ones you want.", C: Contact },
+  { id: "1", name: "Reel", line: "One home per screen. Like or pass the photo you are on and the screens below re-choose themselves.", C: Reel },
+  { id: "2", name: "Contact sheet", line: "36 film frames. Circle the ones you like, cross out the rest, and the sheet develops again around you.", C: Contact },
   { id: "3", name: "Versus", line: "Two photos, one choice. Teaches your taste faster than swiping.", C: Versus },
-  { id: "4", name: "Budget tape", line: "Start from the rent. Drag the tape and see what it buys at each size.", C: Budget },
-  { id: "5", name: "Plum map", line: "Every home on the map, darker where it matches your taste.", C: MapView },
+  { id: "4", name: "Budget tape", line: "Start from the rent. Drag the tape, then like or pass and every row re-sorts for you.", C: Budget },
+  { id: "5", name: "Plum map", line: "Every home on the map. Rate a few and the dots darken where you will like it.", C: MapView },
 ];
 
 export function designFromPath(path: string): string | null {
@@ -54,10 +54,10 @@ function Index() {
   return (
     <div className="lab lab--index">
       <h1>Design lab</h1>
-      <p>Eight ideas for House Swipe on the real homes. The first group needs nothing from you. The second group uses the swipes you have already made in the main app.</p>
+      <p>Eight ideas for House Swipe on the real homes. The first group needs nothing from you up front. The second group learns as you like and pass, and shares what it learns with the main app.</p>
       {[true, false].map((cold) => (
         <section key={String(cold)}>
-          <h2>{cold ? "Work from the first second" : "Get better the more you swipe"}</h2>
+          <h2>{cold ? "Work from the first second" : "Learn from every like and pass"}</h2>
           <ul>
             {DESIGNS.filter((d) => !!d.cold === cold).map((d) => (
               <li key={d.id}>

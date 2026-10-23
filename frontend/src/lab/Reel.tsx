@@ -1,50 +1,76 @@
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import type { Listing } from "../types";
 import { listingKey } from "../lib/listingKey";
 import { area, bedsLabel, money, type Lab } from "./useLab";
-import { Loading, Photo, useFont } from "./common";
+import { Loading, Photo, RateButtons, TasteBar, useFont } from "./common";
 
-const FIRST = 12;
+const AHEAD = 8;
 
-/** One home per screen, best match first. Tap the photo's right or left edge to move through its photos. */
+/**
+ * One home per screen. Like or pass the photo you are looking at and the screens below you are chosen again from what
+ * you have shown so far: spread wide at first to find out what you like, then the closest matches.
+ */
 export function Reel({ lab }: { lab: Lab }) {
   useFont("family=Big+Shoulders+Display:wght@700;900&family=Instrument+Sans:wght@400;600");
-  const [shown, setShown] = useState(FIRST);
   const feedRef = useRef<HTMLDivElement>(null);
-  const rows = useMemo(() => lab.ranked.slice(0, shown), [lab.ranked, shown]);
-  const total = lab.ranked.length;
+  const [order, setOrder] = useState<Listing[]>([]);
+  const [cur, setCur] = useState(0);
+  const latest = useRef(lab);
+  latest.current = lab;
+  const taught = lab.likedCount + lab.dislikedCount;
+  const wasReady = useRef(false);
+
+  // everything below the screen you are on is re-chosen whenever your taste changes
+  useEffect(() => {
+    if (!lab.listings) return;
+    setOrder((prev) => {
+      // when the photo data arrives, a feed chosen without it starts again; otherwise only what is below you changes
+      const justReady = latest.current.rankingReady && !wasReady.current;
+      wasReady.current = latest.current.rankingReady;
+      const keep = justReady && cur === 0 ? [] : prev.slice(0, cur + 1);
+      const seen = new Set(keep.map(listingKey));
+      const next = latest.current.suggest(AHEAD, seen, cur + 1);
+      return [...keep, ...next];
+    });
+  }, [lab.listings, cur, taught, lab.rankingReady, lab.matchScores !== null]); // eslint-disable-line react-hooks/exhaustive-deps
 
   useEffect(() => {
     const el = feedRef.current;
     if (!el) return;
+    let raf = 0;
     const onScroll = () => {
-      if (el.scrollTop + el.clientHeight * 3 > el.scrollHeight) setShown((n) => Math.min(n + FIRST, 200));
+      cancelAnimationFrame(raf);
+      raf = requestAnimationFrame(() => setCur(Math.round(el.scrollTop / el.clientHeight)));
     };
     el.addEventListener("scroll", onScroll, { passive: true });
     return () => el.removeEventListener("scroll", onScroll);
-  }, []);
+  }, [order.length > 0]);
 
-  if (!lab.listings) return <Loading what="Finding homes…" />;
+  function next() {
+    const el = feedRef.current;
+    if (el) el.scrollBy({ top: el.clientHeight, behavior: "smooth" });
+  }
+
+  if (!lab.listings || order.length === 0) return <Loading what="Finding homes…" />;
   return (
     <div className="reel" ref={feedRef}>
-      {rows.map((l, i) => (
-        <Slide key={listingKey(l)} lab={lab} listing={l} rank={i} total={total} />
+      <div className="reel__taste">
+        <TasteBar lab={lab} />
+      </div>
+      {order.map((l) => (
+        <Slide key={listingKey(l)} lab={lab} listing={l} onPass={next} />
       ))}
     </div>
   );
 }
 
-function Slide({ lab, listing, rank, total }: { lab: Lab; listing: Listing; rank: number; total: number }) {
+function Slide({ lab, listing, onPass }: { lab: Lab; listing: Listing; onPass: () => void }) {
   const [idx, setIdx] = useState(0);
   const key = listingKey(listing);
   const photos = listing.photo_urls.slice(0, 12);
   const saved = lab.shortlist.saved.includes(key);
-  const top = lab.matchScores ? Math.max(1, Math.round(((rank + 1) / total) * 100)) : null;
-  const best = lab.rankingPreference && lab.store?.rankingReady ? lab.store.bestPhoto(key, lab.rankingPreference) : null;
-  const first = best ? photos.indexOf(best) : -1;
-  useEffect(() => {
-    if (first > 0) setIdx(first);
-  }, [first]);
+  const choice = lab.choices[key];
+  const [pulse, setPulse] = useState(0);
 
   function step(e: React.MouseEvent<HTMLDivElement>) {
     const r = e.currentTarget.getBoundingClientRect();
@@ -55,12 +81,27 @@ function Slide({ lab, listing, rank, total }: { lab: Lab; listing: Listing; rank
   return (
     <section className="reel__slide">
       <div className="reel__photo" onClick={step}>
-        <Photo url={photos[idx]} alt={`${listing.summary.address}, photo ${idx + 1}`} loading={rank < 2 ? "eager" : "lazy"} />
+        <Photo url={photos[idx]} alt={`${listing.summary.address}, photo ${idx + 1}`} />
         <div className="reel__ticks" aria-hidden>
           {photos.map((_, i) => (
             <i key={i} className={i === idx ? "on" : i < idx ? "past" : ""} />
           ))}
         </div>
+        {pulse > 0 && <span key={pulse} className="reel__burst" aria-hidden>♥</span>}
+      </div>
+      <div className="reel__side">
+        <RateButtons
+          disabled={!lab.rankingReady}
+          liked={choice === "like"}
+          onLike={() => {
+            lab.rate(listing, photos[idx], "like");
+            setPulse((p) => p + 1);
+          }}
+          onPass={() => {
+            lab.rate(listing, photos[idx], "dislike");
+            onPass();
+          }}
+        />
       </div>
       <div className="reel__plate">
         <div className="reel__price">
@@ -72,7 +113,6 @@ function Slide({ lab, listing, rank, total }: { lab: Lab; listing: Listing; rank
           {[bedsLabel(listing), listing.summary.bathrooms ? `${listing.summary.bathrooms} bath` : "", listing.agency_name].filter(Boolean).join(", ")}
         </div>
         <div className="reel__row">
-          {top !== null && <span className="reel__rank">Top {top}% for you</span>}
           <button className={`reel__save${saved ? " on" : ""}`} onClick={() => lab.shortlist.toggleSave(listing)} aria-pressed={saved}>
             {saved ? "Saved" : "Save"}
           </button>
