@@ -237,3 +237,26 @@ html.rd-board {
 .rd-board .saved--board .app__error button { min-height: 44px; border: 0; background: transparent; color: var(--ink); text-decoration: underline; font: 800 13px/1 var(--sans); cursor: pointer; }
 .rd-board .saved--board .saved__title { font-size: clamp(38px, 10vw, 54px); }
 .rd-board .saved--board .saved__by { display: inline-block; padding: 5px 10px; border: 2px solid var(--ink); border-radius: 99px; background: #ffd84a; color: var(--ink); font: 500 11px/1.2 var(--mono); }
+
+/* browse cards, photo-led: everything sits on the image, the only buttons are three small round icons */
+.rd-board .board-listing__gallery { height: min(62svh, 470px); border-bottom: 0; }
+.rd-board .board-listing__gallery::after { content: ''; position: absolute; inset: auto 0 0 0; height: 62%; background: linear-gradient(to top, rgba(18, 14, 10, .86), rgba(18, 14, 10, .45) 55%, transparent); pointer-events: none; z-index: 1; }
+.rd-board .board-listing__tags { position: absolute; z-index: 3; top: 12px; left: 12px; right: 70px; display: flex; flex-wrap: wrap; gap: 6px; pointer-events: none; }
+.rd-board .board-listing__tags .listing-card__agency, .rd-board .board-listing__tags .listing-card__new, .rd-board .board-listing__tags .listing-card__match { position: static; padding: 7px 10px; }
+.rd-board .board-listing__gallery .listing-card__photo-count { z-index: 3; top: 12px; bottom: auto; right: 12px; }
+.rd-board .board-listing__arrow { top: 38%; z-index: 3; }
+.rd-board .board-listing__side { position: absolute; z-index: 4; right: 12px; bottom: 14px; display: flex; flex-direction: column; gap: 8px; }
+.rd-board .board-listing__icon { width: 46px; height: 46px; min-height: 0; padding: 0; border: 2px solid var(--ink); border-radius: 50%; background: var(--cream); color: var(--ink); font: 800 18px/1 var(--sans); box-shadow: 2px 2px 0 var(--ink); cursor: pointer; }
+.rd-board .board-listing__icon--like { background: #ff6a2b; }
+.rd-board .board-listing__icon[aria-pressed="true"] { background: #c8f060; }
+.rd-board .board-listing__icon--like[aria-pressed="true"] { background: #ff6a2b; box-shadow: 0 0 0 3px #c8f060, 2px 2px 0 var(--ink); }
+.rd-board .board-listing__icon:disabled { opacity: .55; cursor: not-allowed; }
+.rd-board .board-listing__info { position: absolute; z-index: 3; left: 0; right: 70px; bottom: 0; display: flex; flex-direction: column; gap: 3px; padding: 0 0 16px 16px; color: #fff; text-decoration: none; }
+.rd-board .board-listing__price { font: 800 32px/1 var(--sans); letter-spacing: -.045em; text-shadow: 0 2px 14px rgba(0, 0, 0, .5); }
+.rd-board .board-listing__drop { display: flex; align-items: center; gap: 8px; }
+.rd-board .board-listing__drop del { color: rgba(255, 255, 255, .75); font: 500 12px/1.3 var(--mono); }
+.rd-board .board-listing__drop span { padding: 5px 8px; border: 2px solid var(--ink); border-radius: 99px; background: #c8f060; color: var(--ink); font: 500 10px/1 var(--mono); }
+.rd-board .board-listing__address { display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2; overflow: hidden; font: 600 15px/1.25 var(--sans); }
+.rd-board .board-listing__rooms { font: 500 11px/1.4 var(--mono); opacity: .9; }
+.rd-board .board-listing__flag { margin-top: 4px; padding: 6px 8px; border: 2px solid var(--ink); border-radius: 8px; background: #ffd84a; color: var(--ink); font: 500 10.5px/1.3 var(--mono); }
+.rd-board .board-listing__info:focus-visible { outline: 3px solid #ffd84a; outline-offset: -4px; }

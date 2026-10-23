@@ -5,7 +5,6 @@ import type { SwipeChoice } from "../lib/preferences";
 import { listingKey } from "../lib/listingKey";
 import { normalizeImageUrl } from "../lib/url";
 import { gbp, latestDrop, type PricePoint } from "../lib/priceHistory";
-import { PriceChart } from "./PriceChart";
 import { trackMilestone } from "../lib/stats";
 
 function checkedDay(day?: string): string | null {
@@ -18,7 +17,7 @@ function checkedDay(day?: string): string | null {
   return `checked ${days}d ago`;
 }
 
-export function BoardListingCard({ listing, store, deadPhotos, swipes, onRate, saved, onToggleSave, isNew, isTopRanked, priceSeries, today }: {
+export function BoardListingCard({ listing, store, deadPhotos, swipes, onRate, saved, onToggleSave, isNew, isTopRanked, priceSeries }: {
   listing: Listing;
   store?: EmbeddingStore | null;
   deadPhotos?: ReadonlySet<string>;
@@ -29,6 +28,7 @@ export function BoardListingCard({ listing, store, deadPhotos, swipes, onRate, s
   isNew?: boolean;
   isTopRanked?: boolean;
   priceSeries?: PricePoint[];
+  /** kept so existing callers still compile; the photo-led card no longer draws the price chart */
   today?: string;
 }) {
   const { summary } = listing;
@@ -61,6 +61,10 @@ export function BoardListingCard({ listing, store, deadPhotos, swipes, onRate, s
     el.scrollTo({ left: next * el.clientWidth, behavior: "smooth" });
   }
 
+  const price = summary.price_pcm != null ? `${gbp(summary.price_pcm)} pcm` : summary.price_flag ? (summary.price_text || "Price on request") : "Price on request";
+  const rooms = summary.bedrooms == null ? "Bedrooms not listed" : `${summary.bedrooms === 0 ? "Studio" : `${summary.bedrooms} bed`}${summary.bathrooms == null ? "" : ` · ${summary.bathrooms} bath`}`;
+  const stale = checked && checked !== "checked today" ? checked : null;
+
   return (
     <article className="listing-card board-listing">
       <div className="listing-card__photo-wrap board-listing__gallery">
@@ -78,31 +82,27 @@ export function BoardListingCard({ listing, store, deadPhotos, swipes, onRate, s
           <button className="board-listing__arrow board-listing__arrow--next" onClick={() => shift(1)} aria-label="Next photo">›</button>
           <span className="listing-card__photo-count">{index + 1}/{photos.length}</span>
         </>}
-        {isTopRanked && photos.length > 0 && <span className="listing-card__match">Nearer your taste</span>}
-        {isNew && <span className="listing-card__new">New</span>}
-        {photos.length === 0 && <span className="board-listing__unranked">Not ranked: no photos</span>}
-      </div>
-
-      <a className="board-listing__body-link" href={agencyUrl} target="_blank" rel="noopener noreferrer" onClick={agencyClick} aria-label={`View ${summary.address} on ${listing.agency_name}`}>
-        <div className="listing-card__body">
-          <p className="listing-card__price">{summary.price_pcm != null ? `${gbp(summary.price_pcm)} pcm` : summary.price_flag ? (summary.price_text || "Price on request") : "Price on request"}</p>
-          {drop && <div className="board-listing__drop"><del>{gbp(drop.from)} pcm</del><span>Price drop −{gbp(drop.amount)}</span></div>}
-          {priceSeries && priceSeries.length >= 2 && today && <PriceChart series={priceSeries} today={today} />}
-          {summary.price_flag && <p className="listing-card__price-flag">Rent looks unusually low. Check with the agency.</p>}
-          <p className="listing-card__address">{summary.address}</p>
-          <p className="listing-card__rooms">{summary.bedrooms == null ? "Bedrooms not listed · ask agency" : `${summary.bedrooms === 0 ? "Studio" : `${summary.bedrooms} bed`}${summary.bathrooms == null ? "" : ` · ${summary.bathrooms} bath`}`}</p>
-          {listing.description && <p className="listing-card__description">{listing.description}</p>}
+        <div className="board-listing__tags">
+          <span className="listing-card__agency">{listing.agency_name}</span>
+          {isNew && <span className="listing-card__new">New</span>}
+          {isTopRanked && photos.length > 0 && <span className="listing-card__match">Nearer your taste</span>}
+          {photos.length === 0 && <span className="board-listing__unranked">Not ranked: no photos</span>}
         </div>
-      </a>
 
-      <div className="board-listing__actions">
-        <button disabled={!canRate} aria-pressed={currentId ? swipes?.[currentId] === "dislike" : false} onClick={() => currentId && onRate?.(currentId, "dislike")}>Pass</button>
-        <button disabled={!canRate} aria-pressed={currentId ? swipes?.[currentId] === "like" : false} onClick={() => currentId && onRate?.(currentId, "like")}>Like</button>
-        <button disabled={!onToggleSave} aria-pressed={Boolean(saved)} onClick={onToggleSave}>{saved ? "Saved" : "Save"}</button>
+        <div className="board-listing__side">
+          <button className="board-listing__icon" disabled={!canRate} aria-label="Not for me" aria-pressed={currentId ? swipes?.[currentId] === "dislike" : false} onClick={() => currentId && onRate?.(currentId, "dislike")}>✕</button>
+          <button className="board-listing__icon board-listing__icon--like" disabled={!canRate} aria-label="I like this" aria-pressed={currentId ? swipes?.[currentId] === "like" : false} onClick={() => currentId && onRate?.(currentId, "like")}>♥</button>
+          <button className="board-listing__icon" disabled={!onToggleSave} aria-label={saved ? "Remove from saved" : "Save"} aria-pressed={Boolean(saved)} onClick={onToggleSave}>{saved ? "★" : "☆"}</button>
+        </div>
+
+        <a className="board-listing__info" href={agencyUrl} target="_blank" rel="noopener noreferrer" onClick={agencyClick} aria-label={`View ${summary.address} on ${listing.agency_name}`}>
+          <span className="board-listing__price">{price}</span>
+          {drop && <span className="board-listing__drop"><del>{gbp(drop.from)}</del><span>−{gbp(drop.amount)}</span></span>}
+          <span className="board-listing__address">{summary.address}</span>
+          <span className="board-listing__rooms">{rooms}{stale ? ` · ${stale}` : ""} · View ↗</span>
+          {summary.price_flag && <span className="board-listing__flag">Rent looks unusually low. Check with the agency.</span>}
+        </a>
       </div>
-      <a className="board-listing__footer" href={agencyUrl} target="_blank" rel="noopener noreferrer" onClick={agencyClick}>
-        <span>{listing.agency_name}{checked ? ` · ${checked}` : ""}</span><strong>View listing ↗</strong>
-      </a>
     </article>
   );
 }
