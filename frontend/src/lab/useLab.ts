@@ -5,6 +5,8 @@ import { useStylePreferences } from "../lib/preferences";
 import { useShortlist } from "../lib/useShortlist";
 import { listingKey } from "../lib/listingKey";
 import type { ListingGeo } from "../lib/geo";
+import { photoId } from "../lib/embeddingStore";
+import type { StyleLabel } from "../types";
 
 /**
  * Everything the design experiments share: the same data, the same taste model and the same saved list as the real app,
@@ -16,6 +18,7 @@ export function useLab() {
   const [raw, setRaw] = useState<Listing[] | null>(null);
   const [killed, setKilled] = useState<string[]>([]);
   const [geo, setGeo] = useState<ListingGeo>({});
+  const [labels, setLabels] = useState<StyleLabel[]>([]);
 
   useEffect(() => {
     loadEmbeddingStore().then(setStore).catch((e) => console.error("style data failed", e));
@@ -24,6 +27,7 @@ export function useLab() {
       .then((r) => (r.ok ? r.json() : { disabled: [] }))
       .then((k) => setKilled(Array.isArray(k?.disabled) ? k.disabled.map(String) : []))
       .catch(() => undefined);
+    fetch("/data/style-labels.json").then((r) => (r.ok ? r.json() : [])).then(setLabels).catch(() => undefined);
     fetch("/data/listing-geo.json").then((r) => (r.ok ? r.json() : {})).then(setGeo).catch(() => undefined);
   }, []);
 
@@ -52,7 +56,46 @@ export function useLab() {
     return [...listings].sort((a, b) => (s ? (s[listingKey(b)] ?? -9) - (s[listingKey(a)] ?? -9) : (b.first_seen ?? "").localeCompare(a.first_seen ?? "")));
   }, [listings, prefs.matchScores]);
 
-  return { store, rankingReady, listings, ranked, byKey, geo, shortlist, ...prefs, swipeCount: prefs.likedCount + prefs.dislikedCount };
+  /** one unit vector per home: the average of its photos, measured from the "average interior" (what makes it different) */
+  const { out: homeVectors, far: homeDistance } = useMemo(() => {
+    const out = new Map<string, Float32Array>();
+    const far = new Map<string, number>();
+    if (!store || !rankingReady || !listings) return { out, far };
+    const dim = store.dim;
+    for (const l of listings) {
+      const key = listingKey(l);
+      const acc = new Float32Array(dim);
+      let n = 0;
+      const sum = new Float32Array(dim);
+      for (const u of l.photo_urls.slice(0, 12)) {
+        const v = store.vectorOf(photoId(key, u));
+        if (!v) continue;
+        let sq = 0;
+        for (let i = 0; i < dim; i++) {
+          const x = v[i] - store.mean[i];
+          sum[i] += x;
+          sq += x * x;
+        }
+        if (sq === 0) continue;
+        // each photo counts equally whatever its length
+        const inv = 1 / Math.sqrt(sq);
+        for (let i = 0; i < dim; i++) acc[i] += (v[i] - store.mean[i]) * inv;
+        n++;
+      }
+      if (n === 0) continue;
+      let sq = 0;
+      for (let i = 0; i < dim; i++) sq += acc[i] * acc[i];
+      const inv = sq > 0 ? 1 / Math.sqrt(sq) : 0;
+      for (let i = 0; i < dim; i++) acc[i] *= inv;
+      out.set(key, acc);
+      let far2 = 0;
+      for (let i = 0; i < dim; i++) far2 += sum[i] * sum[i];
+      far.set(key, Math.sqrt(far2) / n); // how far the home's average photo sits from the average interior
+    }
+    return { out, far };
+  }, [store, rankingReady, listings]);
+
+  return { store, rankingReady, listings, ranked, byKey, geo, labels, homeVectors, homeDistance, shortlist, ...prefs, swipeCount: prefs.likedCount + prefs.dislikedCount };
 }
 export type Lab = ReturnType<typeof useLab>;
 

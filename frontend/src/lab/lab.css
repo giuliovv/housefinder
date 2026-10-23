@@ -129,3 +129,68 @@
 .mp__info button[aria-pressed='true'] { background: #55267f; color: #fff; }
 .mp .lab-loading { color: #2e0a4f; background: rgba(233,230,238,.6); }
 @media (prefers-reduced-motion: reduce) { .vs__side { transition: none; } }
+
+.lab--index h2 { font: 700 13px/1 system-ui, sans-serif; margin: 26px 0 10px; letter-spacing: .02em; color: inherit; max-width: 560px; }
+.lab--index section ul { margin-bottom: 0; }
+
+/* ── 6 Words ──────────────────────────────────────────────────────────── */
+.lab--6, .lab--7, .lab--8 { overflow-y: auto; }
+.lab--6 { background: #ecebf4; color: #1b1a2e; font-family: 'DM Sans', system-ui, sans-serif; }
+.lab--6 .lab-back { background: #1b1a2e; }
+.wd { padding: 64px 18px 60px; max-width: 760px; margin: 0 auto; }
+.wd__title { font: 400 clamp(40px, 11vw, 68px)/1 'Gloock', serif; margin: 0 0 10px; color: #1b1a2e; }
+.wd__sub { margin: 0 0 22px; font-size: 16px; }
+.wd__cloud { list-style: none; padding: 0; margin: 0; display: flex; flex-wrap: wrap; gap: 6px 14px; }
+.wd__word { font: 400 30px/1.15 'Gloock', serif; padding: 2px 6px; margin: 0 -6px; border: 0; background: transparent; color: #1b1a2e; cursor: pointer; background-image: linear-gradient(#3be8b0, #3be8b0); background-repeat: no-repeat; background-position: 0 88%; background-size: 0% 46%; transition: background-size .28s cubic-bezier(.2,.8,.2,1); }
+.wd__word.w1 { font-size: 24px; } .wd__word.w2 { font-size: 36px; } .wd__word.w3 { font-size: 27px; font-style: italic; }
+.wd__word:hover { background-size: 100% 46%; opacity: .8; }
+.wd__word.on { background-size: 100% 46%; opacity: 1; }
+.wd__wait { margin: 22px 0 0; font-style: italic; }
+.wd__res { margin-top: 34px; }
+.wd__res h2 { font: 400 24px/1.2 'Gloock', serif; margin: 0 0 14px; }
+.wd__res ul { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; }
+@media (min-width: 640px) { .wd__res ul { grid-template-columns: repeat(3, 1fr); } }
+.wd__res a { display: block; color: inherit; text-decoration: none; }
+.wd__res img { width: 100%; aspect-ratio: 4 / 3; object-fit: cover; display: block; background: #d3d0e2; }
+.wd__meta { display: block; padding: 6px 0 0; font-size: 13px; line-height: 1.3; }
+.wd__meta b { font-weight: 600; }
+@media (prefers-reduced-motion: reduce) { .wd__word { transition: none; } }
+
+/* ── 7 Pick a wall ────────────────────────────────────────────────────── */
+.lab--7 { background: #cdd5cf; color: #14231b; font-family: 'Libre Franklin', system-ui, sans-serif; }
+.lab--7 .lab-back { background: #14231b; }
+.pk { padding: 62px 12px 60px; max-width: 820px; margin: 0 auto; }
+.pk__head h1, .pk--done h1 { font: 800 clamp(28px, 8vw, 44px)/1.05 'Libre Franklin', sans-serif; letter-spacing: -.02em; margin: 0 0 8px; color: #14231b; }
+.pk__head p, .pk--done > p { margin: 0 0 16px; font-size: 16px; }
+.pk__grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px; }
+.pk__grid--final { grid-template-columns: repeat(2, 1fr); }
+@media (min-width: 640px) { .pk__grid--final { grid-template-columns: repeat(3, 1fr); } .pk__grid { gap: 16px; } }
+.pk__frame { display: flex; flex-direction: column; min-width: 0; width: 100%; padding: 6px; border: 0; background: #fff; box-shadow: 0 0 0 3px #14231b, 0 8px 18px rgba(20,35,27,.22); color: inherit; text-decoration: none; text-align: left; cursor: pointer; transition: transform .2s cubic-bezier(.2,.8,.2,1); }
+.pk__frame:hover { transform: translateY(-4px) rotate(-.6deg); }
+.pk__frame img { flex: none; width: 100%; aspect-ratio: 3 / 4; object-fit: cover; display: block; background: #e6e6e1; }
+.pk__cap { display: block; padding: 6px 2px 2px; font: 800 13px/1.2 'Libre Franklin', sans-serif; }
+.pk__cap i { display: block; font: 400 11px/1.3 'Libre Franklin', sans-serif; font-style: normal; opacity: .75; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.pk__again { display: block; margin: 22px auto 0; padding: 12px 18px; font: 600 14px/1 'Libre Franklin', sans-serif; border: 2px solid #14231b; background: transparent; color: #14231b; cursor: pointer; }
+@media (prefers-reduced-motion: reduce) { .pk__frame { transition: none; } }
+
+/* ── 8 Shelves ────────────────────────────────────────────────────────── */
+.lab--8 { background: #ffffff; color: #1a1a1a; font-family: 'Barlow', system-ui, sans-serif; }
+.lab--8 .lab-back { background: #1a1a1a; }
+.sh { padding: 64px 0 60px; }
+.sh__title { font: 800 56px/.9 'Barlow Condensed', sans-serif; padding: 0 16px 14px; margin: 0; text-transform: uppercase; color: #1a1a1a; }
+.sh__shelf { padding: 22px 0 6px; border-top: 3px solid #1a1a1a; }
+.sh__shelf h2 { font: 800 30px/1 'Barlow Condensed', sans-serif; padding: 0 16px; color: #1a1a1a; }
+.sh__shelf h2 span { font-weight: 600; color: #d6341c; margin-left: 6px; }
+.sh__shelf > p { margin: 6px 16px 14px; font-size: 15px; max-width: 52ch; }
+.sh__shelf ul { list-style: none; margin: 0; padding: 0 16px; display: flex; gap: 12px; overflow-x: auto; scroll-snap-type: x proximity; scroll-padding-left: 16px; }
+.sh__shelf li { flex: 0 0 56%; max-width: 250px; scroll-snap-align: start; }
+.sh__shelf li a { display: block; position: relative; color: inherit; text-decoration: none; }
+.sh__shelf img { width: 100%; aspect-ratio: 1; object-fit: cover; display: block; background: #eee; }
+.sh__tag { position: absolute; left: 0; top: 14px; padding: 5px 14px 5px 10px; background: #d6341c; color: #fff; font: 800 20px/1 'Barlow Condensed', sans-serif; clip-path: polygon(0 0, 100% 0, calc(100% - 8px) 50%, 100% 100%, 0 100%); }
+.sh__where { display: block; padding-top: 6px; font-size: 14px; font-weight: 600; }
+
+.wd { padding-bottom: 150px; }
+.wd__strip { position: fixed; z-index: 30; left: 0; right: 0; bottom: 0; display: flex; gap: 6px; padding: 8px; overflow-x: auto; background: #1b1a2e; }
+.wd__strip a { position: relative; flex: 0 0 104px; height: 84px; display: block; }
+.wd__strip img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.wd__strip b { position: absolute; left: 0; bottom: 0; padding: 2px 5px; font: 600 11px/1.2 'DM Sans', sans-serif; color: #1b1a2e; background: #3be8b0; }
