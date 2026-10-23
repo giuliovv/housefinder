@@ -1,0 +1,54 @@
+/* "Dusk": a dark theme for evening scrolling: deep plum canvas, violet accent, soft panels. Scoped under html.rd-dusk. */
+html.rd-dusk {
+  --ink: #f1ecfb;
+  --muted: #a398bd;
+  --muted-dark: #c3bad9;
+  --cream: #15111f;
+  --outer-bg: #0b0813;
+  --border: #2d2542;
+  --rust: #8f6bff;
+  --rust-dark: #7a55f0;
+  --forest: #2fc9a0;
+  --card: #211a33;
+  --sans: 'Outfit', system-ui, sans-serif;
+  --serif: 'Outfit', system-ui, sans-serif;
+  color-scheme: dark;
+}
+.rd-dusk h1, .rd-dusk h2, .rd-dusk h3 { font-weight: 600; letter-spacing: -0.02em; }
+.rd-dusk .rd-back { position: fixed; z-index: 90; top: 8px; right: 8px; padding: 6px 11px; border-radius: 999px; font: 600 11px/1 system-ui, sans-serif; color: #f1ecfb; background: rgba(143, 107, 255, .35); text-decoration: none; backdrop-filter: blur(6px); }
+.rd-dusk .app { border: 0; background: radial-gradient(120% 60% at 50% -10%, #2b1f4d 0%, #15111f 55%); }
+.rd-dusk .app__header h1 { font-size: 28px; font-weight: 600; color: var(--ink); }
+.rd-dusk .app__eyebrow { color: var(--muted); }
+.rd-dusk .app__tabs { position: sticky; top: 0; z-index: 40; padding: 8px 22px 0; background: rgba(21, 17, 31, .8); backdrop-filter: blur(12px); border-bottom: 1px solid var(--border); }
+.rd-dusk .app__tab { color: var(--muted); font-size: 15px; }
+.rd-dusk .app__tab--active { color: var(--ink); border-bottom: 2px solid #b9a4ff; box-shadow: 0 8px 14px -10px #8f6bff; }
+
+/* surfaces that are hard-coded white in the base styles */
+.rd-dusk .app__chip, .rd-dusk .app__filter-btn, .rd-dusk .app__draw-btn, .rd-dusk .app__sort-select, .rd-dusk .app__area-search, .rd-dusk .sheet__opt, .rd-dusk .sheet__input,
+.rd-dusk .listing-card__save, .rd-dusk .taste__info, .rd-dusk .saved__gone, .rd-dusk .listing-card__drop, .rd-dusk .question__clean { background: var(--card); color: var(--ink); border-color: var(--border); }
+.rd-dusk .listing-card, .rd-dusk .question, .rd-dusk .swipe__intro, .rd-dusk .tip, .rd-dusk .match__card { background: var(--card); color: var(--ink); border-color: var(--border); }
+.rd-dusk .sheet__panel { background: #1b1529; border-top: 1px solid var(--border); }
+.rd-dusk .app__filter-row { background: rgba(21, 17, 31, .92); backdrop-filter: blur(8px); }
+.rd-dusk .app__chip--active, .rd-dusk .sheet__opt--active, .rd-dusk .question__opt--on, .rd-dusk .app__filter-btn--on, .rd-dusk .app__draw-btn--on, .rd-dusk .listing-card__save--on { background: var(--rust); border-color: var(--rust); color: #fff; }
+.rd-dusk .listing-card { box-shadow: none; border-radius: 22px; }
+.rd-dusk .listing-card:hover { box-shadow: 0 0 0 1px #8f6bff, 0 14px 40px -16px rgba(143, 107, 255, .5); }
+.rd-dusk .listing-card__price { font-size: 24px; font-weight: 600; }
+.rd-dusk .listing-card__match { background: rgba(47, 201, 160, .92); color: #06231b; font-weight: 700; }
+.rd-dusk .listing-card__photo-wrap { height: 250px; background: #2a2240; }
+
+.rd-dusk .swipe__card { border-radius: 26px; box-shadow: 0 28px 60px -20px rgba(0, 0, 0, .8), 0 0 0 1px rgba(185, 164, 255, .18); }
+.rd-dusk .swipe__photo { border-radius: 26px; background: #2a2240; }
+.rd-dusk .swipe__btn { width: 66px; height: 66px; box-shadow: 0 10px 30px -10px rgba(0, 0, 0, .8); }
+.rd-dusk .swipe__btn--dislike { background: var(--card); color: #c9bff0; border: 1px solid var(--border); }
+.rd-dusk .swipe__btn--like { background: linear-gradient(135deg, #ff7a90, #8f6bff); }
+.rd-dusk .swipe__stamp { background: rgba(21, 17, 31, .6); }
+.rd-dusk .swipe__cta, .rd-dusk .swipe__intro-btn, .rd-dusk .question__continue, .rd-dusk .sheet__apply, .rd-dusk .tip__btn { background: linear-gradient(135deg, #8f6bff, #6a4be0); color: #fff; border-radius: 999px; }
+.rd-dusk .neighbourhood-map { border: 1px solid var(--border); filter: invert(.92) hue-rotate(180deg) brightness(.9) contrast(.95); }
+.rd-dusk .sheet__input::placeholder { color: var(--muted); }
+.rd-dusk .taste__fill { background: var(--forest); }
+.rd-dusk .saved__fab { box-shadow: 0 10px 30px -8px rgba(143, 107, 255, .7); }
+.rd-dusk .listing-card__agency, .rd-dusk .listing-card__photo-count { color: #2d2542; }
+.rd-dusk .listing-card__agency { background: rgba(255, 255, 255, .92); }
+.rd-dusk .listing-card__rate-btn { background: rgba(255, 255, 255, .94); color: #2d2542; }
+.rd-dusk .listing-card__rate-btn--active.listing-card__rate-btn--like { background: #ff7a90; color: #fff; }
+.rd-dusk .app__tabs, .rd-dusk .app__filter-row { background: rgba(21, 17, 31, .55); }

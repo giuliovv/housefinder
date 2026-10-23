@@ -1,0 +1,61 @@
+/* "Sticker": thick ink outlines, hard offset shadows, flat bright colour. Scoped under html.rd-postcard. */
+html.rd-postcard {
+  --ink: #17141f;
+  --muted: #4d4a5c;
+  --muted-dark: #34313f;
+  --cream: #bfeadb;
+  --outer-bg: #9fd8c6;
+  --border: #17141f;
+  --rust: #ff5436;
+  --rust-dark: #e03a1c;
+  --forest: #3b6bff;
+  --sans: 'Bricolage Grotesque', system-ui, sans-serif;
+  --serif: 'Bricolage Grotesque', system-ui, sans-serif;
+  --hard: 5px 5px 0 #17141f;
+}
+.rd-postcard h1, .rd-postcard h2, .rd-postcard h3 { font-weight: 800; letter-spacing: -0.03em; }
+.rd-postcard .rd-back { position: fixed; z-index: 90; top: 8px; right: 8px; padding: 6px 11px; border: 2px solid #17141f; border-radius: 10px; font: 700 11px/1 system-ui, sans-serif; color: #17141f; background: #ffd23f; text-decoration: none; }
+.rd-postcard .app { border: 0; max-width: 500px; }
+.rd-postcard .app__header { padding: 20px 18px 0; }
+.rd-postcard .app__header h1 { font-size: 38px; line-height: .95; letter-spacing: -0.05em; transform: rotate(-1.5deg); transform-origin: left; }
+.rd-postcard .app__eyebrow { display: inline-block; padding: 3px 8px; border: 2px solid var(--ink); border-radius: 8px; background: #ffd23f; color: var(--ink); font-weight: 700; letter-spacing: .04em; }
+.rd-postcard .app__subtitle { color: var(--ink); font-weight: 500; }
+.rd-postcard .app__tabs { gap: 8px; border: 0; padding: 0 18px 4px; }
+.rd-postcard .app__tab { flex: 1; padding: 10px 0; border: 3px solid var(--ink); border-radius: 14px; background: #fff; color: var(--ink); font-weight: 700; font-size: 14px; box-shadow: 3px 3px 0 var(--ink); }
+.rd-postcard .app__tab--active { background: #ffd23f; color: var(--ink); border: 3px solid var(--ink); box-shadow: 0 0 0 var(--ink); transform: translate(3px, 3px); }
+.rd-postcard .app__tab-dot { background: var(--rust); border: 2px solid var(--ink); }
+
+.rd-postcard .swipe__stack { max-width: 360px; }
+.rd-postcard .swipe__card { border-radius: 24px; border: 3px solid var(--ink); box-shadow: 8px 8px 0 var(--ink); overflow: hidden; background: #fff; }
+.rd-postcard .swipe__photo { border-radius: 0; }
+.rd-postcard .swipe__stamp { border-width: 4px; font-weight: 800; background: #fff; }
+.rd-postcard .swipe__buttons { gap: 22px; }
+.rd-postcard .swipe__btn { width: 68px; height: 68px; border: 3px solid var(--ink); border-radius: 22px; box-shadow: var(--hard); font-weight: 800; transition: transform .1s, box-shadow .1s; }
+.rd-postcard .swipe__btn:active { transform: translate(5px, 5px); box-shadow: 0 0 0 var(--ink); }
+.rd-postcard .swipe__btn--dislike { background: #fff; color: var(--ink); }
+.rd-postcard .swipe__btn--like { background: var(--rust); color: #fff; }
+
+.rd-postcard .app__browse { padding: 16px 16px 30px; }
+.rd-postcard .app__filter-row { background: var(--cream); }
+.rd-postcard .app__filter-btn, .rd-postcard .app__chip, .rd-postcard .app__draw-btn, .rd-postcard .app__sort-select { border: 2.5px solid var(--ink); border-radius: 12px; font-weight: 700; box-shadow: 2px 2px 0 var(--ink); }
+.rd-postcard .app__filter-btn--on, .rd-postcard .app__chip--active, .rd-postcard .app__draw-btn--on { background: #ffd23f; color: var(--ink); border-color: var(--ink); }
+.rd-postcard .listing-grid { gap: 26px; }
+.rd-postcard .listing-card { border: 3px solid var(--ink); border-radius: 22px; box-shadow: 8px 8px 0 var(--ink); background: #fff; }
+.rd-postcard .listing-card:hover { box-shadow: 8px 8px 0 var(--ink); }
+.rd-postcard .listing-card__photo-wrap { height: 230px; border-bottom: 3px solid var(--ink); }
+.rd-postcard .listing-card__price { font-size: 28px; font-weight: 800; letter-spacing: -0.04em; }
+.rd-postcard .listing-card__match { background: #ffd23f; color: var(--ink); border: 2px solid var(--ink); font-weight: 800; font-size: 12px; }
+.rd-postcard .listing-card__agency, .rd-postcard .listing-card__photo-count { border: 2px solid var(--ink); background: #fff; color: var(--ink); font-weight: 700; }
+.rd-postcard .listing-card__status { border: 2px solid var(--ink); background: var(--rust); color: #fff; font-weight: 800; }
+.rd-postcard .listing-card__rate-btn { border: 2.5px solid var(--ink); box-shadow: 2px 2px 0 var(--ink); background: #fff; color: var(--ink); }
+.rd-postcard .listing-card__save { border: 2.5px solid var(--ink); border-radius: 12px; font-weight: 800; box-shadow: 2px 2px 0 var(--ink); }
+.rd-postcard .listing-card__save--on { background: var(--rust); color: #fff; }
+.rd-postcard .sheet__panel { background: #fff4c9; border: 3px solid var(--ink); border-bottom: 0; border-radius: 26px 26px 0 0; }
+.rd-postcard .sheet__opt, .rd-postcard .question__opt, .rd-postcard .sheet__input { border: 2.5px solid var(--ink); border-radius: 12px; font-weight: 700; }
+.rd-postcard .sheet__opt--active, .rd-postcard .question__opt--on { background: #ffd23f; color: var(--ink); border-color: var(--ink); }
+.rd-postcard .question, .rd-postcard .swipe__intro, .rd-postcard .match__card, .rd-postcard .tip { border: 3px solid var(--ink); border-radius: 24px; box-shadow: 8px 8px 0 var(--ink); background: #fff; }
+.rd-postcard .swipe__cta, .rd-postcard .swipe__intro-btn, .rd-postcard .question__continue, .rd-postcard .sheet__apply, .rd-postcard .tip__btn { border: 3px solid var(--ink); border-radius: 16px; background: var(--rust); color: #fff; font-weight: 800; box-shadow: var(--hard); }
+.rd-postcard .neighbourhood-map { border: 3px solid var(--ink); border-radius: 22px; }
+.rd-postcard .taste__fill { background: var(--forest); }
+.rd-postcard .saved__fab { border: 3px solid var(--ink); border-radius: 18px; box-shadow: var(--hard); background: #ffd23f; color: var(--ink); }
+@media (prefers-reduced-motion: reduce) { .rd-postcard .swipe__btn { transition: none; } }

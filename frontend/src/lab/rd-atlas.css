@@ -1,0 +1,54 @@
+/* "Atlas": a dense, list-style layout in white and pine green, sharp corners and small type; Browse is a two-column grid on wide screens. Scoped under html.rd-atlas. */
+html.rd-atlas {
+  --ink: #1b1f23;
+  --muted: #5d6670;
+  --muted-dark: #3e464e;
+  --cream: #ffffff;
+  --outer-bg: #e9ecef;
+  --border: #d3d9df;
+  --rust: #0f5c47;
+  --rust-dark: #0b4636;
+  --forest: #0f5c47;
+  --sans: 'Public Sans', system-ui, sans-serif;
+  --serif: 'Public Sans', system-ui, sans-serif;
+}
+.rd-atlas h1, .rd-atlas h2, .rd-atlas h3 { font-weight: 700; letter-spacing: -0.015em; }
+.rd-atlas .rd-back { position: fixed; z-index: 90; top: 8px; right: 8px; padding: 6px 10px; border-radius: 3px; font: 600 11px/1 system-ui, sans-serif; color: #fff; background: #0f5c47; text-decoration: none; }
+.rd-atlas .app { max-width: 1040px; border: 0; box-shadow: 0 0 0 1px var(--border); font-size: 14px; }
+.rd-atlas .app__header { padding: 14px 18px 0; }
+.rd-atlas .app__header h1 { font-size: 21px; }
+.rd-atlas .app__eyebrow { font-size: 11px; letter-spacing: .02em; text-transform: none; color: var(--muted); }
+.rd-atlas .app__subtitle { margin: 2px 0 10px; font-size: 12.5px; }
+.rd-atlas .app__tabs { padding: 0 18px; gap: 4px; border-bottom: 1px solid var(--border); background: #f6f8f9; }
+.rd-atlas .app__tab { padding: 11px 14px; font-weight: 600; font-size: 13.5px; }
+.rd-atlas .app__tab--active { border-bottom: 3px solid var(--rust); }
+.rd-atlas .swipe { max-width: 520px; margin: 0 auto; }
+.rd-atlas .swipe__stack { max-width: 100%; height: min(62svh, 560px); }
+.rd-atlas .swipe__card, .rd-atlas .swipe__photo { border-radius: 4px; }
+.rd-atlas .swipe__card { box-shadow: 0 10px 24px -14px rgba(27, 31, 35, .6); }
+.rd-atlas .swipe__btn { width: 76px; height: 52px; border-radius: 4px; font-size: 22px; }
+.rd-atlas .swipe__btn--dislike { color: var(--ink); }
+
+.rd-atlas .app__browse { padding: 12px 18px 30px; }
+.rd-atlas .app__filter-row { background: #fff; border-bottom: 1px solid var(--border); margin: 0 -18px 12px; padding: 9px 18px; }
+.rd-atlas .app__filter-btn, .rd-atlas .app__chip, .rd-atlas .app__draw-btn, .rd-atlas .app__sort-select, .rd-atlas .sheet__opt, .rd-atlas .sheet__input, .rd-atlas .question__opt { border-radius: 3px; }
+.rd-atlas .app__filter-btn { background: #f6f8f9; }
+.rd-atlas .listing-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(440px, 1fr)); gap: 12px; }
+@media (max-width: 520px) { .rd-atlas .listing-grid { grid-template-columns: 1fr; } }
+.rd-atlas .listing-card { display: grid; grid-template-columns: 42% 1fr; border-radius: 4px; box-shadow: none; }
+.rd-atlas .listing-card:hover { box-shadow: 0 0 0 1px var(--rust); }
+.rd-atlas .listing-card__photo-wrap { height: auto; min-height: 168px; }
+.rd-atlas .listing-card__body { padding: 10px 12px; min-width: 0; display: flex; flex-direction: column; }
+.rd-atlas .listing-card__price-row { flex-wrap: wrap; }
+.rd-atlas .listing-card__price { font-size: 18px; font-weight: 700; font-variant-numeric: tabular-nums; }
+.rd-atlas .listing-card__save { padding: 4px 9px; font-size: 12px; border-radius: 3px; }
+.rd-atlas .listing-card__address { font-size: 13px; margin-top: 2px; }
+.rd-atlas .listing-card__description { font-size: 12.5px; display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; }
+.rd-atlas .listing-card__match { border-radius: 3px; font-size: 11px; padding: 3px 7px; }
+.rd-atlas .listing-card__rate-btn { width: 34px; height: 34px; border-radius: 3px; }
+.rd-atlas .listing-card__status, .rd-atlas .listing-card__agency, .rd-atlas .listing-card__photo-count { border-radius: 3px; }
+.rd-atlas .sheet__panel { border-radius: 6px 6px 0 0; }
+.rd-atlas .question, .rd-atlas .swipe__intro, .rd-atlas .match__card, .rd-atlas .tip { border-radius: 6px; }
+.rd-atlas .swipe__cta, .rd-atlas .swipe__intro-btn, .rd-atlas .question__continue, .rd-atlas .sheet__apply, .rd-atlas .tip__btn, .rd-atlas .saved__fab { border-radius: 4px; }
+.rd-atlas .neighbourhood-map { border-radius: 4px; }
+.rd-atlas .rd-back { top: auto; bottom: 10px; right: 10px; }

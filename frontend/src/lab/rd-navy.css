@@ -1,0 +1,69 @@
+/* "Photo first": the same app in navy and raspberry, with a thumb-height tab bar and photos that take the screen.
+   Everything is scoped under html.rd-navy so it exists only on /ui2. */
+html.rd-navy {
+  --ink: #0f1e32;
+  --muted: #6c7b8d;
+  --muted-dark: #47576a;
+  --cream: #f3f5f8;
+  --outer-bg: #e3e8ee;
+  --border: #dce3eb;
+  --rust: #e2305c;
+  --rust-dark: #bf2049;
+  --forest: #0e9b73;
+  --sans: 'Schibsted Grotesk', system-ui, sans-serif;
+  --serif: 'Schibsted Grotesk', system-ui, sans-serif;
+}
+.rd-navy body, .rd-navy #root { background: var(--outer-bg); }
+.rd-navy h1, .rd-navy h2, .rd-navy h3 { font-weight: 800; letter-spacing: -0.025em; }
+.rd-back { position: fixed; z-index: 90; top: 8px; right: 8px; padding: 6px 11px; border-radius: 999px; font: 600 11px/1 system-ui, sans-serif; color: #fff; background: rgba(15, 30, 50, .72); text-decoration: none; backdrop-filter: blur(6px); }
+
+/* frame and header */
+.rd-navy .app { max-width: 520px; border: 0; padding-bottom: 104px; background: var(--cream); }
+.rd-navy .app__header { padding: 18px 18px 0; }
+.rd-navy .app__header h1 { font-size: 26px; letter-spacing: -0.04em; }
+.rd-navy .app__eyebrow, .rd-navy .app__subtitle { display: none; }
+.rd-navy .app__subtitle + * { margin-top: 10px; }
+
+/* tabs: a floating bar at the bottom, where the thumb is */
+.rd-navy .app__tabs { position: fixed; z-index: 60; left: 50%; bottom: 14px; transform: translateX(-50%); width: min(calc(100% - 28px), 380px); gap: 4px; padding: 5px; border: 0; border-radius: 999px; background: var(--ink); box-shadow: 0 10px 30px -8px rgba(15, 30, 50, .55); }
+.rd-navy .app__tab { position: relative; flex: 1; padding: 12px 0; border: 0; border-radius: 999px; color: #a9b7c7; font-size: 14px; font-weight: 600; text-align: center; }
+.rd-navy .app__tab--active { background: #fff; color: var(--ink); border: 0; }
+.rd-navy .saved__fab { bottom: 88px; }
+
+/* swipe: the photo is the page */
+.rd-navy .swipe { padding: 0 12px; }
+.rd-navy .swipe__stack { max-width: none; height: min(66svh, 600px); margin: 12px 0 18px; }
+.rd-navy .swipe__card { border-radius: 30px; box-shadow: 0 24px 50px -18px rgba(15, 30, 50, .5); }
+.rd-navy .swipe__photo { border-radius: 30px; background: #cfd8e1; }
+.rd-navy .swipe__buttons { gap: 26px; }
+.rd-navy .swipe__btn { width: 74px; height: 74px; font-size: 28px; box-shadow: 0 12px 24px -10px rgba(15, 30, 50, .5); }
+.rd-navy .swipe__btn--dislike { color: var(--ink); border: 0; }
+.rd-navy .swipe__btn--like { background: linear-gradient(135deg, #ff4d7a, var(--rust)); }
+.rd-navy .swipe__progress { text-align: center; }
+
+/* browse: photo cards without frames */
+.rd-navy .app__browse { padding: 8px 12px 24px; }
+.rd-navy .app__filter-row { background: var(--cream); padding: 10px 0; }
+.rd-navy .app__filter-btn, .rd-navy .app__chip { border-radius: 999px; border: 0; background: #fff; box-shadow: 0 1px 0 var(--border), 0 4px 10px -6px rgba(15, 30, 50, .3); }
+.rd-navy .app__filter-btn--on, .rd-navy .app__chip--active { background: var(--ink); color: #fff; }
+.rd-navy .app__result-count { font-size: 14px; }
+.rd-navy .listing-grid { gap: 18px; }
+.rd-navy .listing-card { border: 0; border-radius: 28px; box-shadow: 0 16px 34px -20px rgba(15, 30, 50, .5); }
+.rd-navy .listing-card__photo-wrap { height: min(56svh, 440px); background: #cfd8e1; }
+.rd-navy .listing-card__body { padding: 14px 18px 18px; }
+.rd-navy .listing-card__price { font-size: 26px; font-weight: 800; letter-spacing: -0.035em; font-variant-numeric: tabular-nums; }
+.rd-navy .listing-card__match { background: var(--forest); font-size: 12px; padding: 6px 12px; bottom: 14px; left: 14px; }
+.rd-navy .listing-card__rate { bottom: 12px; right: 12px; gap: 8px; }
+.rd-navy .listing-card__rate-btn { width: 44px; height: 44px; }
+.rd-navy .listing-card__save { border-radius: 999px; border-color: var(--ink); color: var(--ink); font-weight: 700; }
+.rd-navy .listing-card__save--on { background: var(--rust); border-color: var(--rust); color: #fff; }
+.rd-navy .listing-card__address { color: var(--ink); font-weight: 500; }
+
+/* sheets, questions and the match moment */
+.rd-navy .sheet__panel { border-radius: 30px 30px 0 0; background: var(--cream); }
+.rd-navy .sheet__opt, .rd-navy .question__opt { border-radius: 999px; }
+.rd-navy .question { border-radius: 28px; }
+.rd-navy .match__card { border-radius: 30px; }
+.rd-navy .neighbourhood-map { border-radius: 24px; border: 0; }
+.rd-navy .taste__fill { background: var(--forest); }
+.rd-navy .swipe__intro-btn, .rd-navy .swipe__cta, .rd-navy .question__continue, .rd-navy .sheet__apply, .rd-navy .tip__btn { border-radius: 999px; }
