@@ -94,6 +94,7 @@ export const BUDGET_OPTIONS = [
 
 /** the filters that persist between visits (so an answer is still there tomorrow) */
 export interface StoredFilters {
+  agencyFilter: string;
   minPrice: string;
   maxPrice: string;
   minBedrooms: string;

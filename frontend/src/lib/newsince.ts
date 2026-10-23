@@ -8,6 +8,8 @@ import type { Listing } from "../types";
 
 const STORED_KEY = "housefinder:last-seen:v1";
 const SESSION_KEY = "housefinder:new-since:v1";
+const BOARD_STORED_KEY = "housefinder:board-last-visit:v1";
+const BOARD_SESSION_KEY = "housefinder:board-new-since:v1";
 
 export function newestDay(listings: Pick<Listing, "first_seen">[]): string | null {
   let best: string | null = null;
@@ -36,6 +38,34 @@ export function startVisit(latest: string | null, local: VisitStore, session: Vi
   session.set(SESSION_KEY, previous ?? "none");
   if (latest !== null && (previous === null || latest > previous)) local.set(STORED_KEY, latest);
   return previous;
+}
+
+/** Board v3 freezes the comparison for a browser session but does not advance it on render. */
+export function startBoardVisit(local: VisitStore, session: VisitStore): string | null {
+  const frozen = session.get(BOARD_SESSION_KEY);
+  if (frozen !== null) return frozen === "none" ? null : frozen;
+  let through: string | null = null;
+  try {
+    const saved = JSON.parse(local.get(BOARD_STORED_KEY) ?? "null") as { through?: string } | null;
+    through = typeof saved?.through === "string" ? saved.through : null;
+  } catch {
+    /* corrupt storage is equivalent to a first visit */
+  }
+  session.set(BOARD_SESSION_KEY, through ?? "none");
+  return through;
+}
+
+/** Advance only on page exit or after 30 minutes without interaction. */
+export function finishBoardVisit(latest: string | null, local: VisitStore, closedAt: string): void {
+  if (!latest) return;
+  let previous: string | null = null;
+  try {
+    const saved = JSON.parse(local.get(BOARD_STORED_KEY) ?? "null") as { through?: string } | null;
+    previous = typeof saved?.through === "string" ? saved.through : null;
+  } catch {
+    /* overwrite corrupt storage */
+  }
+  local.set(BOARD_STORED_KEY, JSON.stringify({ through: previous && previous > latest ? previous : latest, closedAt }));
 }
 
 function wrap(storage: Storage): VisitStore {

@@ -31,7 +31,6 @@ export function ListingCard({
   isNew,
   priceSeries,
   today,
-  matchLabel,
 }: {
   listing: Listing;
   matchScore?: number;
@@ -47,7 +46,6 @@ export function ListingCard({
   /** this home's rent history when it really changed (lib/priceHistory.ts) */
   priceSeries?: PricePoint[];
   today?: string;
-  matchLabel?: "relative";
 }) {
   const { summary } = listing;
   const drop = latestDrop(priceSeries);
@@ -164,7 +162,7 @@ export function ListingCard({
         </div>
         {matchScore != null && (
           <span className="listing-card__match" title="Relative match to your swiped style — higher is better, compare listings to each other rather than reading it as an absolute percentage">
-            {matchLabel === "relative" ? "Nearer your taste" : `${Math.round(matchScore * 100)}% match`}
+            {Math.round(matchScore * 100)}% match
           </span>
         )}
         {canRate && (
@@ -220,7 +218,6 @@ export function ListingCard({
         {listing.description && (
           <p className="listing-card__description">{listing.description.slice(0, 140)}…</p>
         )}
-        {matchLabel === "relative" && <span className="board__listing-link">View listing ↗</span>}
       </div>
     </a>
   );

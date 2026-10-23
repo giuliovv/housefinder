@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import type { Listing } from "../types";
-import { newKeys, newestDay, startVisit, type VisitStore } from "./newsince";
+import { finishBoardVisit, newKeys, newestDay, startBoardVisit, startVisit, type VisitStore } from "./newsince";
 
 const mem = (): VisitStore & { data: Record<string, string> } => {
   const data: Record<string, string> = {};
@@ -44,5 +44,25 @@ describe("startVisit", () => {
     local.data["housefinder:last-seen:v1"] = "2026-10-14";
     startVisit("2026-10-13", local, mem());
     expect(local.data["housefinder:last-seen:v1"]).toBe("2026-10-14");
+  });
+});
+
+describe("Board visit lifecycle", () => {
+  it("does not advance the marker on first render", () => {
+    const local = mem();
+    const session = mem();
+    expect(startBoardVisit(local, session)).toBeNull();
+    expect(local.data["housefinder:board-last-visit:v1"]).toBeUndefined();
+    finishBoardVisit("2026-10-23", local, "2026-10-23T12:00:00Z");
+    expect(startBoardVisit(local, mem())).toBe("2026-10-23");
+  });
+  it("keeps the comparison frozen within the same session", () => {
+    const local = mem();
+    const session = mem();
+    finishBoardVisit("2026-10-20", local, "2026-10-20T12:00:00Z");
+    expect(startBoardVisit(local, session)).toBe("2026-10-20");
+    finishBoardVisit("2026-10-23", local, "2026-10-23T12:00:00Z");
+    expect(startBoardVisit(local, session)).toBe("2026-10-20");
+    expect(startBoardVisit(local, mem())).toBe("2026-10-23");
   });
 });

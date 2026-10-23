@@ -2,6 +2,9 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import type { Listing, StyleLabel } from "./types";
 import { loadEmbeddingStore, photoId, type EmbeddingStore } from "./lib/embeddingStore";
 import { ListingCard } from "./components/ListingCard";
+import { BoardListingCard } from "./components/BoardListingCard";
+import { catalogueAge } from "./lib/catalogueFreshness";
+import { removalSuggestions } from "./lib/boardZero";
 import { SwipeDeck } from "./components/SwipeDeck";
 import { SavedView } from "./components/SavedView";
 import { useShortlist } from "./lib/useShortlist";
@@ -13,7 +16,7 @@ import { loadMatchState, pickMatch, saveMatchState, shouldOffer } from "./lib/ma
 import { ReadyCard } from "./components/ReadyCard";
 import { latestDrop, type PriceHistory } from "./lib/priceHistory";
 import { FEATURES, hasFeatures } from "./lib/features";
-import { browserStores, newKeys, newestDay, startVisit } from "./lib/newsince";
+import { browserStores, finishBoardVisit, newKeys, newestDay, startBoardVisit, startVisit } from "./lib/newsince";
 import { matchesBedrooms, reconcileBedrooms } from "./lib/bedrooms";
 import { QuestionCard } from "./components/QuestionCard";
 import {
@@ -67,14 +70,17 @@ function App({ labVariant }: { labVariant?: "board" } = {}) {
   const [styleLabels, setStyleLabels] = useState<StyleLabel[]>([]);
   const [error, setError] = useState<string | null>(null);
   const [styleFailed, setStyleFailed] = useState(false);
+  const [catalogueRefreshedAt, setCatalogueRefreshedAt] = useState<string | null>(null);
+  const [clock, setClock] = useState(Date.now);
+  const [listingsAttempt, setListingsAttempt] = useState(0);
   function retryStyle() {
     setStyleFailed(false);
     loadEmbeddingStore().then(setStore).catch(() => setStyleFailed(true));
   }
   const [deadPhotos, setDeadPhotos] = useState<ReadonlySet<string>>(new Set());
   const [sort, setSort] = useState<SortKey>("price-asc");
-  const [agencyFilter, setAgencyFilter] = useState<string>("all");
   const [stored] = useState(loadFilters);
+  const [agencyFilter, setAgencyFilter] = useState<string>(stored.agencyFilter ?? "all");
   const [shapes, setShapes] = useState<LatLon[][]>(() => stored.shapes ?? []);
   const [minPrice, setMinPrice] = useState<string>(stored.minPrice ?? "");
   const [maxPrice, setMaxPrice] = useState<string>(stored.maxPrice ?? "");
@@ -90,6 +96,16 @@ function App({ labVariant }: { labVariant?: "board" } = {}) {
   const [drawing, setDrawing] = useState(false);
   const [shownCount, setShownCount] = useState(PAGE_SIZE);
   const resultsRef = useRef<HTMLElement>(null);
+
+  useEffect(() => {
+    if (!board) return;
+    fetch("/data/refresh-meta.json")
+      .then((r) => r.ok ? r.json() : null)
+      .then((data) => setCatalogueRefreshedAt(typeof data?.refreshedAt === "string" ? data.refreshedAt : null))
+      .catch(() => setCatalogueRefreshedAt(null));
+    const timer = window.setInterval(() => setClock(Date.now()), 60_000);
+    return () => window.clearInterval(timer);
+  }, [board]);
 
   useEffect(() => {
     // (the home listings and the ranking matrix are fetched later, only once they're needed: see `needData`)
@@ -260,8 +276,29 @@ function App({ labVariant }: { labVariant?: "board" } = {}) {
   useEffect(() => {
     if (!listings || since !== undefined) return;
     const { local, session } = browserStores();
-    setSince(startVisit(newestDay(listings), local, session));
-  }, [listings, since]);
+    setSince(board ? startBoardVisit(local, session) : startVisit(newestDay(listings), local, session));
+  }, [board, listings, since]);
+  useEffect(() => {
+    if (!board || !listings) return;
+    const { local } = browserStores();
+    const latest = newestDay(listings);
+    const finish = () => finishBoardVisit(latest, local, new Date().toISOString());
+    let idle: number;
+    const activity = () => {
+      window.clearTimeout(idle);
+      idle = window.setTimeout(finish, 30 * 60_000);
+    };
+    activity();
+    window.addEventListener("pagehide", finish);
+    window.addEventListener("pointerdown", activity, { passive: true });
+    window.addEventListener("keydown", activity);
+    return () => {
+      window.clearTimeout(idle);
+      window.removeEventListener("pagehide", finish);
+      window.removeEventListener("pointerdown", activity);
+      window.removeEventListener("keydown", activity);
+    };
+  }, [board, listings]);
   const newSet = useMemo(() => (listings && since ? newKeys(listings, since, listingKey) : new Set<string>()), [listings, since]);
   const [newOnly, setNewOnly] = useState(false);
   const [browseSeen, setBrowseSeen] = useState(false);
@@ -270,13 +307,20 @@ function App({ labVariant }: { labVariant?: "board" } = {}) {
   }, [tab]);
   const newInView = useMemo(() => filtered.filter((l) => newSet.has(listingKey(l))), [filtered, newSet]);
   const visible = useMemo(() => (newOnly ? newInView : filtered), [newOnly, newInView, filtered]);
+  const zeroSuggestions = useMemo(() => {
+    if (!board || !listings || visible.length > 0) return [];
+    return removalSuggestions(listings, { agency: agencyFilter, minPrice, maxPrice, minBedrooms, maxBedrooms, minBathrooms, features, shapes }, geo, priceHistory);
+  }, [board, listings, visible.length, agencyFilter, minPrice, maxPrice, minBedrooms, maxBedrooms, minBathrooms, features, shapes, geo, priceHistory]);
+  const topScoreThreshold = useMemo(() => {
+    if (!matchScores) return null;
+    const scores = Object.values(matchScores).filter(Number.isFinite).sort((a, b) => b - a);
+    return scores[Math.max(0, Math.ceil(scores.length * 0.1) - 1)] ?? null;
+  }, [matchScores]);
   // of the new homes, how many are among the top tenth of all matches for this person
   const closeNew = useMemo(() => {
-    if (!matchScores || newInView.length === 0) return 0;
-    const all = Object.values(matchScores).sort((a, b) => b - a);
-    const threshold = all[Math.max(0, Math.ceil(all.length * 0.1) - 1)];
-    return newInView.filter((l) => (matchScores[listingKey(l)] ?? -Infinity) >= threshold).length;
-  }, [matchScores, newInView]);
+    if (!matchScores || topScoreThreshold === null || newInView.length === 0) return 0;
+    return newInView.filter((l) => (matchScores[listingKey(l)] ?? -Infinity) >= topScoreThreshold).length;
+  }, [matchScores, newInView, topScoreThreshold]);
   useEffect(() => {
     if (newOnly && newInView.length === 0) setNewOnly(false); // filters changed under it
   }, [newOnly, newInView.length]);
@@ -286,7 +330,7 @@ function App({ labVariant }: { labVariant?: "board" } = {}) {
   // null->non-null transition specifically, not matchScores itself —
   // otherwise this would force sort back to "match" on every single swipe,
   // overriding a user who deliberately switched to price sort mid-session.
-  const hasPreference = matchScores !== null;
+  const hasPreference = board ? tasteRead !== null && tasteRead.level >= 2 && matchScores !== null : matchScores !== null;
   useEffect(() => {
     if (hasPreference) setSort("match");
   }, [hasPreference]);
@@ -302,6 +346,16 @@ function App({ labVariant }: { labVariant?: "board" } = {}) {
     setMinBathrooms("any");
   }
 
+  function removeOneFilter(key: string) {
+    if (key === "maxPrice") setMaxPrice("");
+    else if (key === "minPrice") setMinPrice("");
+    else if (key === "bedrooms") { setMinBedrooms("any"); setMaxBedrooms("any"); }
+    else if (key === "bathrooms") setMinBathrooms("any");
+    else if (key === "agency") setAgencyFilter("all");
+    else if (key === "area") setShapes([]);
+    else if (key.startsWith("feature:")) setFeatures((cur) => cur.filter((f) => f !== key.slice(8)));
+  }
+
   // Closing the filter sheet brings the results into view: the map and area
   // chips sit above the list, so otherwise the list changes out of sight and
   // nothing visibly happens.
@@ -312,6 +366,7 @@ function App({ labVariant }: { labVariant?: "board" } = {}) {
 
   // what `visible` actually does: "match" only sorts by match once there is a preference
   const effectiveSort: SortKey = sort === "match" && !matchScores ? "price-asc" : sort;
+  const freshness = catalogueAge(catalogueRefreshedAt, clock);
 
   const activeFilterCount =
     (shapes.length > 0 ? 1 : 0) +
@@ -324,8 +379,8 @@ function App({ labVariant }: { labVariant?: "board" } = {}) {
 
   // the filters (set here, in the filter sheet or through a question card) survive a reload
   useEffect(() => {
-    saveFilters({ minPrice, maxPrice, minBedrooms, maxBedrooms, minBathrooms, features, shapes });
-  }, [minPrice, maxPrice, minBedrooms, maxBedrooms, minBathrooms, features, shapes]);
+    saveFilters({ agencyFilter, minPrice, maxPrice, minBedrooms, maxBedrooms, minBathrooms, features, shapes });
+  }, [agencyFilter, minPrice, maxPrice, minBedrooms, maxBedrooms, minBathrooms, features, shapes]);
 
   // Practical questions between photos. Photo swipes only train taste; a question's answer just sets
   // the ordinary filters above, which stay editable in Browse.
@@ -385,9 +440,11 @@ function App({ labVariant }: { labVariant?: "board" } = {}) {
   const [matchCard, setMatchCard] = useState<{ id: string; listingKey: string; url: string } | null>(null);
   const [celebration, setCelebration] = useState<{ listingKey: string; url: string } | null>(null);
   const [pinnedKey, setPinnedKey] = useState<string | null>(null);
+  const [boardMatchToast, setBoardMatchToast] = useState<string | null>(null);
   const [matchState, setMatchState] = useState(loadMatchState);
   function swipeInDeck(id: string, choice: "like" | "dislike") {
     swipe(id, choice); // always an ordinary swipe: it trains the taste model like any other
+    if (board) return; // Board v3 offers a quiet, inline match in Browse instead.
     if (matchCard && id === matchCard.id) {
       if (choice === "like") {
         trackEvent("ev_match_hit");
@@ -418,6 +475,35 @@ function App({ labVariant }: { labVariant?: "board" } = {}) {
   }
   const celebrated = celebration ? listingsByKey[celebration.listingKey] : undefined;
   const pinned = pinnedKey ? listingsByKey[pinnedKey] : undefined;
+  useEffect(() => {
+    if (!board || tab !== "browse" || !listings || !matchScores || (tasteRead?.level ?? 0) < 2) return;
+    const key = "housefinder:board-inline-match:v1";
+    try { if (sessionStorage.getItem(key)) return; } catch { /* still show if storage is unavailable */ }
+    const candidate = pickMatch(
+      visible.map((l) => ({ key: listingKey(l), score: matchScores[listingKey(l)] ?? -Infinity, price: l.summary.price_pcm })),
+      Object.values(matchScores), new Set(shortlist.saved),
+    );
+    if (!candidate) return;
+    setPinnedKey(candidate);
+    try { sessionStorage.setItem(key, "1"); } catch { /* session-only best effort */ }
+  }, [board, tab, listings, matchScores, tasteRead?.level, visible, shortlist.saved]);
+  useEffect(() => {
+    if (!board || tab !== "browse" || !pinnedKey) return;
+    const start = window.scrollY;
+    const dismiss = () => { if (window.scrollY > start + 120) setPinnedKey(null); };
+    window.addEventListener("scroll", dismiss, { passive: true });
+    return () => window.removeEventListener("scroll", dismiss);
+  }, [board, tab, pinnedKey]);
+  useEffect(() => {
+    if (!boardMatchToast) return;
+    const timeout = window.setTimeout(() => setBoardMatchToast(null), 4000);
+    return () => window.clearTimeout(timeout);
+  }, [boardMatchToast]);
+  function rateBoardMatch(id: string, choice: "like" | "dislike") {
+    toggleSwipe(id, choice);
+    if (choice === "like") setBoardMatchToast(id);
+    setPinnedKey(null);
+  }
 
   // The big files are fetched only when needed, so a first-time visitor reaches their first photo after ~1 MB instead of ~30 MB:
   // the listings (browse.json, falling back to the full listings.json) and the ranking matrix load once someone opens Browse or
@@ -437,7 +523,7 @@ function App({ labVariant }: { labVariant?: "board" } = {}) {
       .catch(() => get("/data/listings.json"))
       .then(setAllListings)
       .catch((err) => setError(err instanceof Error ? err.message : String(err)));
-  }, [needData]);
+  }, [needData, listingsAttempt]);
   useEffect(() => {
     // Board v3 needs the listing count immediately, but not the large ranking matrix until taste or Browse needs it.
     if (!needData || !rawStore || (board && tab === "style" && swipeTotal < NEED_DATA_AFTER_SWIPES)) return;
@@ -504,8 +590,8 @@ function App({ labVariant }: { labVariant?: "board" } = {}) {
         </div>
       </header>
 
-      {error && <p className="app__error">Couldn't load the homes just now — give it a refresh in a moment.</p>}
-      {!error && !listings && tab === "browse" && <LoadingMessage kind="listings" />}
+      {error && !board && <p className="app__error">Couldn't load the homes just now — give it a refresh in a moment.</p>}
+      {!error && !listings && tab === "browse" && (board ? <div className="board__browse-loading" role="status" aria-label="Loading homes"><div /><div /><div /></div> : <LoadingMessage kind="listings" />)}
 
       {tab === "style" && store && (
         <DeckNeighboursContext.Provider value={neighbours}>
@@ -573,6 +659,7 @@ function App({ labVariant }: { labVariant?: "board" } = {}) {
           onKeep={() => setCelebration(null)}
         />
       )}
+      {board && boardMatchToast && <div className="board__match-toast" role="status">Saved to your taste · <button onClick={() => { toggleSwipe(boardMatchToast, "like"); setBoardMatchToast(null); }}>Undo</button></div>}
       {skipTip && (
         <div className="sheet__overlay sheet__overlay--center" onClick={() => setSkipTip(false)}>
           <div className="tip" role="dialog" aria-label="Filters tip" onClick={(e) => e.stopPropagation()}>
@@ -610,7 +697,12 @@ function App({ labVariant }: { labVariant?: "board" } = {}) {
           store={store}
           deadPhotos={deadPhotos}
           onToggleSave={shortlist.toggleSave}
-          matchLabel={board ? "relative" : undefined}
+          boardDesign={board}
+          swipes={swipes}
+          onRate={toggleSwipe}
+          topScoreThreshold={topScoreThreshold}
+          priceHistory={priceHistory}
+          today={todayIso}
           onStartBoard={shortlist.startBoard}
           onJoin={shortlist.joinInvite}
           onLeave={shortlist.leaveBoard}
@@ -618,8 +710,18 @@ function App({ labVariant }: { labVariant?: "board" } = {}) {
         />
       )}
 
-      {tab === "browse" && (
+      {tab === "browse" && board && error && <div className="board__browse-error"><span>HOMES UNAVAILABLE</span><h2>Browse is taking a break.</h2><p>Your style photos still work. Try the homes again in a moment.</p><button onClick={() => { setError(null); setListingsAttempt((n) => n + 1); }}>Try again</button><button onClick={() => setTab("style")}>Open Style</button></div>}
+
+      {tab === "browse" && (!board || (listings && !error)) && (
         <div className="app__browse">
+          {board && <aside className="board__desktop-filters" aria-label="Docked filters">
+            <h2>Make it yours.</h2>
+            <label>Min rent, pcm <input type="number" min="0" value={minPrice} onChange={(e) => setMinPrice(e.target.value)} placeholder="Any" /></label>
+            <label>Max rent, pcm <input type="number" min="0" value={maxPrice} onChange={(e) => setMaxPrice(e.target.value)} placeholder="Any" /></label>
+            <label>Bedrooms <select value={minBedrooms} onChange={(e) => { const r = reconcileBedrooms(e.target.value, maxBedrooms, "min"); setMinBedrooms(r.min); setMaxBedrooms(r.max); }}><option value="any">Any</option>{[1, 2, 3, 4].map((n) => <option value={n} key={n}>{n}+</option>)}</select></label>
+            <button onClick={() => setAreaPanelOpen(true)}>Draw an area</button>
+            <button onClick={() => setFilterSheetOpen(true)}>All filters →</button>
+          </aside>}
           <div className="app__filter-row">
             <button className="app__filter-btn" onClick={() => setFilterSheetOpen(true)}>
               Filters{activeFilterCount > 0 ? ` (${activeFilterCount})` : ""}
@@ -638,6 +740,8 @@ function App({ labVariant }: { labVariant?: "board" } = {}) {
               <span className="app__result-word"> {visible.length === 1 ? "home" : "homes"}</span>
             </span>
           </div>
+
+          {board && <p className={`board__freshness${freshness.stale ? " board__freshness--stale" : ""}`}>{freshness.label} · {effectiveSort === "match" ? "nearer your taste first" : effectiveSort === "price-desc" ? "highest price first" : "cheapest first"}</p>}
 
           {areaPanelOpen && (
             <div className="app__area-panel">
@@ -668,11 +772,12 @@ function App({ labVariant }: { labVariant?: "board" } = {}) {
             </div>
           )}
 
+          <div className={board ? "board__toolbar" : undefined}>
           {newInView.length > 0 && (
             <div className="app__new">
               <button className={`app__new-chip ${newOnly ? "app__new-chip--on" : ""}`} onClick={() => setNewOnly((v) => !v)}>
-                ★ {newInView.length >= 300 ? "300+" : newInView.length} new since your last visit
-                {closeNew > 0 ? ` · ${closeNew} close to your taste` : ""}
+                {board ? `New since ${since ?? "last visit"} · ${newInView.length}` : `★ ${newInView.length >= 300 ? "300+" : newInView.length} new since your last visit`}
+                {closeNew > 0 ? ` · ${closeNew} nearer your taste` : ""}
               </button>
               {newOnly && (
                 <button className="app__clear-btn" onClick={() => setNewOnly(false)}>
@@ -681,41 +786,52 @@ function App({ labVariant }: { labVariant?: "board" } = {}) {
               )}
             </div>
           )}
+          {board && <label className="board__sort">Sort <select value={effectiveSort} onChange={(e) => setSort(e.target.value as SortKey)}>
+            {matchScores && <option value="match">Best match</option>}
+            <option value="price-asc">Price: low first</option>
+            <option value="price-desc">Price: high first</option>
+          </select></label>}
           {board && activeFilterCount > 0 && (
             <div className="board__chips" aria-label="Active filters">
-              {minPrice && <button onClick={() => setMinPrice("")}>From £{minPrice} ×</button>}
-              {maxPrice && <button onClick={() => setMaxPrice("")}>Up to £{maxPrice} ×</button>}
-              {(minBedrooms !== "any" || maxBedrooms !== "any") && <button onClick={() => { setMinBedrooms("any"); setMaxBedrooms("any"); }}>{minBedrooms !== "any" ? `${minBedrooms}+` : `Up to ${maxBedrooms}`} beds ×</button>}
-              {minBathrooms !== "any" && <button onClick={() => setMinBathrooms("any")}>{minBathrooms}+ baths ×</button>}
-              {agencyFilter !== "all" && <button onClick={() => setAgencyFilter("all")}>{agencyFilter} ×</button>}
-              {features.map((key) => <button key={key} onClick={() => setFeatures((cur) => cur.filter((f) => f !== key))}>{FEATURES.find((f) => f.key === key)?.label ?? key} ×</button>)}
-              {shapes.length > 0 && <button onClick={() => setShapes([])}>Map area ×</button>}
+              {minPrice && <button onClick={() => setFilterSheetOpen(true)}>From £{minPrice}</button>}
+              {maxPrice && <button onClick={() => setFilterSheetOpen(true)}>Up to £{maxPrice}</button>}
+              {(minBedrooms !== "any" || maxBedrooms !== "any") && <button onClick={() => setFilterSheetOpen(true)}>{minBedrooms !== "any" ? `${minBedrooms}+` : `Up to ${maxBedrooms}`} beds</button>}
+              {minBathrooms !== "any" && <button onClick={() => setFilterSheetOpen(true)}>{minBathrooms}+ baths</button>}
+              {agencyFilter !== "all" && <button onClick={() => setFilterSheetOpen(true)}>{agencyFilter}</button>}
+              {features.map((key) => <button key={key} onClick={() => setFilterSheetOpen(true)}>{FEATURES.find((f) => f.key === key)?.label ?? key}</button>)}
+              {shapes.length > 0 && <button onClick={() => setFilterSheetOpen(true)}>Map area</button>}
             </div>
           )}
+          </div>
           {pinned && (
             <div className="browse__pinned">
               <p className="browse__pinned-label">
-                <span>♥ It's a match!</span>
+                <span>{board ? "LIKELY MATCH · NEARER YOUR TASTE" : "♥ It's a match!"}</span>
                 <button onClick={() => setPinnedKey(null)}>Dismiss</button>
               </p>
               <div className="listing-grid">
-                <ListingCard
-                  listing={pinned}
-                  matchScore={matchScores?.[listingKey(pinned)]}
-                  matchLabel={board ? "relative" : undefined}
-                  store={store}
-                  deadPhotos={deadPhotos}
-                  swipes={swipes}
-                  onRate={toggleSwipe}
-                  saved={shortlist.saved.includes(listingKey(pinned))}
-                  onToggleSave={() => shortlist.toggleSave(pinned)}
-                />
+                {board ? <BoardListingCard listing={pinned} store={store} deadPhotos={deadPhotos} swipes={swipes} onRate={rateBoardMatch} saved={shortlist.saved.includes(listingKey(pinned))} onToggleSave={() => shortlist.toggleSave(pinned)} isTopRanked={topScoreThreshold !== null && (matchScores?.[listingKey(pinned)] ?? -Infinity) >= topScoreThreshold} priceSeries={priceHistory[listingKey(pinned)]} today={todayIso} />
+                  : <ListingCard listing={pinned} matchScore={matchScores?.[listingKey(pinned)]} store={store} deadPhotos={deadPhotos} swipes={swipes} onRate={toggleSwipe} saved={shortlist.saved.includes(listingKey(pinned))} onToggleSave={() => shortlist.toggleSave(pinned)} />}
               </div>
             </div>
           )}
+          {board && visible.length === 0 && <div className="board__zero"><span>NO HOMES IN THIS SEARCH</span><h2>Try a little wider.</h2><p>Your saved homes and style are still here. Remove one limit to see what comes back.</p>{zeroSuggestions.map((s) => <button key={s.key} onClick={() => removeOneFilter(s.key)}>Remove {s.label} · +{s.count}</button>)}{activeFilterCount > 0 && <button onClick={clearFilters}>Clear all filters</button>}</div>}
           <main className="listing-grid app__results" ref={resultsRef}>
             {visible.filter((l) => listingKey(l) !== pinnedKey).slice(0, shownCount).map((listing) => (
-              <ListingCard
+              board ? <BoardListingCard
+                key={listingKey(listing)}
+                listing={listing}
+                store={store}
+                deadPhotos={deadPhotos}
+                swipes={swipes}
+                onRate={toggleSwipe}
+                saved={shortlist.saved.includes(listingKey(listing))}
+                onToggleSave={() => shortlist.toggleSave(listing)}
+                isNew={newSet.has(listingKey(listing))}
+                isTopRanked={topScoreThreshold !== null && (matchScores?.[listingKey(listing)] ?? -Infinity) >= topScoreThreshold}
+                priceSeries={priceHistory[listingKey(listing)]}
+                today={todayIso}
+              /> : <ListingCard
                 key={`${listing.summary.platform}-${listing.summary.source_id}`}
                 listing={listing}
                 matchScore={matchScores?.[listingKey(listing)]}
@@ -728,7 +844,6 @@ function App({ labVariant }: { labVariant?: "board" } = {}) {
                 isNew={newSet.has(listingKey(listing))}
                 priceSeries={priceHistory[listingKey(listing)]}
                 today={todayIso}
-                matchLabel={board ? "relative" : undefined}
               />
             ))}
           </main>

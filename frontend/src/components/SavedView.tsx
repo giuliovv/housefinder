@@ -6,10 +6,18 @@ import { boardPeople, joinNames, shareUrl, whatsappLink, type BoardItem, type Me
 import { normalizeImageUrl } from "../lib/url";
 import { CheckIcon, CopyIcon, WhatsAppIcon } from "./icons";
 import { ListingCard } from "./ListingCard";
+import { BoardListingCard } from "./BoardListingCard";
 import type { EmbeddingStore } from "../lib/embeddingStore";
+import type { SwipeChoice } from "../lib/preferences";
+import type { PriceHistory } from "../lib/priceHistory";
 
 interface Props {
-  matchLabel?: "relative";
+  boardDesign?: boolean;
+  swipes?: Record<string, SwipeChoice>;
+  onRate?: (photoId: string, choice: SwipeChoice) => void;
+  topScoreThreshold?: number | null;
+  priceHistory?: PriceHistory;
+  today?: string;
   saved: string[];
   listingsByKey: Record<string, Listing>;
   me: Me;
@@ -129,7 +137,8 @@ export function SavedView(p: Props) {
   const [sheetOpen, setSheetOpen] = useState(false);
   const inBoard = p.boardId !== null;
   const live = inBoard && p.status === "live"; // until it connects (or if it can't), show my own saves
-  const cardProps = { store: p.store, deadPhotos: p.deadPhotos, matchLabel: p.matchLabel };
+  const cardProps = { store: p.store, deadPhotos: p.deadPhotos };
+  const boardCard = (listing: Listing, saved: boolean) => <BoardListingCard listing={listing} saved={saved} onToggleSave={() => p.onToggleSave(listing)} isTopRanked={p.topScoreThreshold != null && (p.matchScores?.[listingKey(listing)] ?? -Infinity) >= p.topScoreThreshold} swipes={p.swipes} onRate={p.onRate} priceSeries={p.priceHistory?.[listingKey(listing)]} today={p.today} {...cardProps} />;
 
   if (p.invite) {
     return (
@@ -188,7 +197,7 @@ export function SavedView(p: Props) {
                     {both ? "Saved by both: " : "Saved by "}
                     {names.join(" & ")}
                   </p>
-                  {listing ? (
+                  {listing ? p.boardDesign ? boardCard(listing, p.saved.includes(item.key)) : (
                     <ListingCard
                       listing={listing}
                       matchScore={p.matchScores?.[listingKey(listing)]}
@@ -202,14 +211,14 @@ export function SavedView(p: Props) {
                       <div>
                         <strong>{item.snap.price}</strong>
                         <p>{item.snap.address}</p>
-                        <p className="app__map-hint">No longer in our listings — it may have been let.</p>
+                        <p className="app__map-hint">{p.boardDesign ? "No longer listed" : "No longer in our listings — it may have been let."}</p>
                       </div>
                     </a>
                   )}
                 </div>
               );
             })
-          : mine.map((listing) => (
+          : mine.map((listing) => p.boardDesign ? <div key={listingKey(listing)}>{boardCard(listing, true)}</div> : (
               <ListingCard
                 key={listingKey(listing)}
                 listing={listing}
