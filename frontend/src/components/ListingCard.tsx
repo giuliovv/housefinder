@@ -7,6 +7,7 @@ import { latestDrop, gbp, type PricePoint } from "../lib/priceHistory";
 import { PriceChart } from "./PriceChart";
 import { trackMilestone } from "../lib/stats";
 import { listingKey } from "../lib/listingKey";
+import { staleLabelDays } from "../lib/staleness";
 
 /** Agencies leak their own wording into the price cell ("To Let: £4,616 per week",
  * "… (Tenant Info)"); show just the price. The pipeline cleans it too, this covers
@@ -48,10 +49,7 @@ export function ListingCard({
 }) {
   const { summary } = listing;
   const drop = latestDrop(priceSeries);
-  // an agency that is blocking our scraper keeps its homes visible for a while; say honestly how old the information is
-  const staleDays =
-    listing.last_seen && today ? Math.round((Date.parse(`${today}T00:00:00Z`) - Date.parse(`${listing.last_seen}T00:00:00Z`)) / 86_400_000) : null;
-  const showStale = staleDays !== null && staleDays >= 2;
+  const staleDays = staleLabelDays(listing.last_seen, today);
   const allPhotos = listing.photo_urls.length > 0
     ? listing.photo_urls
     : [summary.thumbnail_url].filter((u): u is string => Boolean(u));
@@ -211,7 +209,7 @@ export function ListingCard({
           <p className="listing-card__price-flag">Price looks off — check with the agency</p>
         )}
         <p className="listing-card__address">{summary.address}</p>
-        {showStale && <p className="listing-card__stale">Last checked {staleDays} days ago</p>}
+        {staleDays !== null && <p className="listing-card__stale">Last checked {staleDays} days ago</p>}
         <p className="listing-card__rooms">
           {summary.bedrooms != null && <span>{summary.bedrooms} bed</span>}
           {summary.bathrooms != null && <span>{summary.bathrooms} bath</span>}
