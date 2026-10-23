@@ -586,7 +586,7 @@ function App({ labVariant }: { labVariant?: "board" | "board-v4" } = {}) {
 
         <div className="app__tabs">
           <button className={`app__tab ${tab === "style" ? "app__tab--active" : ""}`} onClick={() => setTab("style")}>
-            {board ? "Style" : "Find your style"}
+            {boardV4 ? "Find your style" : board ? "Style" : "Find your style"}
           </button>
           <button className={`app__tab ${tab === "browse" ? "app__tab--active" : ""}`} onClick={() => setTab("browse")}>
             Browse
@@ -708,6 +708,7 @@ function App({ labVariant }: { labVariant?: "board" | "board-v4" } = {}) {
           deadPhotos={deadPhotos}
           onToggleSave={shortlist.toggleSave}
           boardDesign={board}
+          compactActions={boardV4}
           swipes={swipes}
           onRate={toggleSwipe}
           topScoreThreshold={topScoreThreshold}
@@ -831,6 +832,7 @@ function App({ labVariant }: { labVariant?: "board" | "board-v4" } = {}) {
             {visible.filter((l) => listingKey(l) !== pinnedKey).slice(0, shownCount).map((listing) => (
               board ? <BoardListingCard
                 key={listingKey(listing)}
+                compactActions={boardV4}
                 listing={listing}
                 store={store}
                 deadPhotos={deadPhotos}

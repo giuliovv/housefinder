@@ -13,6 +13,7 @@ import type { PriceHistory } from "../lib/priceHistory";
 
 interface Props {
   boardDesign?: boolean;
+  compactActions?: boolean;
   swipes?: Record<string, SwipeChoice>;
   onRate?: (photoId: string, choice: SwipeChoice) => void;
   topScoreThreshold?: number | null;
@@ -139,7 +140,7 @@ export function SavedView(p: Props) {
   const inBoard = p.boardId !== null;
   const live = inBoard && p.status === "live"; // until it connects (or if it can't), show my own saves
   const cardProps = { store: p.store, deadPhotos: p.deadPhotos };
-  const boardCard = (listing: Listing, saved: boolean) => <BoardListingCard listing={listing} saved={saved} onToggleSave={() => p.onToggleSave(listing)} isTopRanked={p.topScoreThreshold != null && (p.matchScores?.[listingKey(listing)] ?? -Infinity) >= p.topScoreThreshold} swipes={p.swipes} onRate={p.onRate} priceSeries={p.priceHistory?.[listingKey(listing)]} today={p.today} {...cardProps} />;
+  const boardCard = (listing: Listing, saved: boolean) => <BoardListingCard listing={listing} saved={saved} onToggleSave={() => p.onToggleSave(listing)} isTopRanked={p.topScoreThreshold != null && (p.matchScores?.[listingKey(listing)] ?? -Infinity) >= p.topScoreThreshold} swipes={p.swipes} onRate={p.onRate} priceSeries={p.priceHistory?.[listingKey(listing)]} today={p.today} compactActions={p.compactActions} {...cardProps} />;
 
   if (p.invite) {
     return (

@@ -18,7 +18,7 @@ function checkedDay(day?: string): string | null {
   return `checked ${days}d ago`;
 }
 
-export function BoardListingCard({ listing, store, deadPhotos, swipes, onRate, saved, onToggleSave, isNew, isTopRanked, priceSeries, today }: {
+export function BoardListingCard({ listing, store, deadPhotos, swipes, onRate, saved, onToggleSave, isNew, isTopRanked, priceSeries, today, compactActions = false }: {
   listing: Listing;
   store?: EmbeddingStore | null;
   deadPhotos?: ReadonlySet<string>;
@@ -30,6 +30,7 @@ export function BoardListingCard({ listing, store, deadPhotos, swipes, onRate, s
   isTopRanked?: boolean;
   priceSeries?: PricePoint[];
   today?: string;
+  compactActions?: boolean;
 }) {
   const { summary } = listing;
   const images = listing.photo_urls.length ? listing.photo_urls : [summary.thumbnail_url].filter((x): x is string => Boolean(x));
@@ -62,7 +63,7 @@ export function BoardListingCard({ listing, store, deadPhotos, swipes, onRate, s
   }
 
   return (
-    <article className="listing-card board-listing">
+    <article className={`listing-card board-listing${compactActions ? " board-listing--compact" : ""}`}>
       <div className="listing-card__photo-wrap board-listing__gallery">
         {photos.length ? (
           <div className="listing-card__strip" ref={strip} onScroll={onScroll} aria-label={`Photos of ${summary.address}`}>
@@ -81,6 +82,11 @@ export function BoardListingCard({ listing, store, deadPhotos, swipes, onRate, s
         {isTopRanked && photos.length > 0 && <span className="listing-card__match">Nearer your taste</span>}
         {isNew && <span className="listing-card__new">New</span>}
         {photos.length === 0 && <span className="board-listing__unranked">Not ranked: no photos</span>}
+        {compactActions && canRate && <div className="board-listing__photo-actions" aria-label="Rate this photo">
+          <span>This photo</span>
+          <button aria-label="Pass this photo" title="Pass this photo" aria-pressed={currentId ? swipes?.[currentId] === "dislike" : false} onClick={() => currentId && onRate?.(currentId, "dislike")}>×</button>
+          <button aria-label="Like this photo" title="Like this photo" aria-pressed={currentId ? swipes?.[currentId] === "like" : false} onClick={() => currentId && onRate?.(currentId, "like")}>♥</button>
+        </div>}
       </div>
 
       <a className="board-listing__body-link" href={agencyUrl} target="_blank" rel="noopener noreferrer" onClick={agencyClick} aria-label={`View ${summary.address} on ${listing.agency_name}`}>
@@ -95,11 +101,12 @@ export function BoardListingCard({ listing, store, deadPhotos, swipes, onRate, s
         </div>
       </a>
 
-      <div className="board-listing__actions">
+      {compactActions && <div className="board-listing__save-row"><button aria-pressed={Boolean(saved)} onClick={onToggleSave} disabled={!onToggleSave}>{saved ? "★ Saved home" : "☆ Save home"}</button></div>}
+      {!compactActions && <div className="board-listing__actions">
         <button disabled={!canRate} aria-pressed={currentId ? swipes?.[currentId] === "dislike" : false} onClick={() => currentId && onRate?.(currentId, "dislike")}>Pass</button>
         <button disabled={!canRate} aria-pressed={currentId ? swipes?.[currentId] === "like" : false} onClick={() => currentId && onRate?.(currentId, "like")}>Like</button>
         <button disabled={!onToggleSave} aria-pressed={Boolean(saved)} onClick={onToggleSave}>{saved ? "Saved" : "Save"}</button>
-      </div>
+      </div>}
       <a className="board-listing__footer" href={agencyUrl} target="_blank" rel="noopener noreferrer" onClick={agencyClick}>
         <span>{listing.agency_name}{checked ? ` · ${checked}` : ""}</span><strong>View listing ↗</strong>
       </a>
