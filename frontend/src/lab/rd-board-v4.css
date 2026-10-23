@@ -77,7 +77,7 @@ html.rd-board-v4 {
 .rd-board-v4 .listing-card__price-flag { border: 1px solid #e4d4b2; background: #f8efdd; }
 
 .rd-board-v4 .board-swipe__stage { border-radius: 0 0 32px 32px; background: #d8dfd5; }
-.rd-board-v4 .app:has(.board-swipe__stage) .board-swipe__stage { height: clamp(420px, calc(100svh - 310px), 780px); }
+.rd-board-v4 .app:has(.board-swipe__stage) .board-swipe__stage { height: clamp(320px, calc(100svh - 185px), 1100px); }
 .rd-board-v4 .board-swipe__photo .swipe__stamp { border-width: 2px; border-radius: 10px; background: #26332dda; font: 600 clamp(20px, 6vw, 29px)/1 var(--sans); }
 .rd-board-v4 .board-swipe__photo .swipe__stamp--pass { border-color: #eccabb; color: #f4d9cd; }
 .rd-board-v4 .board-swipe__photo .swipe__stamp--like { border-color: var(--accent-soft); color: #fff; }
