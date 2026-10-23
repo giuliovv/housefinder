@@ -62,6 +62,11 @@
 .codex-direction--board .codex-direction__art i:first-child { width: 55%; height: 120%; left: 22%; top: 9%; background: #ff6a2b; border-radius: 46% 46% 0 0; transform: rotate(-14deg); }
 .codex-direction--board .codex-direction__art i:nth-child(2) { width: 47%; height: 48%; left: 8%; bottom: 5%; background: #c8f060; border: 2px solid #15120f; border-radius: 22px; transform: rotate(8deg); }
 .codex-direction--board .codex-direction__art i:last-child { width: 25%; height: 20%; right: 5%; bottom: 16%; background: #ffd84a; border: 2px solid #15120f; border-radius: 99px; }
+.codex-direction--board-v4 { background: #f4f3ec; color: #26332d; border: 1px solid #d7ddd2; box-shadow: 0 14px 30px #26332d12; }
+.codex-direction--board-v4 .codex-direction__art { background: #cbd5c6; border-radius: 28px; }
+.codex-direction--board-v4 .codex-direction__art i:first-child { width: 57%; height: 115%; left: 21%; top: 9%; background: #a8b9a6; border-radius: 48% 48% 0 0; transform: rotate(-8deg); }
+.codex-direction--board-v4 .codex-direction__art i:nth-child(2) { width: 44%; height: 43%; left: 9%; bottom: 8%; background: #efe4d6; border-radius: 20px; transform: rotate(5deg); }
+.codex-direction--board-v4 .codex-direction__art i:last-child { width: 23%; height: 18%; right: 8%; bottom: 17%; background: #b87961; border-radius: 99px; }
 .lab-codex-index footer { padding-top: 22px; font: 12px/1.5 'Courier New', monospace; }
 @media (max-width: 850px) { .lab-codex-index main { grid-template-columns: 1fr; } .codex-direction { min-height: 380px; } .codex-direction__art { max-height: 220px; } }
 @media (prefers-reduced-motion: reduce) { .codex-direction { transition: none; } }

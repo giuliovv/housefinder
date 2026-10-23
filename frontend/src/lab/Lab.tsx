@@ -30,11 +30,12 @@ const CODEX: { slug: string; name: string; line: string; detail: string; whole: 
   { slug: "blueprint", name: "Blueprint", line: "The practical search instrument", detail: "A cartographic workspace: deep blue, measured grids and precise data. Let the map, filters and match signal feel like one tool.", whole: "blueprint" },
   { slug: "salon", name: "Salon", line: "The interior-led magazine", detail: "An editorial gallery with generous photography, expressive typography and warm colour. Lead with how a home feels; reveal the numbers cleanly.", whole: "salon" },
   { slug: "board", name: "Board v3", line: "The bold swipe-to-browse system", detail: "Tangerine, ultramarine and pistachio. A photo-led taste deck, practical listing cards and the same working filters, map and shortlist.", whole: "board" },
+  { slug: "board-v4", name: "Board v4", line: "The quieter photo-led home hunt", detail: "The same working swipe and browse flow, with softer borders, warm paper, muted clay and sage. Character without the comic-book volume.", whole: "board-v4" },
 ];
 
 export function designFromPath(path: string): string | null {
   if (/^\/ui\/codex\/?$/.test(path)) return "codex";
-  const codex = /^\/ui\/codex\/([a-z-]+)\/?$/.exec(path);
+  const codex = /^\/ui\/codex\/([a-z0-9-]+)\/?$/.exec(path);
   if (codex) return `codex/${codex[1]}`;
   const m = /^\/ui(\d*)\/?$/.exec(path);
   return m ? m[1] : null;
@@ -74,7 +75,7 @@ function Index() {
       <p>Ideas for House Swipe on the real homes. The redesign is the whole app with every feature. The others are new ways to find a home: some need nothing from you up front, some learn as you like and pass and share what they learn with the main app.</p>
       <section className="lab-codex-callout">
         <span>NEW COLLECTION / CODEX</span>
-        <h2>Four ways to make the hunt feel different.</h2>
+        <h2>Five ways to make the hunt feel different.</h2>
         <p>Full-app concepts on real homes, not static screenshots.</p>
         <a href="/ui/codex">Explore Codex directions <span aria-hidden="true">↗</span></a>
       </section>
@@ -105,9 +106,9 @@ function CodexIndex() {
     <div className="lab-codex-index">
       <nav><a href="/ui">← Design lab</a><span>HOUSE SWIPE / CODEX</span></nav>
       <header>
-        <p>FOUR DIRECTIONS · ONE REAL PRODUCT</p>
+        <p>FIVE CONCEPTS · ONE REAL PRODUCT</p>
         <h1>A home hunt should have a point of view.</h1>
-        <p>Explore four visual languages across the actual swipe, browse and saved flows. Each direction uses the same listings and working interactions.</p>
+        <p>Explore five visual concepts across the actual swipe, browse and saved flows. Each uses the same listings and working interactions.</p>
       </header>
       <main>
         {CODEX.map((d, i) => (

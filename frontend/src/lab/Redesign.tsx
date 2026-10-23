@@ -14,6 +14,7 @@ import "./rd-fieldnotes.css";
 import "./rd-blueprint.css";
 import "./rd-salon.css";
 import "./rd-board.css";
+import "./rd-board-v4.css";
 import { DeckVariantContext, type DeckVariant } from "../components/deckVariant";
 
 export const REDESIGNS = {
@@ -30,12 +31,13 @@ export const REDESIGNS = {
   blueprint: "family=Space+Grotesk:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600",
   salon: "family=DM+Sans:wght@400;500;600;700&family=Instrument+Serif:ital@0;1",
   board: "family=Bricolage+Grotesque:opsz,wght@12..96,400;12..96,600;12..96,800&family=Instrument+Serif:ital@1&family=DM+Mono:wght@500",
+  "board-v4": "family=DM+Sans:wght@400;500;600;700&family=Instrument+Serif:ital@1&family=DM+Mono:wght@400;500",
 } as const;
 export type RedesignName = keyof typeof REDESIGNS;
 
 /** which swipe deck each design uses, and any extra classes it needs (the full-bleed design borrows the dark browsing styles) */
-const DECK: Partial<Record<RedesignName, DeckVariant>> = { bleed: "bleed", fan: "fan", ritual: "ritual", dig: "dig", stamp: "stamp", board: "board" };
-const EXTRA: Partial<Record<RedesignName, string[]>> = { bleed: ["rd-dusk"] };
+const DECK: Partial<Record<RedesignName, DeckVariant>> = { bleed: "bleed", fan: "fan", ritual: "ritual", dig: "dig", stamp: "stamp", board: "board", "board-v4": "board" };
+const EXTRA: Partial<Record<RedesignName, string[]>> = { bleed: ["rd-dusk"], "board-v4": ["rd-board"] };
 
 /** The whole real app, every feature, wearing a different design: a re-skin through colour variables plus layout rules. */
 export default function Redesign({ name }: { name: RedesignName }) {
@@ -47,11 +49,11 @@ export default function Redesign({ name }: { name: RedesignName }) {
   }, [name]);
   return (
     <>
-      <a className="rd-back" href={["fieldnotes", "blueprint", "salon", "board"].includes(name) ? "/ui/codex" : "/ui"}>
-        ← {(["fieldnotes", "blueprint", "salon", "board"] as string[]).includes(name) ? "Codex" : "All designs"}
+      <a className="rd-back" href={["fieldnotes", "blueprint", "salon", "board", "board-v4"].includes(name) ? "/ui/codex" : "/ui"}>
+        ← {(["fieldnotes", "blueprint", "salon", "board", "board-v4"] as string[]).includes(name) ? "Codex" : "All designs"}
       </a>
       <DeckVariantContext.Provider value={DECK[name] ?? "classic"}>
-        <App labVariant={name === "board" ? "board" : undefined} />
+        <App labVariant={name === "board" || name === "board-v4" ? name : undefined} />
       </DeckVariantContext.Provider>
     </>
   );

@@ -50,8 +50,9 @@ const PAGE_SIZE = 40;
 /** the big data files (listings, ranking matrix) are fetched once someone has swiped this many photos, or opens Browse/Saved */
 const NEED_DATA_AFTER_SWIPES = 10;
 
-function App({ labVariant }: { labVariant?: "board" } = {}) {
-  const board = labVariant === "board";
+function App({ labVariant }: { labVariant?: "board" | "board-v4" } = {}) {
+  const board = labVariant === "board" || labVariant === "board-v4";
+  const boardV4 = labVariant === "board-v4";
   const [rawStore, setStore] = useState<EmbeddingStore | null>(null);
   const [rawListings, setAllListings] = useState<Listing[] | null>(null);
   // agencies switched off (killswitch.json at the site root; see scraper/killswitch.py): hidden at once, no deploy needed
@@ -720,7 +721,7 @@ function App({ labVariant }: { labVariant?: "board" } = {}) {
         />
       )}
 
-      {tab === "browse" && board && error && <div className="board__browse-error"><span>HOMES UNAVAILABLE</span><h2>Can't load homes <em>right now</em></h2><p>Your filters and saved homes are safe on this device. Style photos still work.</p><button onClick={() => { setError(null); setListingsAttempt((n) => n + 1); }}>Try again</button><button onClick={() => setTab("style")}>Open Style instead</button>{catalogueRefreshedAt && <small>Last good catalogue update · {freshness.label.toLowerCase()}</small>}</div>}
+      {tab === "browse" && board && error && <div className="board__browse-error"><span>HOMES UNAVAILABLE</span><h2>Can't load homes <em>right now</em></h2><p>Your filters and saved homes are safe on this device. Style photos still work.</p><button onClick={() => { setError(null); setListingsAttempt((n) => n + 1); }}>Try again</button><button onClick={() => setTab("style")}>Open Style instead</button>{!boardV4 && catalogueRefreshedAt && <small>Last good catalogue update · {freshness.label.toLowerCase()}</small>}</div>}
 
       {tab === "browse" && (!board || (listings && !error)) && (
         <div className="app__browse">
@@ -751,7 +752,7 @@ function App({ labVariant }: { labVariant?: "board" } = {}) {
             </span>
           </div>
 
-          {board && <p className={`board__freshness${freshness.stale ? " board__freshness--stale" : ""}`}>{freshness.label} · {effectiveSort === "match" ? "nearer your taste first" : effectiveSort === "price-desc" ? "highest price first" : "cheapest first"}</p>}
+          {board && !boardV4 && <p className={`board__freshness${freshness.stale ? " board__freshness--stale" : ""}`}>{freshness.label} · {effectiveSort === "match" ? "nearer your taste first" : effectiveSort === "price-desc" ? "highest price first" : "cheapest first"}</p>}
 
           {areaPanelOpen && (
             <div className="app__area-panel">
