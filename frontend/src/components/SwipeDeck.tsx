@@ -278,10 +278,16 @@ export function SwipeDeck({
                   </div>
                 </details>
               </> : <>
-                <p className="board-swipe__kicker">YOU LEAN TOWARD</p>
-                <h2>{styleWords?.length ? <>{styleWords.slice(0, -1).join(" ")} <em>{styleWords.at(-1)}</em></> : <><em>Your</em> next place</>}</h2>
-                <div className="board-swipe__read"><span>{label}</span><span>{decided}/30</span></div>
-                <div className="board-swipe__arches" aria-label={`${decided} photos rated`}>{Array.from({ length: 5 }, (_, i) => <i key={i} className={i < progress ? "board-swipe__arch--on" : ""} />)}</div>
+                <div className="board-swipe__lean">
+                  <div className="board-swipe__lean-copy">
+                    <p className="board-swipe__kicker">YOU LEAN TOWARD</p>
+                    <h2>{styleWords?.length ? <>{styleWords.slice(0, -1).join(" ")} <em>{styleWords.at(-1)}</em></> : <><em>Your</em> next place</>}</h2>
+                  </div>
+                  <div className="board-swipe__meter" role="img" aria-label={`${label}. ${decided} photos rated`} title={label}>
+                    <span className="board-swipe__read">{decided}/30</span>
+                    <div className="board-swipe__arches">{Array.from({ length: 5 }, (_, i) => <i key={i} className={i < progress ? "board-swipe__arch--on" : ""} />)}</div>
+                  </div>
+                </div>
                 <div className="board-swipe__actions">
                   <button onClick={() => commit("dislike")}>← Pass</button>
                   {compactBoardControls && <button className="board-swipe__skip" onClick={() => { stopTeaching(); onHide(current.id); }}>Skip photo</button>}

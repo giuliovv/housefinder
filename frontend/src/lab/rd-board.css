@@ -258,3 +258,12 @@ html.rd-board {
 .rd-board .board-listing__history .price-chart__caption { display: none; }
 .rd-board .board-listing__history .price-chart__label { fill: var(--ink); }
 .rd-board .board__freshness { display: none; }
+
+/* the read meter sits beside the style name (design 3b) */
+.rd-board .board-swipe__lean { display: flex; align-items: flex-end; justify-content: space-between; gap: 12px; margin: 0 0 16px; }
+.rd-board .board-swipe__lean-copy { min-width: 0; }
+.rd-board .board-swipe__lean h2 { margin: 6px 0 0; font-size: clamp(32px, 8vw, 42px); }
+.rd-board .board-swipe__meter { flex: none; text-align: right; }
+.rd-board .board-swipe__meter .board-swipe__read { display: block; }
+.rd-board .board-swipe__meter .board-swipe__arches { gap: 3px; height: auto; margin: 6px 0 4px; justify-content: flex-end; }
+.rd-board .board-swipe__meter .board-swipe__arches i { flex: none; width: 10px; height: 16px; border-width: 2px; border-radius: 6px 6px 2px 2px; }
