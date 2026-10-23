@@ -132,6 +132,15 @@ html.rd-board {
 .rd-board .board-swipe__photo { position: absolute; inset: 0; touch-action: none; cursor: grab; transition: transform .38s cubic-bezier(.2,.8,.2,1); }
 .rd-board .board-swipe__photo:active { cursor: grabbing; }
 .rd-board .board-swipe__photo img { display: block; width: 100%; height: 100%; object-fit: cover; user-select: none; }
+.rd-board .board-swipe__photo .swipe__stamp { z-index: 2; top: 28%; padding: 8px 17px; border-width: 3px; border-radius: 8px; background: #15120fdf; font: 800 clamp(22px, 7vw, 34px)/1 var(--sans); letter-spacing: -.04em; pointer-events: none; }
+.rd-board .board-swipe__photo .swipe__stamp--pass { right: 24px; border-color: #ff6a2b; color: #ff6a2b; }
+.rd-board .board-swipe__photo .swipe__stamp--like { left: 24px; border-color: #c8f060; color: #c8f060; }
+.rd-board .board-swipe__photo--teaching { transform-origin: 50% 80%; animation: board-teach-wiggle 2.6s ease-in-out both; }
+.rd-board .board-swipe__photo--teaching .swipe__stamp--pass { animation: board-teach-pass 2.6s both; }
+.rd-board .board-swipe__photo--teaching .swipe__stamp--like { animation: board-teach-like 2.6s both; }
+@keyframes board-teach-wiggle { 0%, 12%, 48%, 86%, 100% { transform: translateX(0) rotate(0); } 28% { transform: translateX(-7%) rotate(-4deg); } 67% { transform: translateX(7%) rotate(4deg); } }
+@keyframes board-teach-pass { 0%, 15%, 45%, 100% { opacity: 0; } 24%, 32% { opacity: 1; } }
+@keyframes board-teach-like { 0%, 53%, 82%, 100% { opacity: 0; } 63%, 71% { opacity: 1; } }
 .rd-board .question__skip { min-height: 44px; padding: 10px 16px; border: 2px solid var(--ink); border-radius: 99px; background: var(--cream); color: var(--ink); font-weight: 800; text-decoration: none; }
 .rd-board .board-swipe__panel { position: relative; z-index: 2; margin: -55px 12px 0; padding: 20px 18px 16px; border: 2px solid var(--ink); border-radius: 30px; background: var(--cream); box-shadow: 4px 4px 0 #ffd84a; }
 .rd-board .board-swipe__kicker, .rd-board .board-swipe__read, .rd-board .board-swipe__empty > span { font: 500 10.5px/1.2 var(--mono); letter-spacing: .06em; text-transform: uppercase; }
@@ -170,8 +179,7 @@ html.rd-board {
   .rd-board .app__results { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 20px; }
   .rd-board .app__filter-row { top: 66px; }
 }
-@media (prefers-reduced-motion: reduce) { .rd-board .board-swipe__photo { transition: none; animation: board-photo-fade .15s ease; } .rd-board .listing-card { transition: none; } }
-@keyframes board-photo-fade { from { opacity: .3; } to { opacity: 1; } }
+@media (prefers-reduced-motion: reduce) { .rd-board .board-swipe__photo { transition: none; animation: none; } .rd-board .board-swipe__photo .swipe__stamp { animation: none; } .rd-board .listing-card { transition: none; } }
 
 /* The reference places the pill tabs over the room rather than above it. */
 .rd-board .app:has(.board-swipe__stage) .app__header { position: absolute; inset: 0 0 auto; background: transparent; }

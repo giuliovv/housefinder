@@ -68,6 +68,8 @@ export function SwipeDeck({
   totalCount,
   onSwipe,
   browseCount,
+  teachSwipe,
+  onTeachingEnd,
   onReset,
   onGoBrowse,
   styleDescription,
@@ -84,6 +86,8 @@ export function SwipeDeck({
   totalCount: number;
   onSwipe: (id: string, choice: "like" | "dislike") => void;
   browseCount?: number;
+  teachSwipe?: boolean;
+  onTeachingEnd?: () => void;
   onReset: () => void;
   onGoBrowse: () => void;
   styleDescription: string[] | null;
@@ -128,21 +132,39 @@ export function SwipeDeck({
   const [start, setStart] = useState<{ x: number; y: number } | null>(null);
   const [startedAt, setStartedAt] = useState(0);
   const [confirmReset, setConfirmReset] = useState(false);
+  const [teaching, setTeaching] = useState(false);
+
+  useEffect(() => {
+    if (!teaching) return;
+    const timeout = window.setTimeout(() => {
+      setTeaching(false);
+      onTeachingEnd?.();
+    }, 2600);
+    return () => window.clearTimeout(timeout);
+  }, [teaching, onTeachingEnd]);
+
+  function stopTeaching() {
+    if (!teachSwipe) return;
+    setTeaching(false);
+    onTeachingEnd?.();
+  }
 
   useEffect(() => {
     function onKey(e: KeyboardEvent) {
       if (!current || interlude || paused) return;
       if (e.key === "ArrowRight" || e.key === "ArrowLeft") {
+        stopTeaching();
         const choice = e.key === "ArrowRight" ? "like" : "dislike";
         onSwipe(current.id, choice);
       }
     }
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
-  }, [current, onSwipe, interlude, paused, variant]);
+  }, [current, onSwipe, interlude, paused, variant, teachSwipe, onTeachingEnd]);
 
   function commit(choice: "like" | "dislike") {
     if (!current) return;
+    stopTeaching();
     if (variant === "ritual") touchStreak();
     onSwipe(current.id, choice);
     setDrag({ active: false, dx: 0, dy: 0 });
@@ -150,6 +172,7 @@ export function SwipeDeck({
 
   function onPointerDown(e: React.PointerEvent) {
     if (!current || interlude) return;
+    stopTeaching();
     if (variant === "board") e.currentTarget.setPointerCapture(e.pointerId);
     setStart({ x: e.clientX, y: e.clientY });
     setStartedAt(Date.now());
@@ -199,8 +222,8 @@ export function SwipeDeck({
             <div className="board-swipe__stage">
               <div
                 key={current.id}
-                className="board-swipe__photo"
-                style={{ transform: reducedMotion ? undefined : `translateX(${drag.dx}px) rotate(${drag.dx / 35}deg)`, transition: drag.active ? "none" : undefined }}
+                className={`board-swipe__photo${teaching ? " board-swipe__photo--teaching" : ""}`}
+                style={{ transform: teaching || reducedMotion ? undefined : `translateX(${drag.dx}px) rotate(${drag.dx / 35}deg)`, transition: drag.active ? "none" : undefined }}
                 onPointerDown={onPointerDown}
                 onPointerMove={onPointerMove}
                 onPointerUp={onPointerUp}
@@ -208,7 +231,13 @@ export function SwipeDeck({
               >
                 <img referrerPolicy="no-referrer" src={normalizeImageUrl(current.url) ?? undefined} alt="Interior to rate" draggable={false}
                   onError={() => onBroken(current.id)}
-                  onLoad={(e) => { if (e.currentTarget.naturalWidth < 120 || e.currentTarget.naturalHeight < 120) onBroken(current.id); }} />
+                  onLoad={(e) => {
+                    if (e.currentTarget.naturalWidth < 120 || e.currentTarget.naturalHeight < 120) onBroken(current.id);
+                    else if (teachSwipe && !reducedMotion) setTeaching(true);
+                    else if (teachSwipe) onTeachingEnd?.();
+                  }} />
+                <div className="swipe__stamp swipe__stamp--pass" style={{ opacity: teaching ? undefined : passOpacity }} aria-hidden="true">PASS</div>
+                <div className="swipe__stamp swipe__stamp--like" style={{ opacity: teaching ? undefined : likeOpacity }} aria-hidden="true">LIKE</div>
               </div>
             </div>
             <div className="board-swipe__panel">
@@ -220,7 +249,7 @@ export function SwipeDeck({
                 <button onClick={() => commit("dislike")}>← Pass</button><button onClick={() => commit("like")}>Like →</button>
               </div>
               <div className="board-swipe__utility">
-                <button onClick={() => onHide(current.id)}>Skip photo</button>
+                <button onClick={() => { stopTeaching(); onHide(current.id); }}>Skip photo</button>
                 <button className="board-swipe__browse" onClick={onGoBrowse}>See {browseCount ?? "…"} homes ↑</button>
                 <button onClick={() => setConfirmReset(true)}>Reset</button>
               </div>

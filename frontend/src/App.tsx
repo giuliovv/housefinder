@@ -391,6 +391,8 @@ function App({ labVariant }: { labVariant?: "board" } = {}) {
   // in this visit, even for someone returning with plenty of swipes already (or a question left unanswered).
   const [visitStart, setVisitStart] = useState<number | null>(null);
   const [visitStartLevel, setVisitStartLevel] = useState(0); // taste level when the deck was shown this visit
+  const [introWigglePlayed, setIntroWigglePlayed] = useState(false);
+  const markIntroWigglePlayed = useCallback(() => setIntroWigglePlayed(true), []);
   useEffect(() => {
     if (tab !== "style") setVisitStart(null);
     else if (store && visitStart === null) {
@@ -608,6 +610,8 @@ function App({ labVariant }: { labVariant?: "board" } = {}) {
           totalCount={undecided.length + likedCount + dislikedCount}
           onSwipe={swipeInDeck}
           browseCount={board && listings ? visible.length : undefined}
+          teachSwipe={board && !introWigglePlayed}
+          onTeachingEnd={markIntroWigglePlayed}
           injected={matchCard}
           onReset={() => {
             reset();
