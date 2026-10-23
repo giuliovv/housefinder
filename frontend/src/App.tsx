@@ -50,9 +50,10 @@ const PAGE_SIZE = 40;
 /** the big data files (listings, ranking matrix) are fetched once someone has swiped this many photos, or opens Browse/Saved */
 const NEED_DATA_AFTER_SWIPES = 10;
 
-function App({ labVariant }: { labVariant?: "board" | "board-v4" } = {}) {
-  const board = labVariant === "board" || labVariant === "board-v4";
-  const boardV4 = labVariant === "board-v4";
+function App({ labVariant }: { labVariant?: "board" | "board-v4" | "board-v5" } = {}) {
+  const board = labVariant === "board" || labVariant === "board-v4" || labVariant === "board-v5";
+  const boardV4 = labVariant === "board-v4" || labVariant === "board-v5";
+  const boardV5 = labVariant === "board-v5";
   const [rawStore, setStore] = useState<EmbeddingStore | null>(null);
   const [rawListings, setAllListings] = useState<Listing[] | null>(null);
   // agencies switched off (killswitch.json at the site root; see scraper/killswitch.py): hidden at once, no deploy needed
@@ -618,6 +619,7 @@ function App({ labVariant }: { labVariant?: "board" | "board-v4" } = {}) {
           onSwipe={swipeInDeck}
           browseCount={board && listings ? visible.length : undefined}
           compactBoardControls={boardV4}
+          minimalBoardControls={boardV5}
           teachSwipe={board && !introWigglePlayed}
           onTeachingEnd={markIntroWigglePlayed}
           injected={matchCard}

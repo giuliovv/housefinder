@@ -1,0 +1,29 @@
+/* V5 keeps V4's Browse and Saved views; the Style screen is nearly all photo. */
+.rd-board-v5 .board-swipe { height: 100svh; min-height: 500px; padding: 0; }
+.rd-board-v5 .app:has(.board-swipe__stage) .board-swipe__stage { height: 100%; border-radius: 0 0 28px 28px; }
+.rd-board-v5 .board-swipe__panel--minimal,
+.rd-board-v5 .app:has(.board-swipe__stage) .board-swipe__panel--minimal {
+  position: absolute; z-index: 4; right: 12px; bottom: 18px; left: 12px;
+  width: auto; margin: 0; padding: 12px; border: 1px solid #dce3d9;
+  border-radius: 22px; background: #fffefae8; box-shadow: 0 12px 35px #26332d30;
+  backdrop-filter: blur(12px);
+}
+.rd-board-v5 .board-swipe__panel--minimal .board-swipe__actions { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
+.rd-board-v5 .board-swipe__panel--minimal .board-swipe__actions button { min-height: 62px; border: 1px solid #cfd9ce; border-radius: 15px; background: #fffefa; color: var(--ink); font: 600 17px/1 var(--sans); box-shadow: none; }
+.rd-board-v5 .board-swipe__panel--minimal .board-swipe__actions button:last-child { border-color: var(--forest); background: var(--forest); color: #fff; }
+.rd-board-v5 .board-swipe__more summary {
+  position: absolute; right: 0; bottom: calc(100% + 12px); display: grid;
+  width: 44px; height: 44px; place-items: center; border: 1px solid #dce3d9;
+  border-radius: 14px; background: #fffefae8; color: var(--ink);
+  box-shadow: 0 4px 15px #26332d25; font: 600 20px/1 var(--sans);
+  list-style: none; cursor: pointer;
+}
+.rd-board-v5 .board-swipe__more summary::-webkit-details-marker { display: none; }
+.rd-board-v5 .board-swipe__more-menu {
+  position: absolute; right: 0; bottom: calc(100% + 64px); display: grid;
+  width: 170px; gap: 4px; padding: 6px; border: 1px solid #dce3d9;
+  border-radius: 14px; background: #fffefa; box-shadow: 0 8px 25px #26332d30;
+}
+.rd-board-v5 .board-swipe__more-menu button { min-height: 44px; border: 0; border-radius: 9px; background: transparent; color: var(--ink); font: 600 13px/1 var(--sans); text-align: left; cursor: pointer; }
+.rd-board-v5 .board-swipe__more-menu button:hover { background: var(--accent-soft); }
+.rd-board-v5 .board-swipe__more summary:focus-visible, .rd-board-v5 .board-swipe__actions button:focus-visible { outline: 3px solid var(--forest); outline-offset: 2px; }

@@ -31,6 +31,7 @@ const CODEX: { slug: string; name: string; line: string; detail: string; whole: 
   { slug: "salon", name: "Salon", line: "The interior-led magazine", detail: "An editorial gallery with generous photography, expressive typography and warm colour. Lead with how a home feels; reveal the numbers cleanly.", whole: "salon" },
   { slug: "board", name: "Board v3", line: "The bold swipe-to-browse system", detail: "Tangerine, ultramarine and pistachio. A photo-led taste deck, practical listing cards and the same working filters, map and shortlist.", whole: "board" },
   { slug: "board-v4", name: "Board v4", line: "The quieter photo-led home hunt", detail: "The same working swipe and browse flow, with softer borders, warm paper, muted clay and sage. Character without the comic-book volume.", whole: "board-v4" },
+  { slug: "board-v5", name: "Board v5", line: "Just the room and your choice", detail: "A near-full-screen photo, two clear choices, and Browse always one tap away. Taste tools stay out of the way until needed.", whole: "board-v5" },
 ];
 
 export function designFromPath(path: string): string | null {
@@ -80,7 +81,7 @@ function Index() {
       </section>
       <section className="lab-codex-callout">
         <span>NEW COLLECTION / CODEX</span>
-        <h2>Five ways to make the hunt feel different.</h2>
+        <h2>Six ways to make the hunt feel different.</h2>
         <p>Full-app concepts on real homes, not static screenshots.</p>
         <a href="/ui/codex">Explore Codex directions <span aria-hidden="true">↗</span></a>
       </section>
@@ -111,9 +112,9 @@ function CodexIndex() {
     <div className="lab-codex-index">
       <nav><a href="/ui">← Design lab</a><span>HOUSE SWIPE / CODEX</span></nav>
       <header>
-        <p>FIVE CONCEPTS · ONE REAL PRODUCT</p>
+        <p>SIX CONCEPTS · ONE REAL PRODUCT</p>
         <h1>A home hunt should have a point of view.</h1>
-        <p>Explore five visual concepts across the actual swipe, browse and saved flows. Each uses the same listings and working interactions.</p>
+        <p>Explore six visual concepts across the actual swipe, browse and saved flows. Each uses the same listings and working interactions.</p>
       </header>
       <main>
         {CODEX.map((d, i) => (

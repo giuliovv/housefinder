@@ -69,6 +69,7 @@ export function SwipeDeck({
   onSwipe,
   browseCount,
   compactBoardControls = false,
+  minimalBoardControls = false,
   teachSwipe,
   onTeachingEnd,
   onReset,
@@ -88,6 +89,7 @@ export function SwipeDeck({
   onSwipe: (id: string, choice: "like" | "dislike") => void;
   browseCount?: number;
   compactBoardControls?: boolean;
+  minimalBoardControls?: boolean;
   teachSwipe?: boolean;
   onTeachingEnd?: () => void;
   onReset: () => void;
@@ -262,21 +264,35 @@ export function SwipeDeck({
                 <div className="swipe__stamp swipe__stamp--like" style={{ opacity: teaching ? undefined : likeOpacity }} aria-hidden="true">LIKE</div>
               </div>
             </div>
-            <div className="board-swipe__panel">
-              <p className="board-swipe__kicker">YOU LEAN TOWARD</p>
-              <h2>{styleWords?.length ? <>{styleWords.slice(0, -1).join(" ")} <em>{styleWords.at(-1)}</em></> : <><em>Your</em> next place</>}</h2>
-              <div className="board-swipe__read"><span>{label}</span><span>{decided}/30</span></div>
-              <div className="board-swipe__arches" aria-label={`${decided} photos rated`}>{Array.from({ length: 5 }, (_, i) => <i key={i} className={i < progress ? "board-swipe__arch--on" : ""} />)}</div>
-              <div className="board-swipe__actions">
-                <button onClick={() => commit("dislike")}>← Pass</button>
-                {compactBoardControls && <button className="board-swipe__skip" onClick={() => { stopTeaching(); onHide(current.id); }}>Skip photo</button>}
-                <button onClick={() => commit("like")}>Like →</button>
-              </div>
-              <div className="board-swipe__utility">
-                {!compactBoardControls && <button onClick={() => { stopTeaching(); onHide(current.id); }}>Skip photo</button>}
-                {!compactBoardControls && <button className="board-swipe__browse" onClick={onGoBrowse}>See {browseCount ?? "…"} homes ↑</button>}
-                <button onClick={() => setConfirmReset(true)}>{compactBoardControls ? "Reset taste" : "Reset"}</button>
-              </div>
+            <div className={`board-swipe__panel${minimalBoardControls ? " board-swipe__panel--minimal" : ""}`}>
+              {minimalBoardControls ? <>
+                <div className="board-swipe__actions">
+                  <button onClick={() => commit("dislike")}>Not for me</button>
+                  <button onClick={() => commit("like")}>Like it</button>
+                </div>
+                <details className="board-swipe__more" key={current.id}>
+                  <summary aria-label="More style options">···</summary>
+                  <div className="board-swipe__more-menu">
+                    <button onClick={() => { stopTeaching(); onHide(current.id); }}>Skip photo</button>
+                    <button onClick={() => setConfirmReset(true)}>Reset taste</button>
+                  </div>
+                </details>
+              </> : <>
+                <p className="board-swipe__kicker">YOU LEAN TOWARD</p>
+                <h2>{styleWords?.length ? <>{styleWords.slice(0, -1).join(" ")} <em>{styleWords.at(-1)}</em></> : <><em>Your</em> next place</>}</h2>
+                <div className="board-swipe__read"><span>{label}</span><span>{decided}/30</span></div>
+                <div className="board-swipe__arches" aria-label={`${decided} photos rated`}>{Array.from({ length: 5 }, (_, i) => <i key={i} className={i < progress ? "board-swipe__arch--on" : ""} />)}</div>
+                <div className="board-swipe__actions">
+                  <button onClick={() => commit("dislike")}>← Pass</button>
+                  {compactBoardControls && <button className="board-swipe__skip" onClick={() => { stopTeaching(); onHide(current.id); }}>Skip photo</button>}
+                  <button onClick={() => commit("like")}>Like →</button>
+                </div>
+                <div className="board-swipe__utility">
+                  {!compactBoardControls && <button onClick={() => { stopTeaching(); onHide(current.id); }}>Skip photo</button>}
+                  {!compactBoardControls && <button className="board-swipe__browse" onClick={onGoBrowse}>See {browseCount ?? "…"} homes ↑</button>}
+                  <button onClick={() => setConfirmReset(true)}>{compactBoardControls ? "Reset taste" : "Reset"}</button>
+                </div>
+              </>}
             </div>
           </>
         ) : interlude ? <div className="board-swipe__interlude">{interlude}{!compactBoardControls && <button onClick={onGoBrowse}>Browse homes ↑</button>}</div>

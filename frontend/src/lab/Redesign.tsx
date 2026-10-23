@@ -15,6 +15,7 @@ import "./rd-blueprint.css";
 import "./rd-salon.css";
 import "./rd-board.css";
 import "./rd-board-v4.css";
+import "./rd-board-v5.css";
 import { DeckVariantContext, type DeckVariant } from "../components/deckVariant";
 
 export const REDESIGNS = {
@@ -32,12 +33,13 @@ export const REDESIGNS = {
   salon: "family=DM+Sans:wght@400;500;600;700&family=Instrument+Serif:ital@0;1",
   board: "family=Bricolage+Grotesque:opsz,wght@12..96,400;12..96,600;12..96,800&family=Instrument+Serif:ital@1&family=DM+Mono:wght@500",
   "board-v4": "family=Bricolage+Grotesque:opsz,wght@12..96,400;12..96,500;12..96,600;12..96,700&family=Instrument+Serif:ital@1&family=DM+Mono:wght@400;500",
+  "board-v5": "family=Bricolage+Grotesque:opsz,wght@12..96,400;12..96,500;12..96,600;12..96,700&family=Instrument+Serif:ital@1&family=DM+Mono:wght@400;500",
 } as const;
 export type RedesignName = keyof typeof REDESIGNS;
 
 /** which swipe deck each design uses, and any extra classes it needs (the full-bleed design borrows the dark browsing styles) */
-const DECK: Partial<Record<RedesignName, DeckVariant>> = { bleed: "bleed", fan: "fan", ritual: "ritual", dig: "dig", stamp: "stamp", board: "board", "board-v4": "board" };
-const EXTRA: Partial<Record<RedesignName, string[]>> = { bleed: ["rd-dusk"], "board-v4": ["rd-board"] };
+const DECK: Partial<Record<RedesignName, DeckVariant>> = { bleed: "bleed", fan: "fan", ritual: "ritual", dig: "dig", stamp: "stamp", board: "board", "board-v4": "board", "board-v5": "board" };
+const EXTRA: Partial<Record<RedesignName, string[]>> = { bleed: ["rd-dusk"], "board-v4": ["rd-board"], "board-v5": ["rd-board", "rd-board-v4"] };
 
 const DEBUG_PALETTES = [
   { name: "Sage", accent: "#355c48", soft: "#e5eee3", softInk: "#294d39" },
@@ -65,7 +67,7 @@ function BoardV4Debug() {
   }, [palette]);
 
   return <div className="rd-v4-debug">
-    <button className="rd-v4-debug__toggle" aria-expanded={open} aria-controls="rd-v4-debug-panel" onClick={() => setOpen(!open)}>DEBUG · COLORS</button>
+    <button className="rd-v4-debug__toggle" aria-label="Debug colors" aria-expanded={open} aria-controls="rd-v4-debug-panel" onClick={() => setOpen(!open)}>DBG</button>
     {open && <div className="rd-v4-debug__panel" id="rd-v4-debug-panel" role="region" aria-label="Debug-only color options">
       <div className="rd-v4-debug__heading"><strong>Color preview</strong><button aria-label="Close debug colors" onClick={() => setOpen(false)}>×</button></div>
       <p>DEBUG ONLY · NOT FOR PRODUCTION<br />Session preview. Resets on refresh.</p>
@@ -88,13 +90,13 @@ export default function Redesign({ name }: { name: RedesignName }) {
   }, [name]);
   return (
     <>
-      <a className="rd-back" href={["fieldnotes", "blueprint", "salon", "board", "board-v4"].includes(name) ? "/ui/codex" : "/ui"}>
-        ← {(["fieldnotes", "blueprint", "salon", "board", "board-v4"] as string[]).includes(name) ? "Codex" : "All designs"}
+      <a className="rd-back" href={["fieldnotes", "blueprint", "salon", "board", "board-v4", "board-v5"].includes(name) ? "/ui/codex" : "/ui"}>
+        ← {(["fieldnotes", "blueprint", "salon", "board", "board-v4", "board-v5"] as string[]).includes(name) ? "Codex" : "All designs"}
       </a>
       <DeckVariantContext.Provider value={DECK[name] ?? "classic"}>
-        <App labVariant={name === "board" || name === "board-v4" ? name : undefined} />
+        <App labVariant={name === "board" || name === "board-v4" || name === "board-v5" ? name : undefined} />
       </DeckVariantContext.Provider>
-      {name === "board-v4" && <BoardV4Debug />}
+      {(name === "board-v4" || name === "board-v5") && <BoardV4Debug />}
     </>
   );
 }
