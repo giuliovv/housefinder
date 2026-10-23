@@ -133,6 +133,9 @@ export function SwipeDeck({
   const [startedAt, setStartedAt] = useState(0);
   const [confirmReset, setConfirmReset] = useState(false);
   const [teaching, setTeaching] = useState(false);
+  const [loadedPhotoId, setLoadedPhotoId] = useState<string | null>(null);
+  const [idleRemindedIds, setIdleRemindedIds] = useState<ReadonlySet<string>>(new Set());
+  const [activityTick, setActivityTick] = useState(0);
 
   useEffect(() => {
     if (!teaching) return;
@@ -143,10 +146,24 @@ export function SwipeDeck({
     return () => window.clearTimeout(timeout);
   }, [teaching, onTeachingEnd]);
 
+  useEffect(() => {
+    if (
+      variant !== "board" || !current || loadedPhotoId !== current.id ||
+      teachSwipe || teaching || drag.active || interlude || paused || confirmReset ||
+      idleRemindedIds.has(current.id) || window.matchMedia("(prefers-reduced-motion: reduce)").matches
+    ) return;
+    // An unattended photo gets one reminder, not a repeating animation.
+    const timeout = window.setTimeout(() => {
+      setIdleRemindedIds((prev) => new Set(prev).add(current.id));
+      setTeaching(true);
+    }, 5000);
+    return () => window.clearTimeout(timeout);
+  }, [variant, current, loadedPhotoId, teachSwipe, teaching, drag.active, interlude, paused, confirmReset, idleRemindedIds, activityTick]);
+
   function stopTeaching() {
-    if (!teachSwipe) return;
+    if (variant === "board") setActivityTick((n) => n + 1);
     setTeaching(false);
-    onTeachingEnd?.();
+    if (teachSwipe) onTeachingEnd?.();
   }
 
   useEffect(() => {
@@ -233,8 +250,11 @@ export function SwipeDeck({
                   onError={() => onBroken(current.id)}
                   onLoad={(e) => {
                     if (e.currentTarget.naturalWidth < 120 || e.currentTarget.naturalHeight < 120) onBroken(current.id);
-                    else if (teachSwipe && !reducedMotion) setTeaching(true);
-                    else if (teachSwipe) onTeachingEnd?.();
+                    else {
+                      setLoadedPhotoId(current.id);
+                      if (teachSwipe && !reducedMotion) setTeaching(true);
+                      else if (teachSwipe) onTeachingEnd?.();
+                    }
                   }} />
                 <div className="swipe__stamp swipe__stamp--pass" style={{ opacity: teaching ? undefined : passOpacity }} aria-hidden="true">PASS</div>
                 <div className="swipe__stamp swipe__stamp--like" style={{ opacity: teaching ? undefined : likeOpacity }} aria-hidden="true">LIKE</div>
