@@ -184,8 +184,9 @@ html.rd-board {
 
 /* The reference places the pill tabs over the room rather than above it. */
 .rd-board .app:has(.board-swipe__stage) .app__header { position: absolute; inset: 0 0 auto; background: transparent; }
-.rd-board .app:has(.board-swipe__stage) .board-swipe__stage { height: clamp(480px, calc(100svh - 250px), 850px); }
+.rd-board .app:has(.board-swipe__stage) .board-swipe__stage { height: clamp(320px, calc(100svh - 185px), 1100px); }
 .rd-board .app:has(.board-swipe__stage) .board-swipe__panel { margin-top: -22px; }
+@media (max-width: 699px) { .rd-board:has(.board-swipe__stage) .rd-back { top: 72px; bottom: auto; } }
 .rd-board .app__tabs { padding: 3px; gap: 3px; }
 .rd-board .app__tab { border: 0; border-radius: 99px; }
 .rd-board .board__browse-loading { display: block; min-height: calc(100svh - 60px); padding: 26px 16px; }
