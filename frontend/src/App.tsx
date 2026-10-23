@@ -618,7 +618,7 @@ function App({ labVariant }: { labVariant?: "board" | "board-v4" | "board-v5" } 
           totalCount={undecided.length + likedCount + dislikedCount}
           onSwipe={swipeInDeck}
           browseCount={board && listings ? visible.length : undefined}
-          compactBoardControls={boardV4}
+          compactBoardControls={board}
           minimalBoardControls={boardV5}
           teachSwipe={board && !introWigglePlayed}
           onTeachingEnd={markIntroWigglePlayed}
