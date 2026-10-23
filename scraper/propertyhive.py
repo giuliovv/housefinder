@@ -180,7 +180,10 @@ class PropertyHiveScraper(PlatformScraper):
         while url and pages_fetched < max_pages:
             html = http.get(url, user_agent=self.user_agent)
             soup = BeautifulSoup(html, "html.parser")
-            for card in soup.select(self.theme.card_selector):
+            cards = soup.select(self.theme.card_selector)
+            if self.theme.name == "stirlingackroyd" and not cards and soup.select_one(".propertyhive-views .map-view.active"):
+                raise RuntimeError("Stirling Ackroyd returned map view without listing cards")
+            for card in cards:
                 summary = self._parse_card(agency, card)
                 if summary is not None:
                     yield summary

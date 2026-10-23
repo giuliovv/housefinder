@@ -74,3 +74,16 @@ Deployed 2026-10-19. A manual invocation completed with 59 requests and saved
 391 rows to `inbox/stirling.json`; no bot challenge was observed. The next
 invocation returned `cooldown` without making a site request. The next allowed
 attempt is 2026-10-21 00:12 UTC.
+
+## 2026-10-23 search-view incident
+
+The scheduled worker returned zero cards after one HTTP 200 request. The
+canonical lettings URL was served from CDN cache as a map-view page with no
+server-rendered cards, despite a positive result count. No result file was
+overwritten, and the worker recorded `failed`. The normal tile view at
+`?department=residential-lettings&view=grid` returned cards on the first two
+pages, with pagination retaining `view=grid`. The agency config now requests
+that view explicitly; the parser also fails loudly if a map-only page appears
+again. Image digest `sha256:acdb3624f88282403ae0f29304f8678e462278f1f358f4ce290abb882a71611e`
+contains the fix. The failed attempt's cooldown remains in force; do not reset
+it just to test a deployment.

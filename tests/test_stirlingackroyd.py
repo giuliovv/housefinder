@@ -1,13 +1,30 @@
 """Offline tests for the Stirling Ackroyd Property Hive theme and the London
 address filter, against fixtures captured 2026-10-07."""
 import pathlib
+from urllib.parse import parse_qs, urlsplit
 
 from bs4 import BeautifulSoup
+import pytest
 
+from scraper.agencies import AGENCIES
 from scraper.london import is_london
 from scraper.propertyhive import STIRLINGACKROYD_THEME, PropertyHiveScraper
 
 FIXTURES = pathlib.Path(__file__).parent / "fixtures"
+
+
+def test_search_requests_grid_view() -> None:
+    url = AGENCIES["stirlingackroyd"].search_url
+    assert parse_qs(urlsplit(url).query)["view"] == ["grid"]
+
+
+def test_map_view_without_cards_fails_loudly(monkeypatch) -> None:
+    html = '<ul class="propertyhive-views"><li class="map-view active">Map View</li></ul>'
+    monkeypatch.setattr("scraper.propertyhive.http.get", lambda url, **kw: html)
+    scraper = PropertyHiveScraper(theme=STIRLINGACKROYD_THEME)
+
+    with pytest.raises(RuntimeError, match="map view without listing cards"):
+        list(scraper.search("stirlingackroyd", AGENCIES["stirlingackroyd"].search_url, max_pages=1))
 
 
 def test_parses_search_cards() -> None:

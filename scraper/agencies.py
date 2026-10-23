@@ -109,7 +109,7 @@ AGENCIES: dict[str, AgencyConfig] = {
         key="stirlingackroyd",
         name="Stirling Ackroyd",
         platform="propertyhive",
-        search_url="https://www.stirlingackroyd.com/property-search/?department=residential-lettings",
+        search_url="https://www.stirlingackroyd.com/property-search/?department=residential-lettings&view=grid",
         propertyhive_theme="stirlingackroyd",
         user_agent="house-finder/0.1 (personal rental search; not for resale)",
         london_only=True,
