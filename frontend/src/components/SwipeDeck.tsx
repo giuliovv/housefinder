@@ -1,5 +1,5 @@
 import { useContext, useEffect, useState, type ReactNode } from "react";
-import { DeckVariantContext } from "./deckVariant";
+import { DeckNeighboursContext, DeckVariantContext } from "./deckVariant";
 import type { ListingKey } from "../types";
 import { normalizeImageUrl } from "../lib/url";
 import { TasteMeter } from "./TasteMeter";
@@ -25,6 +25,35 @@ function introAlreadySeen(): boolean {
     return localStorage.getItem(INTRO_SEEN_KEY) === "1";
   } catch {
     return false; // storage blocked: show it, it's harmless
+  }
+}
+
+const STREAK_KEY = "housefinder:lab-streak";
+
+function readStreak(): number {
+  try {
+    const days: string[] = JSON.parse(localStorage.getItem(STREAK_KEY) ?? "[]");
+    let n = 0;
+    for (let d = new Date(); days.includes(d.toISOString().slice(0, 10)); d.setUTCDate(d.getUTCDate() - 1)) n++;
+    if (n === 0) {
+      // yesterday still counts until today is over
+      const d = new Date();
+      d.setUTCDate(d.getUTCDate() - 1);
+      for (; days.includes(d.toISOString().slice(0, 10)); d.setUTCDate(d.getUTCDate() - 1)) n++;
+    }
+    return n;
+  } catch {
+    return 0;
+  }
+}
+
+function touchStreak() {
+  try {
+    const today = new Date().toISOString().slice(0, 10);
+    const days: string[] = JSON.parse(localStorage.getItem(STREAK_KEY) ?? "[]");
+    if (!days.includes(today)) localStorage.setItem(STREAK_KEY, JSON.stringify([...days, today].slice(-60)));
+  } catch {
+    /* ignore */
   }
 }
 
@@ -79,6 +108,12 @@ export function SwipeDeck({
   // table: the photos you kept this visit, newest last, shown as a pile
   const [pile, setPile] = useState<string[]>([]);
   const [binned, setBinned] = useState(0);
+  const neighbours = useContext(DeckNeighboursContext);
+  // dig: a swipe up likes the photo and offers the photos most like it
+  const [dig, setDig] = useState<{ id: string; url: string }[] | null>(null);
+  // ritual: every ten photos is a round; a day with a round is a day of the streak
+  const [roundDone, setRoundDone] = useState(() => totalCount - undecided.length);
+  const [streak] = useState(readStreak);
   // One-time explanation for people who haven't swiped yet. Gone for good once dismissed
   // or once the first swipe happens, and never shown to someone who already has swipes.
   const [introSeen, setIntroSeen] = useState(introAlreadySeen);
@@ -111,6 +146,7 @@ export function SwipeDeck({
 
   function commit(choice: "like" | "dislike") {
     if (!current) return;
+    if (variant === "ritual") touchStreak();
     if (choice === "like") setPile((p) => [...p, current.url].slice(-6));
     else setBinned((n) => n + 1);
     onSwipe(current.id, choice);
@@ -130,6 +166,15 @@ export function SwipeDeck({
 
   function onPointerUp() {
     if (!drag.active) return;
+    if (variant === "dig" && current && drag.dy < -DRAG_THRESHOLD && Math.abs(drag.dx) < DRAG_THRESHOLD) {
+      const near = neighbours?.(current.id, 12) ?? [];
+      const open = new Set(undecided.map((p) => p.id));
+      const found = near.filter((p) => open.has(p.id)).slice(0, 6);
+      setDrag({ active: false, dx: 0, dy: 0 });
+      onSwipe(current.id, "like");
+      if (found.length > 0) setDig(found);
+      return;
+    }
     if (drag.dx > DRAG_THRESHOLD) commit("like");
     else if (drag.dx < -DRAG_THRESHOLD) commit("dislike");
     else setDrag({ active: false, dx: 0, dy: 0 });
@@ -139,6 +184,7 @@ export function SwipeDeck({
   const likeOpacity = drag.dx > 0 ? clamp(drag.dx / DRAG_THRESHOLD, 0, 1) : 0;
   const passOpacity = drag.dx < 0 ? clamp(-drag.dx / DRAG_THRESHOLD, 0, 1) : 0;
   const shown = variant === "fan" ? 5 : variant === "bleed" ? 2 : 3;
+  const roundEnds = variant === "ritual" && decided > 0 && decided % 10 === 0 && roundDone !== decided && !injected;
   const visibleCards = injected ? [injected, ...undecided.filter((p) => p.id !== injected.id).slice(0, shown - 1)] : undecided.slice(0, shown);
 
   return (
@@ -162,7 +208,32 @@ export function SwipeDeck({
           </button>
         </div>
       )}
-      {current && interlude ? (
+      {variant === "ritual" && (
+        <div className="swipe__streak" aria-label="Today's round">
+          <svg className="swipe__flame" viewBox="0 0 24 24" width="26" height="26" aria-hidden>
+            <path d="M12 2c1 4-3 5-3 9 0 1.4.6 2.4 1.5 3C10 12 14 11 14 7c3 2 5 5 5 8a7 7 0 1 1-14 0c0-3 2-5 3.5-7C9 10 9 8 12 2z" fill={streak > 0 || decided > 0 ? "#ff7a1a" : "#c4cde4"} />
+          </svg>
+          <b>{Math.max(streak, decided > 0 ? 1 : 0)} day{Math.max(streak, decided > 0 ? 1 : 0) === 1 ? "" : "s"}</b>
+          <span className="swipe__ring" style={{ ["--p" as string]: `${(decided % 10) * 10}%` }}>
+            <i>{decided % 10}/10</i>
+          </span>
+        </div>
+      )}
+      {roundEnds && current ? (
+        <div className="swipe__round">
+          <h2>Round {decided / 10} done</h2>
+          <p>
+            {styleDescription ? `Your style so far: ${styleDescription.join(", ")}.` : "Keep going: ten more and we will start naming your style."}
+          </p>
+          <p className="swipe__round-count">{likedCount} liked, {dislikedCount} passed</p>
+          <button className="swipe__cta" onClick={() => setRoundDone(decided)}>
+            Next ten
+          </button>
+          <button className="swipe__reset" onClick={onGoBrowse}>
+            See my matches
+          </button>
+        </div>
+      ) : current && interlude ? (
         <>
           {interlude}
           <p className="swipe__progress">
@@ -259,8 +330,8 @@ export function SwipeDeck({
                     {variant === "table" && <span className="swipe__caption">Would you live here?</span>}
                     {isTop && (
                       <>
-                        <div className="swipe__stamp swipe__stamp--like" style={{ opacity: likeOpacity }}>LIKE</div>
-                        <div className="swipe__stamp swipe__stamp--pass" style={{ opacity: passOpacity }}>PASS</div>
+                        <div className="swipe__stamp swipe__stamp--like" style={{ opacity: likeOpacity }}>{variant === "stamp" ? "MOVE IN" : "LIKE"}</div>
+                        <div className="swipe__stamp swipe__stamp--pass" style={{ opacity: passOpacity }}>{variant === "stamp" ? "NEXT" : "PASS"}</div>
                       </>
                     )}
                   </div>
@@ -269,9 +340,36 @@ export function SwipeDeck({
             })}
           </div>
           <div className="swipe__buttons">
-            <button className="swipe__btn swipe__btn--dislike" onClick={() => commit("dislike")} aria-label="Not for me">✕</button>
-            <button className="swipe__btn swipe__btn--like" onClick={() => commit("like")} aria-label="Like this">♥</button>
+            <button className="swipe__btn swipe__btn--dislike" onClick={() => commit("dislike")} aria-label="Not for me">
+              ✕{variant === "stamp" && <small>Next</small>}
+            </button>
+            <button className="swipe__btn swipe__btn--like" onClick={() => commit("like")} aria-label="Like this">
+              ♥{variant === "stamp" && <small>Move in</small>}
+            </button>
           </div>
+          {variant === "dig" && <p className="swipe__dighint">Swipe up to love it and see more like it</p>}
+          {dig && (
+            <div className="swipe__dig" role="dialog" aria-label="More like this">
+              <p>Loved it. Anything else like that?</p>
+              <div className="swipe__dig-grid">
+                {dig.map((p) => (
+                  <button
+                    key={p.id}
+                    onClick={() => {
+                      onSwipe(p.id, "like");
+                      setDig((d) => (d ? d.filter((x) => x.id !== p.id) : d));
+                    }}
+                    aria-label="Like this one too"
+                  >
+                    <img src={normalizeImageUrl(p.url) ?? undefined} alt="" referrerPolicy="no-referrer" draggable={false} />
+                  </button>
+                ))}
+              </div>
+              <button className="swipe__dig-done" onClick={() => setDig(null)}>
+                Done
+              </button>
+            </div>
+          )}
           <button className="swipe__skip" onClick={() => onHide(current.id)}>
             Not a room? Skip this photo
           </button>

@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import type { Listing, StyleLabel } from "./types";
 import { loadEmbeddingStore, photoId, type EmbeddingStore } from "./lib/embeddingStore";
 import { ListingCard } from "./components/ListingCard";
@@ -34,6 +34,7 @@ import { LoadingMessage } from "./components/LoadingMessage";
 import { useStylePreferences } from "./lib/preferences";
 import { listingKey } from "./lib/listingKey";
 import { topStyleLabels } from "./lib/similarity";
+import { DeckNeighboursContext } from "./components/deckVariant";
 import "./App.css";
 
 type SortKey = "price-asc" | "price-desc" | "match";
@@ -158,6 +159,25 @@ function App() {
   }, [allListings]);
 
   const shortlist = useShortlist(listingsByKey);
+
+  // the photos of the deck that look most like a given one (only used by deck designs with a "more like this" gesture)
+  const neighbours = useCallback(
+    (photoId: string, n: number) => {
+      const here = store?.vectorOf(photoId);
+      if (!store || !here) return [];
+      const scored: { id: string; url: string; s: number }[] = [];
+      for (const p of store.deck) {
+        if (p.id === photoId) continue;
+        const v = store.vectorOf(p.id);
+        if (!v) continue;
+        let dot = 0;
+        for (let i = 0; i < v.length; i++) dot += v[i] * here[i];
+        scored.push({ id: p.id, url: p.url, s: dot });
+      }
+      return scored.sort((x, y) => y.s - x.s).slice(0, n);
+    },
+    [store],
+  );
 
   // on a shared list the tab counts the whole list, not just what I saved
   const savedCount = shortlist.boardId && shortlist.status === "live" ? shortlist.board.length : shortlist.saved.length;
@@ -481,6 +501,7 @@ function App() {
       {!error && !listings && tab === "browse" && <LoadingMessage kind="listings" />}
 
       {tab === "style" && store && (
+        <DeckNeighboursContext.Provider value={neighbours}>
         <SwipeDeck
           undecided={undecided}
           likedCount={likedCount}
@@ -525,6 +546,7 @@ function App() {
             ) : undefined
           }
         />
+        </DeckNeighboursContext.Provider>
       )}
       {celebration && celebrated && (
         <MatchCelebration

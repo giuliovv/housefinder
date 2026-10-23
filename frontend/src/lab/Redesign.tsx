@@ -8,6 +8,9 @@ import "./rd-atlas.css";
 import "./rd-table.css";
 import "./rd-bleed.css";
 import "./rd-fan.css";
+import "./rd-ritual.css";
+import "./rd-dig.css";
+import "./rd-stamp.css";
 import { DeckVariantContext, type DeckVariant } from "../components/deckVariant";
 
 export const REDESIGNS = {
@@ -18,11 +21,14 @@ export const REDESIGNS = {
   table: "family=Familjen+Grotesk:wght@400;500;600;700&family=Caveat:wght@700",
   bleed: "family=Outfit:wght@300;400;500;600",
   fan: "family=Sora:wght@400;500;600;700",
+  ritual: "family=Nunito:wght@400;600;700;800;900",
+  dig: "family=Karla:wght@400;600;700&family=Fraunces:opsz,wght@9..144,500;9..144,600",
+  stamp: "family=Karla:wght@400;600;700&family=Special+Elite",
 } as const;
 export type RedesignName = keyof typeof REDESIGNS;
 
 /** which swipe deck each design uses, and any extra classes it needs (the full-bleed design borrows the dark browsing styles) */
-const DECK: Partial<Record<RedesignName, DeckVariant>> = { table: "table", bleed: "bleed", fan: "fan" };
+const DECK: Partial<Record<RedesignName, DeckVariant>> = { table: "table", bleed: "bleed", fan: "fan", ritual: "ritual", dig: "dig", stamp: "stamp" };
 const EXTRA: Partial<Record<RedesignName, string[]>> = { bleed: ["rd-dusk"] };
 
 /** The whole real app, every feature, wearing a different design: a re-skin through colour variables plus layout rules. */

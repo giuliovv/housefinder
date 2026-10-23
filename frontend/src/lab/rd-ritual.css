@@ -1,0 +1,42 @@
+/* "Daily ten": swiping as a daily ritual. A streak, a ring that fills across each round of ten photos, and a round-complete card that names your style. Scoped under html.rd-ritual. */
+html.rd-ritual {
+  --ink: #0c1f4a;
+  --muted: #5d6e94;
+  --muted-dark: #34466f;
+  --cream: #f1f5ff;
+  --outer-bg: #d9e3fa;
+  --border: #d3def5;
+  --rust: #ff7a1a;
+  --rust-dark: #e5650a;
+  --forest: #1f9d6b;
+  --sans: 'Nunito', system-ui, sans-serif;
+  --serif: 'Nunito', system-ui, sans-serif;
+}
+.rd-ritual .rd-back { position: fixed; z-index: 90; top: 8px; right: 8px; padding: 6px 11px; border-radius: 999px; font: 700 11px/1 system-ui, sans-serif; color: #fff; background: #0c1f4a; text-decoration: none; }
+.rd-ritual h1, .rd-ritual h2, .rd-ritual h3 { font-weight: 900; letter-spacing: -0.02em; }
+.rd-ritual .app { border: 0; background: var(--cream); }
+.rd-ritual .app__tab { font-weight: 700; }
+.rd-ritual .app__tab--active { border-bottom: 4px solid var(--rust); border-radius: 2px; }
+.rd-ritual .listing-card, .rd-ritual .question, .rd-ritual .swipe__intro { border: 2px solid var(--border); border-bottom-width: 5px; border-radius: 22px; box-shadow: none; }
+.rd-ritual .app__chip, .rd-ritual .app__filter-btn { border: 2px solid var(--border); border-bottom-width: 4px; border-radius: 14px; font-weight: 800; }
+.rd-ritual .swipe__cta, .rd-ritual .swipe__intro-btn, .rd-ritual .question__continue, .rd-ritual .sheet__apply, .rd-ritual .tip__btn { border-radius: 16px; font-weight: 900; box-shadow: 0 5px 0 var(--rust-dark); letter-spacing: .02em; }
+.rd-ritual .swipe__streak { width: 100%; display: flex; align-items: center; gap: 10px; margin: 2px 0 12px; padding: 8px 12px; border: 2px solid var(--border); border-bottom-width: 5px; border-radius: 18px; background: #fff; font-size: 16px; color: var(--ink); }
+.rd-ritual .swipe__streak b { font-weight: 900; margin-right: auto; }
+.rd-ritual .swipe__flame { flex: none; }
+.rd-ritual .swipe__ring i { position: relative; font-style: normal; }
+.rd-ritual .swipe__ring { position: relative; width: 58px; height: 58px; border-radius: 50%; display: grid; place-items: center; font-size: 12px; font-weight: 900; background: conic-gradient(var(--rust) var(--p), #e3eaf9 0); transition: background .3s; }
+.rd-ritual .swipe__ring::before { content: ''; position: absolute; inset: 7px; border-radius: 50%; background: #fff; }
+.rd-ritual .swipe__ring { isolation: isolate; }
+.rd-ritual .swipe__ring { color: var(--ink); }
+.rd-ritual .swipe__ring::after { content: none; }
+.rd-ritual .swipe__stack { height: 380px; }
+.rd-ritual .swipe__card { border-radius: 26px; box-shadow: 0 20px 36px -22px rgba(12, 31, 74, .6); }
+.rd-ritual .swipe__photo { border-radius: 26px; }
+.rd-ritual .swipe__btn { width: 66px; height: 66px; border-bottom: 5px solid rgba(0,0,0,.2); box-shadow: none; }
+.rd-ritual .swipe__btn--dislike { border: 2px solid var(--border); border-bottom-width: 5px; color: var(--ink); }
+.rd-ritual .swipe__btn--like { background: var(--forest); color: #fff; }
+.rd-ritual .swipe__round { margin: 10px 0 0; padding: 26px 20px; text-align: center; border: 2px solid var(--border); border-bottom-width: 6px; border-radius: 26px; background: #fff; }
+.rd-ritual .swipe__round h2 { font-size: 34px; margin: 0 0 8px; color: var(--ink); }
+.rd-ritual .swipe__round p { margin: 0 0 8px; font-size: 17px; line-height: 1.4; color: var(--ink); }
+.rd-ritual .swipe__round-count { color: var(--muted); font-weight: 700; }
+.rd-ritual .swipe__round .swipe__cta { display: block; width: 100%; margin: 18px 0 10px; padding: 15px; border: 0; background: var(--rust); color: #fff; font-size: 16px; cursor: pointer; }
