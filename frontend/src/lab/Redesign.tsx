@@ -31,7 +31,7 @@ export const REDESIGNS = {
   blueprint: "family=Space+Grotesk:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600",
   salon: "family=DM+Sans:wght@400;500;600;700&family=Instrument+Serif:ital@0;1",
   board: "family=Bricolage+Grotesque:opsz,wght@12..96,400;12..96,600;12..96,800&family=Instrument+Serif:ital@1&family=DM+Mono:wght@500",
-  "board-v4": "family=DM+Sans:wght@400;500;600;700&family=Instrument+Serif:ital@1&family=DM+Mono:wght@400;500",
+  "board-v4": "family=Bricolage+Grotesque:opsz,wght@12..96,400;12..96,500;12..96,600;12..96,700&family=Instrument+Serif:ital@1&family=DM+Mono:wght@400;500",
 } as const;
 export type RedesignName = keyof typeof REDESIGNS;
 
