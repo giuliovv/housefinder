@@ -94,21 +94,25 @@ export function BoardListingCard({ listing, store, deadPhotos, swipes, onRate, s
           <button disabled={!canRate} aria-label="I like this" aria-pressed={currentId ? swipes?.[currentId] === "like" : false} onClick={() => currentId && onRate?.(currentId, "like")}>♥</button>
         </div>
 
-        <button className={`board-listing__save${saved ? " board-listing__save--on" : ""}`} disabled={!onToggleSave} aria-pressed={Boolean(saved)} onClick={onToggleSave}>
-          {saved ? "★ Saved" : "☆ Save"}
-        </button>
+      </div>
 
-        <a className="board-listing__info" href={agencyUrl} target="_blank" rel="noopener noreferrer" onClick={agencyClick} aria-label={`View ${summary.address} on ${listing.agency_name}`}>
-          <span className="board-listing__price">{price}</span>
-          {drop && priceSeries && (
-            <span className="board-listing__history">
-              <span className="board-listing__history-head"><b>Price dropped</b><del>{gbp(drop.from)}</del><span>−{gbp(drop.amount)}</span></span>
-              <PriceChart series={priceSeries} today={today ?? new Date().toISOString().slice(0, 10)} />
-            </span>
-          )}
-          <span className="board-listing__address">{summary.address}</span>
-          <span className="board-listing__rooms">{rooms}{stale ? ` · ${stale}` : ""} · View ↗</span>
-          {summary.price_flag && <span className="board-listing__flag">Rent looks unusually low. Check with the agency.</span>}
+      <div className="listing-card__body">
+        <div className="board-listing__headline">
+          <p className="listing-card__price">{price}</p>
+          <button className={`board-listing__save${saved ? " board-listing__save--on" : ""}`} disabled={!onToggleSave} aria-pressed={Boolean(saved)} onClick={onToggleSave}>
+            {saved ? "★ Saved" : "☆ Save"}
+          </button>
+        </div>
+        {drop && priceSeries && (
+          <div className="board-listing__history">
+            <div className="board-listing__history-head"><b>Price dropped</b><del>{gbp(drop.from)}</del><span>−{gbp(drop.amount)}</span></div>
+            <PriceChart series={priceSeries} today={today ?? new Date().toISOString().slice(0, 10)} />
+          </div>
+        )}
+        {summary.price_flag && <p className="listing-card__price-flag">Rent looks unusually low. Check with the agency.</p>}
+        <a className="board-listing__body-link" href={agencyUrl} target="_blank" rel="noopener noreferrer" onClick={agencyClick} aria-label={`View ${summary.address} on ${listing.agency_name}`}>
+          <span className="listing-card__address">{summary.address}</span>
+          <span className="listing-card__rooms">{rooms}{stale ? ` · ${stale}` : ""} · View listing ↗</span>
         </a>
       </div>
     </article>
