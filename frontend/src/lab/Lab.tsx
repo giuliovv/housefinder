@@ -29,6 +29,7 @@ const CODEX: { slug: string; name: string; line: string; detail: string; whole: 
   { slug: "fieldnotes", name: "Field Notes", line: "The considered home hunt", detail: "A renter's research journal: annotated imagery, paper, ink and a yellow highlighter. Make decisions feel collected rather than consumed.", whole: "fieldnotes" },
   { slug: "blueprint", name: "Blueprint", line: "The practical search instrument", detail: "A cartographic workspace: deep blue, measured grids and precise data. Let the map, filters and match signal feel like one tool.", whole: "blueprint" },
   { slug: "salon", name: "Salon", line: "The interior-led magazine", detail: "An editorial gallery with generous photography, expressive typography and warm colour. Lead with how a home feels; reveal the numbers cleanly.", whole: "salon" },
+  { slug: "board", name: "Board v3", line: "The bold swipe-to-browse system", detail: "Tangerine, ultramarine and pistachio. A photo-led taste deck, practical listing cards and the same working filters, map and shortlist.", whole: "board" },
 ];
 
 export function designFromPath(path: string): string | null {
@@ -73,7 +74,7 @@ function Index() {
       <p>Ideas for House Swipe on the real homes. The redesign is the whole app with every feature. The others are new ways to find a home: some need nothing from you up front, some learn as you like and pass and share what they learn with the main app.</p>
       <section className="lab-codex-callout">
         <span>NEW COLLECTION / CODEX</span>
-        <h2>Three ways to make the hunt feel different.</h2>
+        <h2>Four ways to make the hunt feel different.</h2>
         <p>Full-app concepts on real homes, not static screenshots.</p>
         <a href="/ui/codex">Explore Codex directions <span aria-hidden="true">↗</span></a>
       </section>
@@ -104,14 +105,14 @@ function CodexIndex() {
     <div className="lab-codex-index">
       <nav><a href="/ui">← Design lab</a><span>HOUSE SWIPE / CODEX</span></nav>
       <header>
-        <p>THREE DIRECTIONS · ONE REAL PRODUCT</p>
+        <p>FOUR DIRECTIONS · ONE REAL PRODUCT</p>
         <h1>A home hunt should have a point of view.</h1>
-        <p>Explore three visual languages across the actual swipe, browse and saved flows. Each direction uses the same listings and working interactions.</p>
+        <p>Explore four visual languages across the actual swipe, browse and saved flows. Each direction uses the same listings and working interactions.</p>
       </header>
       <main>
         {CODEX.map((d, i) => (
           <a className={`codex-direction codex-direction--${d.slug}`} href={`/ui/codex/${d.slug}`} key={d.slug}>
-            <span className="codex-direction__number">0{i + 1} / 03</span>
+            <span className="codex-direction__number">0{i + 1} / 0{CODEX.length}</span>
             <span className="codex-direction__art" aria-hidden="true"><i /><i /><i /></span>
             <span className="codex-direction__copy"><small>{d.line}</small><strong>{d.name}</strong><span>{d.detail}</span></span>
             <span className="codex-direction__arrow" aria-hidden="true">↗</span>

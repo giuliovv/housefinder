@@ -26,9 +26,10 @@ A mobile-first London rental search that learns *visual taste* from interior pho
 
 - `/`: current public product.
 - `/ui`: existing design experiments.
-- `/ui/codex`: three new complete-app directions, each running the same actual features and listings.
+- `/ui/codex`: four complete-app directions, each running the same actual features and listings.
 - `/ui/codex/fieldnotes`: a tactile research journal, focused on deliberate decisions.
 - `/ui/codex/blueprint`: a precise, map-and-data-led search instrument.
 - `/ui/codex/salon`: a warm, photography-first interiors magazine.
+- `/ui/codex/board`: a photo-led, ink-outlined Style and Browse direction built from the supplied Board v3 handoff.
 
-These are exploratory visual systems, not three new product feature sets. A final design should pick a clear point of view while preserving the functional depth above.
+These are exploratory visual systems, not four new product feature sets. A final design should pick a clear point of view while preserving the functional depth above.

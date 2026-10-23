@@ -12,7 +12,7 @@ import { MatchCelebration } from "./components/MatchCelebration";
 import { loadMatchState, pickMatch, saveMatchState, shouldOffer } from "./lib/matchmoment";
 import { ReadyCard } from "./components/ReadyCard";
 import { latestDrop, type PriceHistory } from "./lib/priceHistory";
-import { hasFeatures } from "./lib/features";
+import { FEATURES, hasFeatures } from "./lib/features";
 import { browserStores, newKeys, newestDay, startVisit } from "./lib/newsince";
 import { matchesBedrooms, reconcileBedrooms } from "./lib/bedrooms";
 import { QuestionCard } from "./components/QuestionCard";
@@ -46,7 +46,8 @@ const PAGE_SIZE = 40;
 /** the big data files (listings, ranking matrix) are fetched once someone has swiped this many photos, or opens Browse/Saved */
 const NEED_DATA_AFTER_SWIPES = 10;
 
-function App() {
+function App({ labVariant }: { labVariant?: "board" } = {}) {
+  const board = labVariant === "board";
   const [rawStore, setStore] = useState<EmbeddingStore | null>(null);
   const [rawListings, setAllListings] = useState<Listing[] | null>(null);
   // agencies switched off (killswitch.json at the site root; see scraper/killswitch.py): hidden at once, no deploy needed
@@ -66,6 +67,10 @@ function App() {
   const [styleLabels, setStyleLabels] = useState<StyleLabel[]>([]);
   const [error, setError] = useState<string | null>(null);
   const [styleFailed, setStyleFailed] = useState(false);
+  function retryStyle() {
+    setStyleFailed(false);
+    loadEmbeddingStore().then(setStore).catch(() => setStyleFailed(true));
+  }
   const [deadPhotos, setDeadPhotos] = useState<ReadonlySet<string>>(new Set());
   const [sort, setSort] = useState<SortKey>("price-asc");
   const [agencyFilter, setAgencyFilter] = useState<string>("all");
@@ -419,8 +424,8 @@ function App() {
   // Saved, or has swiped enough that matches are about to be wanted (match moments start at 15 swipes).
   const [needData, setNeedData] = useState(false);
   useEffect(() => {
-    if (tab !== "style" || swipeTotal >= NEED_DATA_AFTER_SWIPES) setNeedData(true);
-  }, [tab, swipeTotal]);
+    if (board || tab !== "style" || swipeTotal >= NEED_DATA_AFTER_SWIPES) setNeedData(true);
+  }, [board, tab, swipeTotal]);
   useEffect(() => {
     if (!needData) return;
     const get = (url: string) =>
@@ -434,12 +439,13 @@ function App() {
       .catch((err) => setError(err instanceof Error ? err.message : String(err)));
   }, [needData]);
   useEffect(() => {
-    if (!needData || !rawStore) return;
+    // Board v3 needs the listing count immediately, but not the large ranking matrix until taste or Browse needs it.
+    if (!needData || !rawStore || (board && tab === "style" && swipeTotal < NEED_DATA_AFTER_SWIPES)) return;
     rawStore
       .ensureRanking()
       .then(() => setRankingReady(true))
       .catch((err) => console.error("ranking data failed to load", err));
-  }, [needData, rawStore]);
+  }, [needData, rawStore, board, tab, swipeTotal]);
 
   // anonymous usage counters (see lib/stats.ts)
   useEffect(() => {
@@ -475,7 +481,7 @@ function App() {
   }, [announce]);
 
   return (
-    <div className="app">
+    <div className={`app${board ? " app--board" : ""}`}>
       <header className="app__header">
         <div className="app__header-row">
           <h1>House Swipe</h1>
@@ -489,6 +495,7 @@ function App() {
           </button>
           <button className={`app__tab ${tab === "browse" ? "app__tab--active" : ""}`} onClick={() => setTab("browse")}>
             Browse
+            {board && listings && <span className="board__tab-count">{visible.length}</span>}
             {(!ready.browseOpened || (newSet.size > 0 && !browseSeen)) && <span className="app__tab-dot" aria-label="Your matches are ready" />}
           </button>
           <button className={`app__tab ${tab === "saved" ? "app__tab--active" : ""}`} onClick={() => setTab("saved")}>
@@ -508,6 +515,8 @@ function App() {
           dislikedCount={dislikedCount}
           totalCount={undecided.length + likedCount + dislikedCount}
           onSwipe={swipeInDeck}
+          onUndo={board ? toggleSwipe : undefined}
+          browseCount={board && listings ? visible.length : undefined}
           injected={matchCard}
           onReset={() => {
             reset();
@@ -553,7 +562,8 @@ function App() {
           photoUrl={celebration.url}
           price={celebrated.summary.price_text}
           address={celebrated.summary.address}
-          matchPercent={matchScores ? Math.round((matchScores[celebration.listingKey] ?? 0) * 100) : null}
+          matchPercent={!board && matchScores ? Math.round((matchScores[celebration.listingKey] ?? 0) * 100) : null}
+          relative={board}
           onOpen={() => {
             trackEvent("ev_match_opened");
             setCelebration(null);
@@ -577,9 +587,13 @@ function App() {
           </div>
         </div>
       )}
-      {tab === "style" && !store && !styleFailed && <LoadingMessage kind="style" />}
-      {tab === "style" && styleFailed && (
-        <p className="app__error">Couldn't load the style cards just now — you can still browse; try a refresh in a moment.</p>
+      {tab === "style" && !store && !styleFailed && (board ?
+        <div className="board__skeleton" role="status" aria-label="Loading style photos"><div className="board__skeleton-photo" /><div className="board__skeleton-card"><span>LOADING STYLE PHOTOS</span><i /><i /><button disabled>← Pass</button><button disabled>Like →</button></div></div>
+        : <LoadingMessage kind="style" />
+      )}
+      {tab === "style" && styleFailed && (board ?
+        <div className="board__style-failed"><span>PHOTO DECK UNAVAILABLE</span><h2>Style photos paused.</h2><p>You can still browse every available home, sorted by price.</p><button onClick={() => setTab("browse")}>Browse homes ↑</button><button onClick={retryStyle}>Retry photos</button></div>
+        : <p className="app__error">Couldn't load the style cards just now — you can still browse; try a refresh in a moment.</p>
       )}
 
       {tab === "saved" && (
@@ -596,6 +610,7 @@ function App() {
           store={store}
           deadPhotos={deadPhotos}
           onToggleSave={shortlist.toggleSave}
+          matchLabel={board ? "relative" : undefined}
           onStartBoard={shortlist.startBoard}
           onJoin={shortlist.joinInvite}
           onLeave={shortlist.leaveBoard}
@@ -666,6 +681,17 @@ function App() {
               )}
             </div>
           )}
+          {board && activeFilterCount > 0 && (
+            <div className="board__chips" aria-label="Active filters">
+              {minPrice && <button onClick={() => setMinPrice("")}>From £{minPrice} ×</button>}
+              {maxPrice && <button onClick={() => setMaxPrice("")}>Up to £{maxPrice} ×</button>}
+              {(minBedrooms !== "any" || maxBedrooms !== "any") && <button onClick={() => { setMinBedrooms("any"); setMaxBedrooms("any"); }}>{minBedrooms !== "any" ? `${minBedrooms}+` : `Up to ${maxBedrooms}`} beds ×</button>}
+              {minBathrooms !== "any" && <button onClick={() => setMinBathrooms("any")}>{minBathrooms}+ baths ×</button>}
+              {agencyFilter !== "all" && <button onClick={() => setAgencyFilter("all")}>{agencyFilter} ×</button>}
+              {features.map((key) => <button key={key} onClick={() => setFeatures((cur) => cur.filter((f) => f !== key))}>{FEATURES.find((f) => f.key === key)?.label ?? key} ×</button>)}
+              {shapes.length > 0 && <button onClick={() => setShapes([])}>Map area ×</button>}
+            </div>
+          )}
           {pinned && (
             <div className="browse__pinned">
               <p className="browse__pinned-label">
@@ -676,6 +702,7 @@ function App() {
                 <ListingCard
                   listing={pinned}
                   matchScore={matchScores?.[listingKey(pinned)]}
+                  matchLabel={board ? "relative" : undefined}
                   store={store}
                   deadPhotos={deadPhotos}
                   swipes={swipes}
@@ -701,6 +728,7 @@ function App() {
                 isNew={newSet.has(listingKey(listing))}
                 priceSeries={priceHistory[listingKey(listing)]}
                 today={todayIso}
+                matchLabel={board ? "relative" : undefined}
               />
             ))}
           </main>

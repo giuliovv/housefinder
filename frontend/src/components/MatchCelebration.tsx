@@ -6,6 +6,7 @@ interface Props {
   price: string;
   address: string;
   matchPercent: number | null;
+  relative?: boolean;
   onOpen: () => void;
   onKeep: () => void;
 }
@@ -18,7 +19,7 @@ const CONFETTI = Array.from({ length: 28 }, (_, i) => ({
 }));
 
 /** The Tinder-style "It's a match!" moment after swiping right on a home we expected them to love. */
-export function MatchCelebration({ photoUrl, price, address, matchPercent, onOpen, onKeep }: Props) {
+export function MatchCelebration({ photoUrl, price, address, matchPercent, relative, onOpen, onKeep }: Props) {
   useEffect(() => {
     try {
       navigator.vibrate?.([30, 40, 30]);
@@ -37,13 +38,13 @@ export function MatchCelebration({ photoUrl, price, address, matchPercent, onOpe
         ))}
       </div>
       <div className="match__card">
-        <p className="match__kicker">A home we think you'll love</p>
-        <h2 className="match__title">It's a match!</h2>
+        <p className="match__kicker">{relative ? "LIKELY MATCH" : "A home we think you'll love"}</p>
+        <h2 className="match__title">{relative ? "Nearer your taste." : "It's a match!"}</h2>
         <img className="match__photo" referrerPolicy="no-referrer" src={normalizeImageUrl(photoUrl) ?? undefined} alt="" />
         <p className="match__price">{price}</p>
         <p className="match__address">{address}</p>
         {matchPercent !== null && <p className="match__score">{matchPercent}% match with your taste</p>}
-        <p className="match__more">One of the best fits so far. Browse has more like it, ranked for you.</p>
+        <p className="match__more">{relative ? "This home ranks nearer the style you've liked so far. Keep browsing to compare." : "One of the best fits so far. Browse has more like it, ranked for you."}</p>
         <button className="question__continue" onClick={onOpen}>
           See it and more like it →
         </button>

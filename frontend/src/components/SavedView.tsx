@@ -9,6 +9,7 @@ import { ListingCard } from "./ListingCard";
 import type { EmbeddingStore } from "../lib/embeddingStore";
 
 interface Props {
+  matchLabel?: "relative";
   saved: string[];
   listingsByKey: Record<string, Listing>;
   me: Me;
@@ -128,7 +129,7 @@ export function SavedView(p: Props) {
   const [sheetOpen, setSheetOpen] = useState(false);
   const inBoard = p.boardId !== null;
   const live = inBoard && p.status === "live"; // until it connects (or if it can't), show my own saves
-  const cardProps = { store: p.store, deadPhotos: p.deadPhotos };
+  const cardProps = { store: p.store, deadPhotos: p.deadPhotos, matchLabel: p.matchLabel };
 
   if (p.invite) {
     return (

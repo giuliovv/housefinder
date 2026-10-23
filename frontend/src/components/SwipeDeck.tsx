@@ -17,6 +17,8 @@ interface Drag {
   dy: number;
 }
 
+type LastBoardSwipe = { id: string; choice: "like" | "dislike" };
+
 const DRAG_THRESHOLD = 90;
 const INTRO_SEEN_KEY = "housefinder:swipe-intro-seen:v1";
 
@@ -67,6 +69,8 @@ export function SwipeDeck({
   dislikedCount,
   totalCount,
   onSwipe,
+  onUndo,
+  browseCount,
   onReset,
   onGoBrowse,
   styleDescription,
@@ -82,6 +86,8 @@ export function SwipeDeck({
   dislikedCount: number;
   totalCount: number;
   onSwipe: (id: string, choice: "like" | "dislike") => void;
+  onUndo?: (id: string, choice: "like" | "dislike") => void;
+  browseCount?: number;
   onReset: () => void;
   onGoBrowse: () => void;
   styleDescription: string[] | null;
@@ -124,27 +130,41 @@ export function SwipeDeck({
   }, [hasSwiped]);
   const [drag, setDrag] = useState<Drag>({ active: false, dx: 0, dy: 0 });
   const [start, setStart] = useState<{ x: number; y: number } | null>(null);
+  const [startedAt, setStartedAt] = useState(0);
+  const [lastBoardSwipe, setLastBoardSwipe] = useState<LastBoardSwipe | null>(null);
+  const [confirmReset, setConfirmReset] = useState(false);
+  useEffect(() => {
+    if (!lastBoardSwipe) return;
+    const timeout = window.setTimeout(() => setLastBoardSwipe(null), 4000);
+    return () => window.clearTimeout(timeout);
+  }, [lastBoardSwipe]);
 
   useEffect(() => {
     function onKey(e: KeyboardEvent) {
       if (!current || interlude || paused) return;
-      if (e.key === "ArrowRight") onSwipe(current.id, "like");
-      if (e.key === "ArrowLeft") onSwipe(current.id, "dislike");
+      if (e.key === "ArrowRight" || e.key === "ArrowLeft") {
+        const choice = e.key === "ArrowRight" ? "like" : "dislike";
+        if (variant === "board") setLastBoardSwipe({ id: current.id, choice });
+        onSwipe(current.id, choice);
+      }
     }
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
-  }, [current, onSwipe, interlude, paused]);
+  }, [current, onSwipe, interlude, paused, variant]);
 
   function commit(choice: "like" | "dislike") {
     if (!current) return;
     if (variant === "ritual") touchStreak();
+    if (variant === "board") setLastBoardSwipe({ id: current.id, choice });
     onSwipe(current.id, choice);
     setDrag({ active: false, dx: 0, dy: 0 });
   }
 
   function onPointerDown(e: React.PointerEvent) {
     if (!current || interlude) return;
+    if (variant === "board") e.currentTarget.setPointerCapture(e.pointerId);
     setStart({ x: e.clientX, y: e.clientY });
+    setStartedAt(Date.now());
     setDrag({ active: true, dx: 0, dy: 0 });
   }
 
@@ -164,8 +184,11 @@ export function SwipeDeck({
       if (found.length > 0) setDig(found);
       return;
     }
-    if (drag.dx > DRAG_THRESHOLD) commit("like");
-    else if (drag.dx < -DRAG_THRESHOLD) commit("dislike");
+    const boardThreshold = Math.min(window.innerWidth * 0.3, 180);
+    const fastEnough = variant === "board" && Date.now() - startedAt < 350 && Math.abs(drag.dx) > 55;
+    const threshold = variant === "board" ? boardThreshold : DRAG_THRESHOLD;
+    if (drag.dx > threshold || (fastEnough && drag.dx > 0)) commit("like");
+    else if (drag.dx < -threshold || (fastEnough && drag.dx < 0)) commit("dislike");
     else setDrag({ active: false, dx: 0, dy: 0 });
   }
 
@@ -175,6 +198,55 @@ export function SwipeDeck({
   const shown = variant === "fan" ? 5 : variant === "bleed" ? 2 : 3;
   const roundEnds = variant === "ritual" && decided > 0 && decided % 10 === 0 && roundDone !== decided && !injected;
   const visibleCards = injected ? [injected, ...undecided.filter((p) => p.id !== injected.id).slice(0, shown - 1)] : undecided.slice(0, shown);
+
+  if (variant === "board") {
+    const reducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    const styleWords = likedCount >= 3 ? styleDescription?.[0]?.trim().split(/\s+/) : null;
+    const label = likedCount < 3 ? "Learning your taste" : tasteRead?.level === 3 ? "Strong read" : "Getting there";
+    const progress = Math.min(5, Math.floor(decided / 6));
+    return (
+      <section className="board-swipe" aria-label="Find your style">
+        {current && !interlude ? (
+          <>
+            <div className="board-swipe__stage">
+              <div
+                key={current.id}
+                className="board-swipe__photo"
+                style={{ transform: reducedMotion ? undefined : `translateX(${drag.dx}px) rotate(${drag.dx / 35}deg)`, transition: drag.active ? "none" : undefined }}
+                onPointerDown={onPointerDown}
+                onPointerMove={onPointerMove}
+                onPointerUp={onPointerUp}
+                onPointerCancel={() => setDrag({ active: false, dx: 0, dy: 0 })}
+              >
+                <img referrerPolicy="no-referrer" src={normalizeImageUrl(current.url) ?? undefined} alt="Interior to rate" draggable={false}
+                  onError={() => onBroken(current.id)}
+                  onLoad={(e) => { if (e.currentTarget.naturalWidth < 120 || e.currentTarget.naturalHeight < 120) onBroken(current.id); }} />
+              </div>
+              <button className="board-swipe__edge board-swipe__edge--pass" onClick={() => commit("dislike")} aria-label="Pass on this interior">← Pass</button>
+              <button className="board-swipe__edge board-swipe__edge--like" onClick={() => commit("like")} aria-label="Like this interior">Like →</button>
+            </div>
+            <div className="board-swipe__panel">
+              <p className="board-swipe__kicker">YOU LEAN TOWARD</p>
+              <h2>{styleWords?.length ? <>{styleWords.slice(0, -1).join(" ")} <em>{styleWords.at(-1)}</em></> : <><em>Your</em> next place</>}</h2>
+              <div className="board-swipe__read"><span>{label}</span><span>{decided}/30</span></div>
+              <div className="board-swipe__arches" aria-label={`${decided} photos rated`}>{Array.from({ length: 5 }, (_, i) => <i key={i} className={i < progress ? "board-swipe__arch--on" : ""} />)}</div>
+              <div className="board-swipe__actions">
+                <button onClick={() => commit("dislike")}>← Pass</button><button onClick={() => commit("like")}>Like →</button>
+              </div>
+              <div className="board-swipe__utility">
+                <button onClick={() => onHide(current.id)}>Hide photo</button>
+                <button className="board-swipe__browse" onClick={onGoBrowse}>See {browseCount ?? "…"} homes ↑</button>
+                <button onClick={() => setConfirmReset(true)}>Reset</button>
+              </div>
+            </div>
+          </>
+        ) : interlude ? <div className="board-swipe__interlude">{interlude}<button onClick={onGoBrowse}>Browse homes ↑</button></div>
+          : <div className="board-swipe__empty"><span>THE WHOLE SET</span><h2>That's the set.</h2><p>Ready to find a place that feels like you?</p><button onClick={onGoBrowse}>See {browseCount ?? ""} homes ↑</button><button onClick={() => setConfirmReset(true)}>Start over</button></div>}
+        {lastBoardSwipe && <div className="board-swipe__toast" role="status">{lastBoardSwipe.choice === "like" ? "Liked" : "Passed"} · <button onClick={() => { onUndo?.(lastBoardSwipe.id, lastBoardSwipe.choice); setLastBoardSwipe(null); }}>Undo</button></div>}
+        {confirmReset && <div className="board-swipe__modal" role="dialog" aria-modal="true" aria-label="Reset taste"><div><h2>Start fresh?</h2><p>This clears your photo likes and passes. Your Browse filters and saved homes stay.</p><button onClick={() => setConfirmReset(false)}>Keep my taste</button><button onClick={() => { onReset(); setConfirmReset(false); setLastBoardSwipe(null); }}>Reset taste</button></div></div>}
+      </section>
+    );
+  }
 
   return (
     <div className={`swipe swipe--${variant}`}>
