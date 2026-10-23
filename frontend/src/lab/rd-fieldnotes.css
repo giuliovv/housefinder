@@ -1,0 +1,55 @@
+/* Field Notes: a quiet, tactile journal for considered decisions. */
+html.rd-fieldnotes {
+  --ink: #233c33;
+  --muted: #587267;
+  --muted-dark: #405c50;
+  --cream: #f4efd9;
+  --outer-bg: #d9dcc6;
+  --border: #a9b4a5;
+  --rust: #a1472d;
+  --rust-dark: #843820;
+  --forest: #376958;
+  --sans: 'DM Mono', monospace;
+  --serif: 'Newsreader', Georgia, serif;
+}
+.rd-fieldnotes #root { background: repeating-linear-gradient(90deg, #d9dcc6 0 39px, #cad4bd 40px); }
+.rd-fieldnotes .app { max-width: 980px; border: 0; box-shadow: 0 0 0 1px #96a48f, 22px 22px 0 #b5b9a3; background: linear-gradient(90deg, transparent 59px, #dcaa9c 60px, transparent 61px), var(--cream); }
+.rd-fieldnotes .app__header { padding: 34px clamp(22px, 5vw, 74px) 0; }
+.rd-fieldnotes .app__header h1 { font-size: clamp(37px, 6vw, 67px); line-height: .95; letter-spacing: -.055em; }
+.rd-fieldnotes .app__eyebrow { color: var(--rust); font: 500 11px/1.4 var(--sans); border-top: 1px solid var(--rust); padding-top: 5px; }
+.rd-fieldnotes .app__subtitle { max-width: 45ch; font: 13px/1.5 var(--sans); margin: 13px 0 25px; }
+.rd-fieldnotes .app__tabs { gap: 0; border-block: 1px solid var(--ink); }
+.rd-fieldnotes .app__tab { flex: 1; font: 500 12px/1.3 var(--sans); border-right: 1px solid var(--border); padding: 13px 8px; text-transform: uppercase; letter-spacing: .035em; }
+.rd-fieldnotes .app__tab:last-child { border-right: 0; }
+.rd-fieldnotes .app__tab--active { color: var(--ink); background: #e7d87b; border-bottom: 0; }
+.rd-fieldnotes .rd-back { position: fixed; z-index: 100; top: 12px; right: 12px; padding: 9px 13px; background: var(--ink); color: var(--cream); text-decoration: none; font: 500 12px/1 var(--sans); }
+.rd-fieldnotes .swipe { max-width: 550px; margin: 0 auto; }
+.rd-fieldnotes .swipe__stack { max-width: 430px; }
+.rd-fieldnotes .swipe__card { border: 8px solid #fffaf0; border-bottom-width: 25px; border-radius: 2px; box-shadow: 4px 8px 0 #738678, 0 10px 25px #233c3326; }
+.rd-fieldnotes .swipe__photo { border-radius: 0; }
+.rd-fieldnotes .swipe__buttons { gap: 24px; }
+.rd-fieldnotes .swipe__btn { border-radius: 50%; border: 1px solid var(--ink); background: transparent; box-shadow: 3px 4px 0 #b5b9a3; }
+.rd-fieldnotes .swipe__btn--like { color: var(--rust); }
+.rd-fieldnotes .swipe__btn--dislike { color: var(--ink); }
+.rd-fieldnotes .app__browse { padding: 26px clamp(22px, 5vw, 74px) 50px; }
+.rd-fieldnotes .app__filter-row { background: var(--cream); border-bottom: 1px solid var(--ink); margin-bottom: 20px; }
+.rd-fieldnotes .app__filter-btn, .rd-fieldnotes .app__draw-btn, .rd-fieldnotes .sheet__opt, .rd-fieldnotes .sheet__input, .rd-fieldnotes .question__opt { border-radius: 0; }
+.rd-fieldnotes .listing-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 310px), 1fr)); gap: 28px; }
+.rd-fieldnotes .listing-card { background: transparent; border: 0; border-top: 1px solid var(--ink); border-radius: 0; box-shadow: none; }
+.rd-fieldnotes .listing-card:hover { box-shadow: none; }
+.rd-fieldnotes .listing-card__photo-wrap { margin-top: 9px; height: 220px; border-radius: 0; }
+.rd-fieldnotes .listing-card__body { padding: 14px 0 20px; }
+.rd-fieldnotes .listing-card__price { font: 600 27px/1 var(--serif); }
+.rd-fieldnotes .listing-card__address { font-weight: 500; }
+.rd-fieldnotes .listing-card__match { border-radius: 0; background: #e7d87b; color: var(--ink); }
+.rd-fieldnotes .listing-card__save, .rd-fieldnotes .listing-card__rate-btn { border-radius: 0; }
+.rd-fieldnotes .saved__title { font-size: 34px; }
+.rd-fieldnotes .sheet__panel, .rd-fieldnotes .question, .rd-fieldnotes .swipe__intro, .rd-fieldnotes .match__card, .rd-fieldnotes .tip { border-radius: 2px; background: var(--cream); }
+.rd-fieldnotes .neighbourhood-map { border-radius: 2px; }
+@media (max-width: 620px) {
+  .rd-fieldnotes .app { box-shadow: none; background: var(--cream); }
+  .rd-fieldnotes .app__header { padding: 55px 20px 0; }
+  .rd-fieldnotes .app__eyebrow { font-size: 9px; }
+  .rd-fieldnotes .app__browse { padding-inline: 20px; }
+  .rd-fieldnotes .listing-grid { grid-template-columns: 1fr; }
+}

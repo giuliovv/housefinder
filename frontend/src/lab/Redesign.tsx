@@ -10,6 +10,9 @@ import "./rd-fan.css";
 import "./rd-ritual.css";
 import "./rd-dig.css";
 import "./rd-stamp.css";
+import "./rd-fieldnotes.css";
+import "./rd-blueprint.css";
+import "./rd-salon.css";
 import { DeckVariantContext, type DeckVariant } from "../components/deckVariant";
 
 export const REDESIGNS = {
@@ -22,6 +25,9 @@ export const REDESIGNS = {
   ritual: "family=Nunito:wght@400;600;700;800;900",
   dig: "family=Karla:wght@400;600;700&family=Fraunces:opsz,wght@9..144,500;9..144,600",
   stamp: "family=Karla:wght@400;600;700&family=Special+Elite",
+  fieldnotes: "family=DM+Mono:wght@400;500&family=Newsreader:opsz,wght@6..72,400;6..72,500;6..72,600",
+  blueprint: "family=Space+Grotesk:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600",
+  salon: "family=DM+Sans:wght@400;500;600;700&family=Instrument+Serif:ital@0;1",
 } as const;
 export type RedesignName = keyof typeof REDESIGNS;
 
@@ -39,8 +45,8 @@ export default function Redesign({ name }: { name: RedesignName }) {
   }, [name]);
   return (
     <>
-      <a className="rd-back" href="/ui">
-        All designs
+      <a className="rd-back" href={["fieldnotes", "blueprint", "salon"].includes(name) ? "/ui/codex" : "/ui"}>
+        ← {(["fieldnotes", "blueprint", "salon"] as string[]).includes(name) ? "Codex" : "All designs"}
       </a>
       <DeckVariantContext.Provider value={DECK[name] ?? "classic"}>
         <App />

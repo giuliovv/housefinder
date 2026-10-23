@@ -25,7 +25,16 @@ const DESIGNS: { id: string; name: string; line: string; cold?: boolean; whole?:
   { id: "4", name: "Budget tape", line: "Start from the rent. Drag the tape, then like or pass and every row re-sorts for you.", C: Budget },
 ];
 
+const CODEX: { slug: string; name: string; line: string; detail: string; whole: RedesignName }[] = [
+  { slug: "fieldnotes", name: "Field Notes", line: "The considered home hunt", detail: "A renter's research journal: annotated imagery, paper, ink and a yellow highlighter. Make decisions feel collected rather than consumed.", whole: "fieldnotes" },
+  { slug: "blueprint", name: "Blueprint", line: "The practical search instrument", detail: "A cartographic workspace: deep blue, measured grids and precise data. Let the map, filters and match signal feel like one tool.", whole: "blueprint" },
+  { slug: "salon", name: "Salon", line: "The interior-led magazine", detail: "An editorial gallery with generous photography, expressive typography and warm colour. Lead with how a home feels; reveal the numbers cleanly.", whole: "salon" },
+];
+
 export function designFromPath(path: string): string | null {
+  if (/^\/ui\/codex\/?$/.test(path)) return "codex";
+  const codex = /^\/ui\/codex\/([a-z-]+)\/?$/.exec(path);
+  if (codex) return `codex/${codex[1]}`;
   const m = /^\/ui(\d*)\/?$/.exec(path);
   return m ? m[1] : null;
 }
@@ -34,9 +43,12 @@ export default function Lab({ path }: { path: string }) {
   useNoIndex();
   const id = designFromPath(path) ?? "";
   const design = DESIGNS.find((d) => d.id === id);
+  const codex = CODEX.find((d) => `codex/${d.slug}` === id);
   useEffect(() => {
-    document.title = design ? `${design.name} · House Swipe design lab` : "House Swipe design lab";
-  }, [design]);
+    document.title = codex ? `${codex.name} · House Swipe Codex` : design ? `${design.name} · House Swipe design lab` : "House Swipe design lab";
+  }, [codex, design]);
+  if (codex) return <Redesign name={codex.whole} />;
+  if (id === "codex") return <CodexIndex />;
   if (design?.whole) return <Redesign name={design.whole} />;
   return design ? <Design id={design.id} /> : <Index />;
 }
@@ -59,6 +71,12 @@ function Index() {
     <div className="lab lab--index">
       <h1>Design lab</h1>
       <p>Ideas for House Swipe on the real homes. The redesign is the whole app with every feature. The others are new ways to find a home: some need nothing from you up front, some learn as you like and pass and share what they learn with the main app.</p>
+      <section className="lab-codex-callout">
+        <span>NEW COLLECTION / CODEX</span>
+        <h2>Three ways to make the hunt feel different.</h2>
+        <p>Full-app concepts on real homes, not static screenshots.</p>
+        <a href="/ui/codex">Explore Codex directions <span aria-hidden="true">↗</span></a>
+      </section>
       {["whole", "cold", "learn"].map((group) => (
         <section key={group}>
           <h2>{group === "whole" ? "The whole app, redesigns (every feature works)" : group === "cold" ? "Work from the first second" : "Learn from every like and pass"}</h2>
@@ -77,6 +95,30 @@ function Index() {
       <a className="lab-home" href="/">
         Back to House Swipe
       </a>
+    </div>
+  );
+}
+
+function CodexIndex() {
+  return (
+    <div className="lab-codex-index">
+      <nav><a href="/ui">← Design lab</a><span>HOUSE SWIPE / CODEX</span></nav>
+      <header>
+        <p>THREE DIRECTIONS · ONE REAL PRODUCT</p>
+        <h1>A home hunt should have a point of view.</h1>
+        <p>Explore three visual languages across the actual swipe, browse and saved flows. Each direction uses the same listings and working interactions.</p>
+      </header>
+      <main>
+        {CODEX.map((d, i) => (
+          <a className={`codex-direction codex-direction--${d.slug}`} href={`/ui/codex/${d.slug}`} key={d.slug}>
+            <span className="codex-direction__number">0{i + 1} / 03</span>
+            <span className="codex-direction__art" aria-hidden="true"><i /><i /><i /></span>
+            <span className="codex-direction__copy"><small>{d.line}</small><strong>{d.name}</strong><span>{d.detail}</span></span>
+            <span className="codex-direction__arrow" aria-hidden="true">↗</span>
+          </a>
+        ))}
+      </main>
+      <footer>Concepts only. The current public app at <a href="/">houseswipe.uk</a> is unchanged.</footer>
     </div>
   );
 }

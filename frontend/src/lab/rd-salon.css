@@ -1,0 +1,54 @@
+/* Salon: a warm interiors magazine where photography leads. */
+html.rd-salon {
+  --ink: #34231c;
+  --muted: #725e52;
+  --muted-dark: #5a4339;
+  --cream: #f8f0e5;
+  --outer-bg: #e6d2bf;
+  --border: #c9ae98;
+  --rust: #ac4b30;
+  --rust-dark: #883b26;
+  --forest: #496a52;
+  --sans: 'DM Sans', sans-serif;
+  --serif: 'Instrument Serif', Georgia, serif;
+}
+.rd-salon #root { background: radial-gradient(circle at 10% 12%, #f9dfbe, transparent 40%), linear-gradient(130deg, #e6d2bf, #cdaa93); }
+.rd-salon .app { max-width: 1100px; border: 0; box-shadow: 0 10px 55px #502c1d2a; }
+.rd-salon .app__header { padding: 43px clamp(22px, 6vw, 76px) 0; }
+.rd-salon .app__header h1 { font: 400 clamp(49px, 7vw, 83px)/.92 var(--serif); letter-spacing: -.035em; }
+.rd-salon .app__eyebrow { font: 700 11px/1 var(--sans); letter-spacing: .18em; color: var(--rust); }
+.rd-salon .app__subtitle { font: 18px/1.25 var(--serif); max-width: 43ch; margin: 16px 0 37px; }
+.rd-salon .app__tabs { gap: clamp(18px, 5vw, 60px); border-bottom: 1px solid var(--ink); }
+.rd-salon .app__tab { font: 500 13px/1.2 var(--sans); text-transform: uppercase; letter-spacing: .12em; padding: 15px 0; }
+.rd-salon .app__tab--active { border-bottom: 3px solid var(--rust); }
+.rd-salon .rd-back { position: fixed; z-index: 100; top: 12px; right: 12px; padding: 9px 14px; background: var(--rust); color: #fff; text-decoration: none; font: 600 12px/1 var(--sans); }
+.rd-salon .swipe { max-width: 570px; margin: 0 auto; }
+.rd-salon .swipe__stack { max-width: 460px; }
+.rd-salon .swipe__card { border-radius: 190px 190px 6px 6px; box-shadow: 8px 12px 0 #d6ae92; }
+.rd-salon .swipe__photo { border-radius: 190px 190px 6px 6px; }
+.rd-salon .swipe__btn { border-radius: 50%; border: 1px solid var(--ink); background: transparent; }
+.rd-salon .swipe__btn--like { background: var(--rust); color: #fff; border-color: var(--rust); }
+.rd-salon .app__browse { padding: 30px clamp(22px, 6vw, 76px) 70px; }
+.rd-salon .app__filter-row { background: var(--cream); border-bottom: 1px solid var(--border); padding-bottom: 12px; margin-bottom: 30px; }
+.rd-salon .app__filter-btn { border-radius: 30px; font-size: 12px; text-transform: uppercase; letter-spacing: .08em; }
+.rd-salon .listing-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 350px), 1fr)); gap: 44px 28px; }
+.rd-salon .listing-card { background: transparent; border: 0; border-radius: 0; box-shadow: none; }
+.rd-salon .listing-card:hover { box-shadow: none; }
+.rd-salon .listing-card__photo-wrap { height: 320px; border-radius: 170px 170px 3px 3px; }
+.rd-salon .listing-card__photo { object-fit: cover; }
+.rd-salon .listing-card__body { padding: 15px 0 8px; border-bottom: 1px solid var(--border); }
+.rd-salon .listing-card__price { font: 400 35px/1 var(--serif); }
+.rd-salon .listing-card__address { font: 400 20px/1.2 var(--serif); }
+.rd-salon .listing-card__match { background: #e6dac4; color: var(--ink); border-radius: 2px; }
+.rd-salon .listing-card__save { border-radius: 0; border-color: var(--ink); }
+.rd-salon .saved__title { font-size: 45px; font-weight: 400; }
+.rd-salon .sheet__panel, .rd-salon .question, .rd-salon .swipe__intro, .rd-salon .match__card, .rd-salon .tip { background: var(--cream); border-radius: 3px; }
+.rd-salon .neighbourhood-map { border-radius: 3px; }
+@media (max-width: 620px) {
+  .rd-salon .app__header { padding: 53px 20px 0; }
+  .rd-salon .app__eyebrow { font-size: 9px; }
+  .rd-salon .app__tab { font-size: 10px; letter-spacing: .04em; }
+  .rd-salon .app__browse { padding-inline: 20px; }
+  .rd-salon .listing-grid { grid-template-columns: 1fr; }
+  .rd-salon .listing-card__photo-wrap { height: 260px; }
+}

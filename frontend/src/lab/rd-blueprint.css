@@ -1,0 +1,55 @@
+/* Blueprint: a compact, architectural search instrument. */
+html.rd-blueprint {
+  --ink: #e9efe9;
+  --muted: #b2c8ca;
+  --muted-dark: #c6d9d6;
+  --cream: #18394b;
+  --outer-bg: #102939;
+  --border: #688c91;
+  --rust: #f3c174;
+  --rust-dark: #dba44e;
+  --forest: #9ad0b2;
+  --sans: 'Space Grotesk', sans-serif;
+  --serif: 'IBM Plex Mono', monospace;
+}
+.rd-blueprint #root { background: repeating-linear-gradient(0deg, #16364a 0 1px, transparent 1px 34px), repeating-linear-gradient(90deg, #16364a 0 1px, #102939 1px 34px); }
+.rd-blueprint .app { max-width: 1100px; border-inline: 1px solid var(--border); background: linear-gradient(90deg, #54798b22 1px, transparent 1px), linear-gradient(#54798b22 1px, transparent 1px), var(--cream); background-size: 32px 32px; }
+.rd-blueprint .app__header { padding: 30px clamp(18px, 4vw, 48px) 0; background: #102e40eb; }
+.rd-blueprint .app__header h1 { font: 600 clamp(31px, 4vw, 51px)/1 var(--sans); letter-spacing: -.055em; text-transform: uppercase; }
+.rd-blueprint .app__eyebrow { color: var(--rust); font: 500 11px/1 var(--serif); }
+.rd-blueprint .app__subtitle { color: #c3d6d5; font: 12px/1.5 var(--serif); margin: 12px 0 26px; }
+.rd-blueprint .app__tabs { gap: 0; border-bottom-color: var(--border); }
+.rd-blueprint .app__tab { flex: 1; padding: 14px 5px; font: 600 12px/1.2 var(--serif); text-transform: uppercase; letter-spacing: .04em; border-top: 1px solid var(--border); border-right: 1px solid var(--border); color: #c3d6d5; }
+.rd-blueprint .app__tab--active { color: #142f41; background: var(--rust); border-bottom: 0; }
+.rd-blueprint .rd-back { position: fixed; z-index: 100; top: 12px; right: 12px; padding: 9px 13px; border: 1px solid #b1cbd0; background: #102939; color: #fff; text-decoration: none; font: 500 12px/1 var(--serif); }
+.rd-blueprint .swipe { max-width: 520px; margin: 0 auto; }
+.rd-blueprint .swipe__stack { max-width: 440px; }
+.rd-blueprint .swipe__card { border-radius: 0; border: 1px solid var(--rust); box-shadow: 10px 10px 0 #0e293a; }
+.rd-blueprint .swipe__photo { border-radius: 0; }
+.rd-blueprint .swipe__btn { border-radius: 0; border: 1px solid var(--border); background: #102e40; color: var(--ink); }
+.rd-blueprint .swipe__btn--like { background: var(--rust); color: #102939; }
+.rd-blueprint .app__browse { padding: 24px clamp(18px, 4vw, 48px) 45px; }
+.rd-blueprint .app__filter-row { background: #18394b; border: 1px solid var(--border); padding: 8px; margin-bottom: 20px; }
+.rd-blueprint .app__filter-btn, .rd-blueprint .app__draw-btn, .rd-blueprint .sheet__opt, .rd-blueprint .sheet__input { border-radius: 0; }
+.rd-blueprint .app__result-count { font: 500 13px/1 var(--serif); text-align: right; }
+.rd-blueprint .listing-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 320px), 1fr)); gap: 13px; }
+.rd-blueprint .listing-card { border-radius: 0; border: 1px solid var(--border); background: #102e40; box-shadow: none; }
+.rd-blueprint .listing-card:hover { box-shadow: inset 0 0 0 2px var(--rust); }
+.rd-blueprint .listing-card__photo-wrap { height: 215px; border-bottom: 1px solid var(--border); }
+.rd-blueprint .listing-card__body { padding: 14px; }
+.rd-blueprint .listing-card__price { font: 600 24px/1 var(--sans); letter-spacing: -.03em; }
+.rd-blueprint .listing-card__address, .rd-blueprint .listing-card__rooms { color: var(--ink); }
+.rd-blueprint .listing-card__match { border-radius: 0; background: var(--rust); color: #102939; font-family: var(--serif); }
+.rd-blueprint .listing-card__status, .rd-blueprint .listing-card__drop, .rd-blueprint .listing-card__new { color: #102939; }
+.rd-blueprint .listing-card__save, .rd-blueprint .app__filter-btn, .rd-blueprint .app__draw-btn, .rd-blueprint .sheet__opt, .rd-blueprint .sheet__input { background: #102e40; color: var(--ink); }
+.rd-blueprint .listing-card__save--on, .rd-blueprint .app__draw-btn--on, .rd-blueprint .sheet__opt--active, .rd-blueprint .question__opt--on { background: var(--rust); color: #102939; }
+.rd-blueprint .swipe__cta, .rd-blueprint .swipe__intro-btn, .rd-blueprint .question__continue, .rd-blueprint .sheet__apply, .rd-blueprint .tip__btn, .rd-blueprint .saved__fab { background: var(--rust); color: #102939; }
+.rd-blueprint .sheet__title, .rd-blueprint .sheet__label, .rd-blueprint .question__title, .rd-blueprint .tip__title, .rd-blueprint .saved__title { color: var(--ink); }
+.rd-blueprint .sheet__hint, .rd-blueprint .question__hint, .rd-blueprint .tip__text { color: var(--muted); }
+.rd-blueprint .sheet__close, .rd-blueprint .question__skip, .rd-blueprint .swipe__skip { color: var(--ink); }
+.rd-blueprint .saved__gone { background: #102e40; color: var(--ink); }
+.rd-blueprint .listing-card__save, .rd-blueprint .listing-card__rate-btn, .rd-blueprint .listing-card__agency, .rd-blueprint .listing-card__status { border-radius: 0; }
+.rd-blueprint .sheet__panel, .rd-blueprint .question, .rd-blueprint .swipe__intro, .rd-blueprint .match__card, .rd-blueprint .tip { border-radius: 0; background: #18394b; border: 1px solid var(--border); }
+.rd-blueprint .neighbourhood-map { border-radius: 0; border-color: var(--border); }
+.rd-blueprint .taste__fill { background: var(--rust); }
+@media (max-width: 620px) { .rd-blueprint .app__header { padding-top: 55px; } .rd-blueprint .listing-grid { grid-template-columns: 1fr; } }
