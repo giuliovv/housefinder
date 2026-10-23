@@ -90,9 +90,11 @@ export default function Redesign({ name }: { name: RedesignName }) {
   }, [name]);
   return (
     <>
-      <a className="rd-back" href={["fieldnotes", "blueprint", "salon", "board", "board-v4", "board-v5"].includes(name) ? "/ui/codex" : "/ui"}>
-        ← {(["fieldnotes", "blueprint", "salon", "board", "board-v4", "board-v5"] as string[]).includes(name) ? "Codex" : "All designs"}
-      </a>
+      {!["board", "board-v4", "board-v5"].includes(name) && (
+        <a className="rd-back" href={["fieldnotes", "blueprint", "salon"].includes(name) ? "/ui/codex" : "/ui"}>
+          ← {(["fieldnotes", "blueprint", "salon"] as string[]).includes(name) ? "Codex" : "All designs"}
+        </a>
+      )}
       <DeckVariantContext.Provider value={DECK[name] ?? "classic"}>
         <App labVariant={name === "board" || name === "board-v4" || name === "board-v5" ? name : undefined} />
       </DeckVariantContext.Provider>
