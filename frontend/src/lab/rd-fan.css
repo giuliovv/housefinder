@@ -1,0 +1,34 @@
+/* "Hand": the photos are dealt as a fanned hand of cards that pivot from the bottom; lilac, ink and coral. Scoped under html.rd-fan. */
+html.rd-fan {
+  --ink: #241a4e;
+  --muted: #7a70a3;
+  --muted-dark: #4d4377;
+  --cream: #efeaff;
+  --outer-bg: #dcd3fb;
+  --border: #d3c9f4;
+  --rust: #ff5a5f;
+  --rust-dark: #e8444a;
+  --forest: #2b9e86;
+  --sans: 'Sora', system-ui, sans-serif;
+  --serif: 'Sora', system-ui, sans-serif;
+}
+.rd-fan .rd-back { position: fixed; z-index: 90; top: 8px; right: 8px; padding: 6px 11px; border-radius: 999px; font: 600 11px/1 system-ui, sans-serif; color: #fff; background: #241a4e; text-decoration: none; }
+.rd-fan h1, .rd-fan h2, .rd-fan h3 { font-weight: 700; letter-spacing: -0.03em; }
+.rd-fan .app { border: 0; background: linear-gradient(#f4f0ff, #e6defc); }
+.rd-fan .app__header h1 { font-size: 26px; }
+.rd-fan .app__tabs { gap: 8px; border: 0; padding-bottom: 4px; }
+.rd-fan .app__tab { padding: 9px 16px; border: 0; border-radius: 999px; background: transparent; }
+.rd-fan .app__tab--active { background: #241a4e; color: #fff; border: 0; }
+.rd-fan .listing-card, .rd-fan .question, .rd-fan .swipe__intro { border: 0; border-radius: 24px; box-shadow: 0 14px 30px -18px rgba(36, 26, 78, .55); }
+.rd-fan .app__chip, .rd-fan .app__filter-btn { border-radius: 999px; border-color: transparent; }
+.rd-fan .app__filter-row { background: #f1ecff; }
+.rd-fan .listing-card__photo-wrap { height: 240px; }
+.rd-fan .listing-card__price { font-weight: 700; }
+
+.rd-fan .swipe--fan .swipe__stack { max-width: 300px; height: 420px; margin: 40px auto 34px; }
+.rd-fan .swipe--fan .swipe__card { transform-origin: 50% 110%; border-radius: 22px; background: #fff; padding: 8px; box-shadow: 0 16px 30px -14px rgba(36, 26, 78, .6); }
+.rd-fan .swipe--fan .swipe__photo { border-radius: 16px; }
+.rd-fan .swipe__buttons { gap: 34px; }
+.rd-fan .swipe__btn { width: 64px; height: 64px; box-shadow: 0 10px 20px -10px rgba(36, 26, 78, .6); }
+.rd-fan .swipe__btn--dislike { border: 0; color: #241a4e; }
+.rd-fan .swipe__btn--like { background: var(--rust); }

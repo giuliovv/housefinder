@@ -1,0 +1,42 @@
+/* "Light table": a photographer's lit table. Photos are prints you drop in the Bin or the Keep pile. Scoped under html.rd-table. */
+html.rd-table {
+  --ink: #1b2a33;
+  --muted: #637783;
+  --muted-dark: #3f545f;
+  --cream: #e8f0f4;
+  --outer-bg: #c9d6dd;
+  --border: #bccbd3;
+  --rust: #e2502b;
+  --rust-dark: #c23e1d;
+  --forest: #1f7a6a;
+  --sans: 'Familjen Grotesk', system-ui, sans-serif;
+  --serif: 'Familjen Grotesk', system-ui, sans-serif;
+}
+.rd-table .rd-back { position: fixed; z-index: 90; top: 8px; right: 8px; padding: 6px 11px; border-radius: 4px; font: 600 11px/1 system-ui, sans-serif; color: #fff; background: #1b2a33; text-decoration: none; }
+.rd-table h1, .rd-table h2, .rd-table h3 { font-weight: 700; letter-spacing: -0.02em; }
+.rd-table .app { border: 0; background-color: var(--cream); background-image: linear-gradient(rgba(27,42,51,.06) 1px, transparent 1px), linear-gradient(90deg, rgba(27,42,51,.06) 1px, transparent 1px); background-size: 28px 28px; }
+.rd-table .app__header h1 { font-size: 26px; }
+.rd-table .app__tab--active { border-bottom-color: var(--rust); }
+.rd-table .listing-card, .rd-table .question, .rd-table .swipe__intro { border-radius: 4px; background: #fff; box-shadow: 0 1px 0 var(--border), 0 12px 24px -16px rgba(27,42,51,.5); }
+.rd-table .app__chip, .rd-table .app__filter-btn { border-radius: 4px; }
+.rd-table .app__filter-row { background: var(--cream); }
+
+.rd-table .swipe--table { position: relative; padding: 0 16px; }
+.rd-table .swipe__zones { width: 100%; display: flex; justify-content: space-between; align-items: flex-end; margin: 4px 0 2px; }
+.rd-table .swipe__zone { flex: 0 0 44%; min-height: 104px; display: flex; flex-direction: column; align-items: center; justify-content: flex-end; gap: 2px; padding: 8px; border: 2px dashed #8ea4b0; border-radius: 4px; font-size: 12px; color: var(--muted-dark); transition: opacity .15s, transform .15s; }
+.rd-table .swipe__zone b { font-weight: 700; font-size: 13px; letter-spacing: .02em; }
+.rd-table .swipe__zone span { font-variant-numeric: tabular-nums; }
+.rd-table .swipe__zone--keep { border-color: var(--rust); color: var(--rust-dark); }
+.rd-table .swipe__pile { position: relative; width: 56px; height: 50px; margin-bottom: 6px; }
+.rd-table .swipe__pile img { position: absolute; left: 0; top: 0; width: 56px; height: 44px; object-fit: cover; border: 3px solid #fff; box-shadow: 0 2px 6px rgba(0,0,0,.35); }
+.rd-table .swipe__stack { max-width: 330px; height: 410px; margin: 14px auto 22px; }
+.rd-table .swipe__card { border-radius: 2px; background: #fff; padding: 10px 10px 46px; box-shadow: 0 2px 0 rgba(0,0,0,.08), 0 22px 36px -18px rgba(27,42,51,.65); }
+.rd-table .swipe__photo { border-radius: 0; }
+.rd-table .swipe__caption { position: absolute; left: 0; right: 0; bottom: -40px; text-align: center; font: 700 20px/1 'Caveat', cursive; color: #33454f; pointer-events: none; }
+.rd-table .swipe__photo { overflow: visible; }
+.rd-table .swipe__photo img { border-radius: 0; }
+.rd-table .swipe__buttons { gap: 40px; }
+.rd-table .swipe__btn { width: 64px; height: 64px; border-radius: 50%; box-shadow: none; }
+.rd-table .swipe__btn--dislike { background: transparent; border: 2px dashed #8ea4b0; color: var(--muted-dark); }
+.rd-table .swipe__btn--like { background: var(--rust); }
+.rd-table .swipe__stamp { border-radius: 4px; }

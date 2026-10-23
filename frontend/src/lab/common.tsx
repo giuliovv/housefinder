@@ -45,7 +45,7 @@ export function wordsPref(labels: { label: string; embedding: number[] }[], pick
 /** "3 liked, 2 passed" plus the model's own read of how well it knows the person */
 export function TasteBar({ lab }: { lab: { tasteRead: { label: string; score: number } | null; likedCount: number; dislikedCount: number; rankingReady: boolean } }) {
   return (
-    <div className="taste" role="status">
+    <div className="lab-taste" role="status">
       <span>{lab.rankingReady ? `${lab.likedCount} liked, ${lab.dislikedCount} passed` : "Loading photo data, rating starts in a moment"}</span>
       <i style={{ ["--s" as string]: `${Math.round((lab.tasteRead?.score ?? 0) * 100)}%` }} />
       <b>{lab.tasteRead?.label ?? "No read yet"}</b>

@@ -13,6 +13,9 @@ const DESIGNS: { id: string; name: string; line: string; cold?: boolean; whole?:
   { id: "2", name: "Navy", whole: "navy", line: "Photos take the screen, navy and raspberry, tabs under your thumb.", C: () => null },
   { id: "9", name: "Sticker", whole: "postcard", line: "Thick outlines, hard shadows, flat bright colour. Playful and loud.", C: () => null },
   { id: "10", name: "Dusk", whole: "dusk", line: "A dark theme for evening scrolling: plum canvas, violet accent, glass bars.", C: () => null },
+  { id: "12", name: "Light table", whole: "table", line: "Photos are prints. Flick them into the Bin or onto your Keep pile and watch the pile grow.", C: () => null },
+  { id: "13", name: "Full bleed", whole: "bleed", line: "The photo is the whole screen. The screen washes green or pink as you drag, and every ten photos fill the strip.", C: () => null },
+  { id: "14", name: "Hand", whole: "fan", line: "Photos are dealt as a fanned hand of cards. Play the front card left or right and the hand re-deals.", C: () => null },
   { id: "11", name: "Atlas", whole: "atlas", line: "Dense and practical: list cards, small type, sharp corners, two columns on a laptop.", C: () => null },
   { id: "6", name: "Words", cold: true, line: "Tap a few words like Cosy or Industrial. Homes appear at once, no swiping.", C: Words },
   { id: "8", name: "Shelves", cold: true, line: "Gardens the advert forgot to mention, rents that just dropped, homes unlike anything else. Nothing to teach it.", C: Shelves },
@@ -57,7 +60,7 @@ function Index() {
       <p>Ideas for House Swipe on the real homes. The redesign is the whole app with every feature. The others are new ways to find a home: some need nothing from you up front, some learn as you like and pass and share what they learn with the main app.</p>
       {["whole", "cold", "learn"].map((group) => (
         <section key={group}>
-          <h2>{group === "whole" ? "The whole app, four redesigns (every feature works)" : group === "cold" ? "Work from the first second" : "Learn from every like and pass"}</h2>
+          <h2>{group === "whole" ? "The whole app, redesigns (every feature works)" : group === "cold" ? "Work from the first second" : "Learn from every like and pass"}</h2>
           <ul>
             {DESIGNS.filter((d) => (d.whole ? "whole" : d.cold ? "cold" : "learn") === group).map((d) => (
               <li key={d.id}>

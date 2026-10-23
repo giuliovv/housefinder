@@ -131,10 +131,10 @@
 .wd__strip b { position: absolute; left: 0; bottom: 0; padding: 2px 5px; font: 600 11px/1.2 'DM Sans', sans-serif; color: #1b1a2e; background: #3be8b0; }
 
 /* learning controls shared by the designs that adapt */
-.taste { display: flex; align-items: center; gap: 10px; padding: 7px 12px; border-radius: 999px; font: 600 12px/1 system-ui, sans-serif; background: rgba(0,0,0,.55); color: #fff; backdrop-filter: blur(8px); }
-.taste i { width: 54px; height: 5px; border-radius: 3px; background: rgba(255,255,255,.3); position: relative; flex: none; }
-.taste i::after { content: ''; position: absolute; inset: 0 auto 0 0; width: var(--s); border-radius: 3px; background: #ffd23f; transition: width .4s; }
-.taste b { font-weight: 600; opacity: .85; }
+.lab-taste { display: flex; align-items: center; gap: 10px; padding: 7px 12px; border-radius: 999px; font: 600 12px/1 system-ui, sans-serif; background: rgba(0,0,0,.55); color: #fff; backdrop-filter: blur(8px); }
+.lab-taste i { width: 54px; height: 5px; border-radius: 3px; background: rgba(255,255,255,.3); position: relative; flex: none; }
+.lab-taste i::after { content: ''; position: absolute; inset: 0 auto 0 0; width: var(--s); border-radius: 3px; background: #ffd23f; transition: width .4s; }
+.lab-taste b { font-weight: 600; opacity: .85; }
 .rate { display: flex; flex-direction: column; gap: 12px; }
 .rate button { width: 58px; height: 58px; border-radius: 50%; border: 2px solid #fff; background: rgba(0,0,0,.4); color: #fff; font-size: 26px; line-height: 1; cursor: pointer; backdrop-filter: blur(6px); transition: transform .15s; }
 .rate button:active { transform: scale(.9); }
@@ -147,7 +147,7 @@
 @media (prefers-reduced-motion: reduce) { .reel__burst { animation: none; opacity: 0; } }
 
 
-.bd__head .taste { background: #12203a; margin: 2px 0 6px; display: inline-flex; backdrop-filter: none; }
+.bd__head .lab-taste { background: #12203a; margin: 2px 0 6px; display: inline-flex; backdrop-filter: none; }
 .bd__rate { display: flex; gap: 6px; padding-top: 6px; }
 .bd__rate button { flex: 1; padding: 9px 0; font: 700 14px/1 'Bricolage Grotesque', sans-serif; border: 2px solid #12203a; background: transparent; color: #12203a; cursor: pointer; }
 .bd__rate button:nth-child(2) { background: #12203a; color: #fff; }
