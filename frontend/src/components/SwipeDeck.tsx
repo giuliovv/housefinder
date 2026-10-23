@@ -234,7 +234,6 @@ export function SwipeDeck({
   if (variant === "board") {
     const reducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
     const styleWords = likedCount >= 3 ? styleDescription?.[0]?.trim().split(/\s+/) : null;
-    const label = likedCount < 3 ? "Learning your taste" : tasteRead?.level === 3 ? "Strong read" : "Getting there";
     const progress = Math.min(5, Math.floor(decided / 6));
     return (
       <section className="board-swipe" aria-label="Find your style">
@@ -283,8 +282,8 @@ export function SwipeDeck({
                     <p className="board-swipe__kicker">YOU LEAN TOWARD</p>
                     <h2>{styleWords?.length ? <>{styleWords.slice(0, -1).join(" ")} <em>{styleWords.at(-1)}</em></> : <><em>Your</em> next place</>}</h2>
                   </div>
-                  <div className="board-swipe__meter" role="img" aria-label={`${label}. ${decided} photos rated`} title={label}>
-                    <span className="board-swipe__read">{decided}/30</span>
+                  <div className="board-swipe__meter" role="img" aria-label={`${tasteRead?.label ?? "Just getting started"}. ${decided} photos rated`}>
+                    <span className="board-swipe__read">{tasteRead?.label ?? "Just getting started"}</span>
                     <div className="board-swipe__arches">{Array.from({ length: 5 }, (_, i) => <i key={i} className={i < progress ? "board-swipe__arch--on" : ""} />)}</div>
                   </div>
                 </div>

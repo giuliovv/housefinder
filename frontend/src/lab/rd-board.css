@@ -267,3 +267,14 @@ html.rd-board {
 .rd-board .board-swipe__meter .board-swipe__read { display: block; }
 .rd-board .board-swipe__meter .board-swipe__arches { gap: 3px; height: auto; margin: 6px 0 4px; justify-content: flex-end; }
 .rd-board .board-swipe__meter .board-swipe__arches i { flex: none; width: 10px; height: 16px; border-width: 2px; border-radius: 6px 6px 2px 2px; }
+
+/* the photo gets the screen; the panel is just the read and the two choices (reset is a scroll away) */
+.rd-board .app:has(.board-swipe__stage) .board-swipe__stage { height: clamp(340px, calc(100svh - 150px), 1100px); }
+.rd-board .app:has(.board-swipe__stage) .board-swipe__panel { margin-top: -22px; padding: 13px 16px 8px; border-radius: 26px; }
+.rd-board .board-swipe__lean { margin: 0 0 10px; align-items: center; }
+.rd-board .board-swipe__lean h2 { font-size: clamp(26px, 7vw, 34px); }
+.rd-board .board-swipe__kicker { font-size: 9.5px; }
+.rd-board .board-swipe__meter { max-width: 138px; }
+.rd-board .board-swipe__meter .board-swipe__read { font-size: 9.5px; line-height: 1.25; }
+.rd-board .board-swipe__actions button { min-height: 48px; font-size: 16px; }
+.rd-board .board-swipe__utility { margin-top: 0; }
