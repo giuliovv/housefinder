@@ -38,6 +38,15 @@ Three parts today:
 - **`infra/`** — CDK app: S3 + CloudFront hosting for the built frontend,
   deployed to Giulio's personal AWS account (not the ERP client account).
 
+**Style photos:** `/data/deck.json` and their CLIP vectors are generated from
+our scraped listing database, but the photo pixels are hot-linked directly from
+agency/image-host URLs. We do not store copies of the photos. The deck exporter
+filters known broken and visibly agency-marked photos; Browse keeps the
+agency's original listing photos. `scraper/watermark_filter.py` detects the
+fixed AJR watermark per image and caches results in S3 under
+`analytics/watermark-cache.json`; Londonwide's branded subset is omitted from
+Style. Unknown/fetch-failed images are retained rather than guessed at.
+
 `frontend/public/data/*` (the scraped listings, the compact style/ranking files
 built from the embeddings, and area centroids) is **not checked into git** — it's generated output, and it
 already ends up in S3 on every `cdk deploy` anyway (see `infra/`), so

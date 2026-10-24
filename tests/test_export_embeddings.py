@@ -40,7 +40,7 @@ def test_build_writes_consistent_files(tmp_path):
 
     stats = ee.build(emb, listings, tmp_path / "out")
 
-    assert {k: v for k, v in stats.items() if k != "outdoor_changed"} == {"listings": 2, "photos": 3, "deck": 4, "dead": 0, "junk": 0}
+    assert {k: v for k, v in stats.items() if k != "outdoor_changed"} == {"listings": 2, "photos": 3, "deck": 4, "dead": 0, "junk": 0, "watermark_skipped": 0}
     index = json.loads((tmp_path / "out/ranking-index.json").read_text())
     assert index["count"] == 3
     assert [(l["k"], l["o"], l["u"]) for l in index["listings"]] == [("p:1", 0, ["a1", "a2"]), ("p:2", 2, ["b1"])]
@@ -55,6 +55,26 @@ def test_build_writes_consistent_files(tmp_path):
     assert "g1" not in {d["u"] for d in deck}
     assert "c1" in {d["u"] for d in deck}                                          # off-market photos feed the deck
     assert len(base64.b64decode(deck[0]["v"])) == ee.DIM
+
+
+def test_watermarked_photo_is_deck_only_exclusion(tmp_path):
+    store = {"p:1": {"photos": [{"url": "marked", "embedding": vec(1).tolist()}, {"url": "clean", "embedding": vec(2).tolist()}]}}
+    path = tmp_path / "emb.json"
+    path.write_text(json.dumps(store))
+
+    class Watermarks:
+        def check(self, candidates):
+            pass
+
+        def is_marked(self, key, url):
+            return url == "marked"
+
+    stats = ee.build(path, [listing("1")], tmp_path / "out", watermarks=Watermarks())
+    deck = json.loads((tmp_path / "out/deck.json").read_text())["photos"]
+    ranking = json.loads((tmp_path / "out/ranking-index.json").read_text())["listings"]
+    assert {p["u"] for p in deck} == {"clean"}
+    assert ranking[0]["u"] == ["marked", "clean"]
+    assert stats["watermark_skipped"] == 1
 
 
 def test_deck_sample_is_deterministic_and_capped_per_listing(tmp_path):

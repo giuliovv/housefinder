@@ -40,6 +40,7 @@ import numpy as np
 
 from . import photo_classes
 from .photo_health import PhotoHealth
+from .watermark_filter import WatermarkFilter
 
 DIM = 512
 DECK_SIZE = 1500
@@ -95,7 +96,7 @@ def build_browse(listings: list[dict]) -> list[dict]:
     return out
 
 
-def build(embeddings_path: pathlib.Path, listings: list[dict], out_dir: pathlib.Path, health=None) -> dict:
+def build(embeddings_path: pathlib.Path, listings: list[dict], out_dir: pathlib.Path, health=None, watermarks: WatermarkFilter | None = None) -> dict:
     """`health` is an optional photo_health.PhotoHealth: photos known to be dead are
     left out of the ranking matrix and the deck, and written to dead-photos.json so
     the site can hide them from listing cards too."""
@@ -133,14 +134,20 @@ def build(embeddings_path: pathlib.Path, listings: list[dict], out_dir: pathlib.
     candidates.sort(key=lambda t: t[0])
     deck_candidates: list[tuple[int, str, str, np.ndarray, float]] = []
     per_listing: dict[str, int] = {}
+    watermark_skipped = 0
     i = 0
     while len(deck_candidates) < DECK_SIZE and i < len(candidates):
         batch = candidates[i : i + 400]
         i += 400
         if health is not None:
             health.check([c[2] for c in batch], limit=len(batch))   # the deck's candidates always get checked
+        if watermarks is not None:
+            watermarks.check([(c[1], c[2]) for c in batch])
         for h, key, url, q, s in batch:
             if health is not None and health.is_dead(url):
+                continue
+            if watermarks is not None and watermarks.is_marked(key, url):
+                watermark_skipped += 1
                 continue
             if per_listing.get(key, 0) >= DECK_MAX_PER_LISTING:
                 continue
@@ -198,7 +205,7 @@ def build(embeddings_path: pathlib.Path, listings: list[dict], out_dir: pathlib.
             else:
                 attrs.pop("seen_in_photos", None)
             outdoor_changed += 1
-    return {"listings": len(index), "photos": len(rows), "deck": len(deck), "dead": len(dead), "junk": junk_photos, "outdoor_changed": outdoor_changed}
+    return {"listings": len(index), "photos": len(rows), "deck": len(deck), "dead": len(dead), "junk": junk_photos, "watermark_skipped": watermark_skipped, "outdoor_changed": outdoor_changed}
 
 
 def check_consistency(listings: list[dict], out_dir: pathlib.Path, minimum: float = 0.6) -> float:
@@ -225,8 +232,10 @@ def main() -> None:
     parser.add_argument("--out-dir", type=pathlib.Path, required=True)
     parser.add_argument("--photo-health", type=pathlib.Path, help="cache of which photo URLs still work (created if missing); enables dead-photo filtering")
     parser.add_argument("--health-budget", type=int, default=2500, help="most photos to (re)probe this run")
+    parser.add_argument("--watermark-cache", type=pathlib.Path, help="cache agency-mark detection; excludes marked photos from Style only")
     args = parser.parse_args()
     health = PhotoHealth(args.photo_health, dt.datetime.now(dt.timezone.utc).date(), args.health_budget) if args.photo_health else None
+    watermarks = WatermarkFilter(args.watermark_cache) if args.watermark_cache else None
     listings = json.loads(args.listings.read_text())
     # The site matches ranking-index.json to listings.json by listing key, so the two must
     # always agree. Keys are agency-namespaced in memory (migrate_rows), so persist that to the
@@ -234,7 +243,10 @@ def main() -> None:
     # and old keys in the other and almost nothing gets a match score (this happened once).
     if migrate_rows(listings):
         args.listings.write_text(json.dumps(listings, ensure_ascii=False, indent=2))
-    stats = build(args.embeddings, listings, args.out_dir, health)
+    stats = build(args.embeddings, listings, args.out_dir, health, watermarks)
+    if watermarks is not None:
+        watermarks.save()
+        print(f"watermark filter: {stats['watermark_skipped']} marked deck candidates skipped; {len(watermarks.data)} AJR URLs classified")
     if stats["outdoor_changed"]:   # gardens / terraces / balconies seen in photos are part of the data the site filters on
         args.listings.write_text(json.dumps(listings, ensure_ascii=False, indent=2))
         print(f"outdoor features from photos updated for {stats['outdoor_changed']} listings")

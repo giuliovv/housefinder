@@ -109,7 +109,7 @@ jobs:
       # replaces the whole site, so they must be part of every build).
       - name: Install export dependencies
         if: env.DO_SCRAPE != 'true'
-        run: pip install ijson numpy requests
+        run: pip install ijson numpy requests Pillow
 
       # Homeflow agencies time out from GitHub's IPs; the dev host scrapes them
       # on cron and uploads the raw result here (see scraper/refresh.py).
@@ -190,6 +190,9 @@ jobs:
           mkdir -p analytics
           aws s3 cp "s3://$BUCKET/analytics/photo-health.json" analytics/photo-health.json || echo "no photo health cache yet"
 
+      - name: Pull watermark cache
+        run: aws s3 cp "s3://$BUCKET/analytics/watermark-cache.json" analytics/watermark-cache.json || echo "no watermark cache yet"
+
       # Disabled agencies' listings must not reach the site even on a deploy-only run.
       - name: Apply the kill switch
         run: python -m scraper.killswitch apply --listings frontend/public/data/listings.json --file killswitch.json
@@ -197,8 +200,9 @@ jobs:
       - name: Build compact site embeddings
         run: |
           if [ -f work/embeddings.json ]; then
-            python -m scraper.export_embeddings --embeddings work/embeddings.json --listings frontend/public/data/listings.json --out-dir frontend/public/data --photo-health analytics/photo-health.json
+            python -m scraper.export_embeddings --embeddings work/embeddings.json --listings frontend/public/data/listings.json --out-dir frontend/public/data --photo-health analytics/photo-health.json --watermark-cache analytics/watermark-cache.json
             aws s3 cp analytics/photo-health.json "s3://$BUCKET/analytics/photo-health.json" --quiet || true
+            aws s3 cp analytics/watermark-cache.json "s3://$BUCKET/analytics/watermark-cache.json" --quiet || true
           else
             echo "no work/embeddings.json — site will have no style data"
           fi
