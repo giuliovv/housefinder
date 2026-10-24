@@ -22,6 +22,7 @@ TEMPLATE_PATH = pathlib.Path(__file__).parent / "data" / "watermark_ajr.npz"
 AJR_PREFIX = "estatetrack:ajrproperty:"
 LONDONWIDE_PREFIX = "estatesit:PC_LONWI_"
 LONDON_ESTATES_PREFIX = "estatesit:PC_LONDO_"
+BENHAM_PHOTO_HOST = "https://www.benhams.com/assets/"
 AJR_THRESHOLD = 0.25
 REGION = (190, 233, 610, 310)
 
@@ -68,7 +69,7 @@ class WatermarkFilter:
                     self.data[url] = marked
 
     def is_marked(self, key: str, url: str) -> bool:
-        return key.startswith((LONDONWIDE_PREFIX, LONDON_ESTATES_PREFIX)) or (
+        return url.startswith(BENHAM_PHOTO_HOST) or key.startswith((LONDONWIDE_PREFIX, LONDON_ESTATES_PREFIX)) or (
             key.startswith(AJR_PREFIX) and self.data.get(url, False)
         )
 

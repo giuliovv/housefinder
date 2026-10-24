@@ -39,6 +39,8 @@ def test_cache_and_branded_agency_exceptions(tmp_path):
     assert not filter_.is_marked("estatetrack:ajrproperty:2", "clean")
     assert filter_.is_marked("estatesit:PC_LONWI_001699", "anything")
     assert filter_.is_marked("estatesit:PC_LONDO_003642", "anything")
+    assert filter_.is_marked("themed:hmm261058", "https://www.benhams.com/assets/thumb/reapit/HMM/photo.webp")
+    assert not filter_.is_marked("themed:hmm261058", "https://other.example.com/photo.webp")
     assert not filter_.is_marked("estatesit:PC_LYONS_000188", "anything")
     filter_.save()
     reloaded = WatermarkFilter(path, downloader=download)
