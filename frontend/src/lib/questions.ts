@@ -122,7 +122,8 @@ export interface ReadyState {
 }
 
 const READY_KEY = "housefinder:ready:v1";
-const READY_FROM_LEVEL = 2; // "a good read"
+const READY_FROM_LEVEL = 3; // "a strong read"
+const READY_GAP_AFTER_QUESTION = 5;
 
 export function loadReady(): ReadyState {
   return { shownLevel: 0, browseOpened: true, ...readJson<Partial<ReadyState>>(READY_KEY, {}) };
@@ -133,11 +134,18 @@ export function saveReady(state: ReadyState): void {
 }
 
 /**
- * The level to announce, or null. Announced exactly once, and only when the read *crosses* "good" during this visit
- * (it started below "good" and is now at least "good"). Someone who comes back already past that point (swipes from
+ * The level to announce, or null. Announced exactly once, and only when the read *crosses* "strong" during this visit
+ * (it started below "strong" and is now at least "strong"). Someone who comes back already past that point (swipes from
  * an earlier visit, or from before this card existed) is never told "you're ready": they know the way to Browse.
  */
-export function readyToAnnounce(level: number | null, shownLevel: number, levelAtVisitStart = 0): number | null {
-  if (level === null || levelAtVisitStart >= READY_FROM_LEVEL) return null;
-  return level >= READY_FROM_LEVEL && shownLevel < READY_FROM_LEVEL ? level : null;
+export function readyToAnnounce(
+  level: number | null,
+  shownLevel: number,
+  levelAtVisitStart = 0,
+  swipeTotal = 0,
+  lastQuestionAt = 0,
+): number | null {
+  if (level === null || levelAtVisitStart >= READY_FROM_LEVEL || shownLevel > 0) return null;
+  if (lastQuestionAt > 0 && lastQuestionAt <= swipeTotal && swipeTotal - lastQuestionAt < READY_GAP_AFTER_QUESTION) return null;
+  return level >= READY_FROM_LEVEL ? level : null;
 }

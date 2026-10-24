@@ -416,9 +416,11 @@ function App({ labVariant }: { labVariant?: "board" | "board-v4" | "board-v5" } 
         location: shapes.length > 0,
       })
     : null;
-  // "You're ready, check Browse": announced once, when the taste read first reaches "good"
+  // Suggest Browse only after a strong taste read, with photos between it and the last question.
   const [ready, setReady] = useState(loadReady);
-  const announce = deckWarmedUp(visitStart, swipeTotal) ? readyToAnnounce(tasteRead?.level ?? null, ready.shownLevel, visitStartLevel) : null;
+  const announce = deckWarmedUp(visitStart, swipeTotal) && !question
+    ? readyToAnnounce(tasteRead?.level ?? null, ready.shownLevel, visitStartLevel, swipeTotal, questionState.lastAt)
+    : null;
   function dismissReady(goBrowse: boolean) {
     if (announce === null) return;
     const next = { shownLevel: announce, browseOpened: goBrowse };
@@ -611,9 +613,7 @@ function App({ labVariant }: { labVariant?: "board" | "board-v4" | "board-v5" } 
           onHide={board ? skipPhoto : hidePhoto}
           paused={skipTip}
           interlude={
-            announce !== null ? (
-              <ReadyCard key={`ready-${announce}`} level={announce as 2 | 3} onGo={() => dismissReady(true)} onKeep={() => dismissReady(false)} />
-            ) : question ? (
+            question ? (
               <QuestionCard
                 key={question}
                 id={question}
@@ -632,6 +632,8 @@ function App({ labVariant }: { labVariant?: "board" | "board-v4" | "board-v5" } 
                 }}
                 onSkip={() => finishQuestion(false)}
               />
+            ) : announce !== null ? (
+              <ReadyCard key={`ready-${announce}`} onGo={() => dismissReady(true)} onKeep={() => dismissReady(false)} />
             ) : undefined
           }
         />
