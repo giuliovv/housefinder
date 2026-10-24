@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useFont, useNoIndex } from "../lab/common";
-import { demoHomes, demoMatchScore, demoPrice, type DemoHome } from "./data";
+import { DEMO_MATCH_ID, demoHomes, demoMatchScore, demoPrice, type DemoHome } from "./data";
 import "./demo.css";
 
 type Tab = "style" | "browse" | "saved";
@@ -47,10 +47,16 @@ export default function DemoApp() {
   const passed = demoHomes.filter((home) => decisions[home.id] === "pass");
   const hasTaste = liked.length >= 3 && passed.length >= 2;
   const strongRead = liked.length >= 5 && passed.length >= 4;
+  const showMatch = Object.keys(decisions).length >= 3;
   const tasteLabel = strongRead ? "A strong read on your taste" : hasTaste ? "Getting a feel for your taste" : "Learning your taste";
   const tasteStyle = liked.length ? [...liked].sort((a, b) => liked.filter((x) => x.style === b.style).length - liked.filter((x) => x.style === a.style).length)[0].style : null;
 
   const browse = [...demoHomes].sort((a, b) => {
+    if (a.sheet === 5 || b.sheet === 5) return Number(a.sheet === 5) - Number(b.sheet === 5);
+    if (sort === "taste" && showMatch) {
+      if (a.id === DEMO_MATCH_ID) return -1;
+      if (b.id === DEMO_MATCH_ID) return 1;
+    }
     if (sort === "taste" && liked.length >= 2) {
       const difference = demoMatchScore(b, liked) - demoMatchScore(a, liked);
       if (difference) return difference;
@@ -119,6 +125,7 @@ export default function DemoApp() {
         <button className="demo-listing__photo-button" onClick={() => setSelected(home)} aria-label={`Preview ${home.street}`}>
           <DemoPhoto home={home} />
           <span className="demo-listing__agency">{home.agency}</span>
+          {showMatch && sort === "taste" && home.id === DEMO_MATCH_ID && <span className="demo-listing__match">Nearer your taste</span>}
           {home.is_new && <span className="demo-listing__new">New</span>}
         </button>
         <div className="demo-listing__body">
@@ -185,7 +192,8 @@ export default function DemoApp() {
       ))}
 
       {tab === "browse" && <section className="demo-browse">
-        <div className="demo-browse__top"><div><p className="demo-kicker">BROWSE HOMES</p><h1>{demoHomes.length} <em>homes</em></h1></div><button className="demo-sort" onClick={() => setSort(sort === "taste" ? "price" : "taste")}>{sort === "taste" && liked.length >= 2 ? "Nearer your taste" : "Lowest price"} ↓</button></div>
+        <div className="demo-browse__top"><div><p className="demo-kicker">BROWSE HOMES</p><h1>{demoHomes.length} <em>homes</em></h1></div><button className="demo-sort" onClick={() => setSort(sort === "taste" ? "price" : "taste")}>{sort === "taste" && showMatch ? "Nearer your taste" : "Price"} ↓</button></div>
+        {showMatch && sort === "taste" && <div className="demo-match-note"><span>✦</span><div><strong>Looks like your kind of place</strong><small>Start with this one, then keep exploring.</small></div></div>}
         <div className="demo-browse__list">{browse.map(homeCard)}</div>
       </section>}
 

@@ -63,6 +63,11 @@ html.demo-page {
 .demo-browse__top > span { font: 500 11px 'DM Mono', monospace; }
 .demo-sort { min-height: 42px; padding: 7px 10px; border: 1px solid #bbb7ac; border-radius: 99px; background: var(--demo-cream); font-size: 11px; font-weight: 600; white-space: nowrap; }
 .demo-browse__hint { margin: 0 0 14px; color: var(--demo-muted); font-size: 11px; }
+.demo-match-note { display: flex; align-items: center; gap: 11px; margin: 10px 0 14px; padding: 11px 13px; border: 1px solid #d9d4bc; border-radius: 15px; background: #edf1dc; }
+.demo-match-note > span { display: grid; place-items: center; flex: none; width: 32px; height: 32px; border-radius: 50%; background: #d7e4a9; font-size: 17px; }
+.demo-match-note strong, .demo-match-note small { display: block; }
+.demo-match-note strong { font-size: 13px; }
+.demo-match-note small { margin-top: 2px; color: var(--demo-muted); font-size: 11px; }
 .demo-browse__list { display: grid; gap: 16px; }
 .demo-listing { overflow: hidden; border: 1px solid #d0cabe; border-radius: 21px; background: var(--demo-cream); box-shadow: 0 7px 18px #2f2a2020; }
 .demo-listing__photo-button { position: relative; display: block; width: 100%; height: 235px; padding: 0; border: 0; background: #d7d2c8; overflow: hidden; text-align: left; }
@@ -71,6 +76,7 @@ html.demo-page {
 .demo-listing__agency, .demo-listing__new { position: absolute; top: 11px; padding: 6px 9px; border-radius: 99px; background: #fffdf7e8; font: 500 10px 'DM Mono', monospace; }
 .demo-listing__agency { left: 11px; }
 .demo-listing__new { right: 11px; background: var(--demo-orange); }
+.demo-listing__match { position: absolute; left: 11px; bottom: 11px; padding: 6px 10px; border-radius: 99px; background: #e0efb6; color: var(--demo-ink); font: 600 11px 'Bricolage Grotesque', sans-serif; }
 .demo-listing__body { padding: 14px 16px 16px; }
 .demo-listing__headline { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
 .demo-listing__headline strong { font-size: 27px; font-weight: 800; letter-spacing: -.055em; }
