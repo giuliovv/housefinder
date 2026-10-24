@@ -66,7 +66,7 @@ export function BoardListingCard({ listing, store, deadPhotos, swipes, onRate, s
   const stale = checked && checked !== "checked today" ? checked : null;
 
   return (
-    <article className="listing-card board-listing">
+    <a className="listing-card board-listing" href={agencyUrl} target="_blank" rel="noopener noreferrer" onClick={agencyClick} aria-label={`${price}, ${summary.address}, ${rooms}. Opens the listing at ${listing.agency_name}`}>
       <div className="listing-card__photo-wrap board-listing__gallery">
         {photos.length ? (
           <div className="listing-card__strip" ref={strip} onScroll={onScroll} aria-label={`Photos of ${summary.address}`}>
@@ -78,8 +78,8 @@ export function BoardListingCard({ listing, store, deadPhotos, swipes, onRate, s
           </div>
         ) : <div className="board-listing__no-photo">No photo from agency</div>}
         {photos.length > 1 && <>
-          <button className="board-listing__arrow board-listing__arrow--prev" onClick={() => shift(-1)} aria-label="Previous photo">‹</button>
-          <button className="board-listing__arrow board-listing__arrow--next" onClick={() => shift(1)} aria-label="Next photo">›</button>
+          <button className="board-listing__arrow board-listing__arrow--prev" onClick={(e) => { e.preventDefault(); e.stopPropagation(); shift(-1); }} aria-label="Previous photo">‹</button>
+          <button className="board-listing__arrow board-listing__arrow--next" onClick={(e) => { e.preventDefault(); e.stopPropagation(); shift(1); }} aria-label="Next photo">›</button>
           <span className="listing-card__photo-count">{index + 1}/{photos.length}</span>
         </>}
         <div className="board-listing__tags">
@@ -90,8 +90,8 @@ export function BoardListingCard({ listing, store, deadPhotos, swipes, onRate, s
         </div>
 
         <div className="board-listing__rate">
-          <button disabled={!canRate} aria-label="Not for me" aria-pressed={currentId ? swipes?.[currentId] === "dislike" : false} onClick={() => currentId && onRate?.(currentId, "dislike")}>✕</button>
-          <button disabled={!canRate} aria-label="I like this" aria-pressed={currentId ? swipes?.[currentId] === "like" : false} onClick={() => currentId && onRate?.(currentId, "like")}>♥</button>
+          <button disabled={!canRate} aria-label="Not for me" aria-pressed={currentId ? swipes?.[currentId] === "dislike" : false} onClick={(e) => { e.preventDefault(); e.stopPropagation(); if (currentId) onRate?.(currentId, "dislike"); }}>✕</button>
+          <button disabled={!canRate} aria-label="I like this" aria-pressed={currentId ? swipes?.[currentId] === "like" : false} onClick={(e) => { e.preventDefault(); e.stopPropagation(); if (currentId) onRate?.(currentId, "like"); }}>♥</button>
         </div>
 
       </div>
@@ -99,7 +99,7 @@ export function BoardListingCard({ listing, store, deadPhotos, swipes, onRate, s
       <div className="listing-card__body">
         <div className="board-listing__headline">
           <p className="listing-card__price">{price}</p>
-          <button className={`board-listing__save${saved ? " board-listing__save--on" : ""}`} disabled={!onToggleSave} aria-pressed={Boolean(saved)} onClick={onToggleSave}>
+          <button className={`board-listing__save${saved ? " board-listing__save--on" : ""}`} disabled={!onToggleSave} aria-pressed={Boolean(saved)} onClick={(e) => { e.preventDefault(); e.stopPropagation(); onToggleSave?.(); }}>
             {saved ? "★ Saved" : "☆ Save"}
           </button>
         </div>
@@ -110,11 +110,11 @@ export function BoardListingCard({ listing, store, deadPhotos, swipes, onRate, s
           </div>
         )}
         {summary.price_flag && <p className="listing-card__price-flag">Rent looks unusually low. Check with the agency.</p>}
-        <a className="board-listing__body-link" href={agencyUrl} target="_blank" rel="noopener noreferrer" onClick={agencyClick} aria-label={`View ${summary.address} on ${listing.agency_name}`}>
+        <div className="board-listing__body-link">
           <span className="listing-card__address">{summary.address}</span>
-          <span className="listing-card__rooms">{rooms}{stale ? ` · ${stale}` : ""} · View listing ↗</span>
-        </a>
+          <span className="listing-card__rooms">{rooms}{stale ? ` · ${stale}` : ""}</span>
+        </div>
       </div>
-    </article>
+    </a>
   );
 }
