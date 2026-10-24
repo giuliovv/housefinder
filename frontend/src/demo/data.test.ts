@@ -1,5 +1,5 @@
 import { expect, it } from "vitest";
-import { DEMO_MATCH_ID, demoHomes, demoMatchScore, demoStyleHomes } from "./data";
+import { DEMO_MATCH_ID, demoGallery, demoHomes, demoMatchScore, demoStyleHomes, orderDemoBrowse, shouldOfferDemoMatch } from "./data";
 
 it("maps 20 fictional homes onto five generated sheets", () => {
   expect(demoHomes).toHaveLength(20);
@@ -16,4 +16,24 @@ it("maps 20 fictional homes onto five generated sheets", () => {
 
 it("ranks homes with a matching fictional style above unrelated ones", () => {
   expect(demoMatchScore(demoHomes[1], [demoHomes[0]])).toBeGreaterThan(demoMatchScore(demoHomes[4], [demoHomes[0]]));
+});
+
+it("gives the first two featured homes room galleries without duplicating other listings", () => {
+  const match = demoHomes.find((home) => home.id === DEMO_MATCH_ID)!;
+  expect(demoGallery(match).map((photo) => photo.room)).toEqual(["Living room", "Bedroom", "Kitchen", "Dining room"]);
+  expect(demoGallery(demoHomes[0])).toHaveLength(5);
+  expect(demoGallery(demoHomes[2])).toHaveLength(1);
+});
+
+it("offers the scripted match once after three Style swipes", () => {
+  expect(shouldOfferDemoMatch({ h01: "like", h17: "pass" })).toBe(false);
+  expect(shouldOfferDemoMatch({ h01: "like", h17: "pass", h02: "like" })).toBe(true);
+  expect(shouldOfferDemoMatch({ h01: "like", h17: "pass", h02: "like", [DEMO_MATCH_ID]: "like" })).toBe(false);
+});
+
+it("puts the two complete homes first in filmed Browse and dated rooms last", () => {
+  const ordered = orderDemoBrowse([demoHomes[0], demoHomes[1]], "taste", true);
+  expect(ordered.slice(0, 2).map((home) => home.id)).toEqual([DEMO_MATCH_ID, "h01"]);
+  expect(ordered.slice(0, 2).every((home) => demoGallery(home).length >= 4)).toBe(true);
+  expect(ordered.slice(-4).every((home) => home.sheet === 5)).toBe(true);
 });
