@@ -27,25 +27,34 @@ interface Props {
   status: BoardStatus;
   board: BoardItem[];
   sharingAvailable: boolean;
+  isOwner: boolean;
+  ownerToken: string | null;
   matchScores: Record<string, number> | null;
   store: EmbeddingStore | null;
   deadPhotos: ReadonlySet<string>;
   onToggleSave: (listing: Listing) => void;
-  onStartBoard: (name: string) => string;
-  onJoin: (name: string) => void;
-  onLeave: () => void;
+  onStartBoard: (name: string) => Promise<string>;
+  onJoin: (name: string) => Promise<void>;
+  onLeave: () => Promise<void>;
+  onDelete: () => Promise<void>;
   onRetry?: () => void;
   onBrowse: () => void;
 }
 
-function NameForm({ initial, cta, note, onSubmit }: { initial: string; cta: string; note?: string; onSubmit: (name: string) => void }) {
+function NameForm({ initial, cta, note, onSubmit }: { initial: string; cta: string; note?: string; onSubmit: (name: string) => Promise<unknown> }) {
   const [name, setName] = useState(initial);
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState<string | null>(null);
   return (
     <form
       className="saved__form"
-      onSubmit={(e) => {
+      onSubmit={async (e) => {
         e.preventDefault();
-        if (name.trim()) onSubmit(name);
+        if (!name.trim() || busy) return;
+        setBusy(true);
+        setError(null);
+        try { await onSubmit(name); } catch (reason) { setError(reason instanceof Error ? reason.message : "Couldn't connect. Try again."); }
+        finally { setBusy(false); }
       }}
     >
       <input
@@ -57,8 +66,9 @@ function NameForm({ initial, cta, note, onSubmit }: { initial: string; cta: stri
         autoFocus
       />
       {note && <p className="app__map-hint">{note}</p>}
-      <button className="app__draw-btn app__draw-btn--on" type="submit" disabled={!name.trim()}>
-        {cta}
+      {error && <p className="app__error" role="alert">{error}</p>}
+      <button className="app__draw-btn app__draw-btn--on" type="submit" disabled={!name.trim() || busy}>
+        {busy ? "Working…" : cta}
       </button>
     </form>
   );
@@ -67,18 +77,27 @@ function NameForm({ initial, cta, note, onSubmit }: { initial: string; cta: stri
 function ShareSheet({
   boardId,
   me,
+  isOwner,
+  ownerToken,
   onCreate,
   onLeave,
+  onDelete,
   onClose,
 }: {
   boardId: string | null;
   me: Me;
-  onCreate: (name: string) => void;
-  onLeave: () => void;
+  isOwner: boolean;
+  ownerToken: string | null;
+  onCreate: (name: string) => Promise<string>;
+  onLeave: () => Promise<void>;
+  onDelete: () => Promise<void>;
   onClose: () => void;
 }) {
   const [copied, setCopied] = useState(false);
-  const [confirmStop, setConfirmStop] = useState(false);
+  const [manageCopied, setManageCopied] = useState(false);
+  const [confirmAction, setConfirmAction] = useState<"leave" | "delete" | null>(null);
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState<string | null>(null);
   const url = boardId ? shareUrl(window.location.origin, boardId) : "";
   return (
     <div className="sheet__overlay" onClick={onClose}>
@@ -110,24 +129,46 @@ function ShareSheet({
             >
               {copied ? <CheckIcon /> : <CopyIcon />} {copied ? "Link copied" : "Copy link"}
             </button>
-            {confirmStop ? (
+            {isOwner && ownerToken && <>
+              <button className="app__draw-btn" onClick={async () => {
+                try {
+                  await navigator.clipboard.writeText(`${url}#manage=${ownerToken}`);
+                  setManageCopied(true);
+                } catch { setError("Couldn't copy the management link. Check your browser permissions."); }
+              }}>{manageCopied ? "Management link copied" : "Copy private management link"}</button>
+              <p className="app__map-hint">Keep this link private. It lets you recover list deletion access if you change devices. Anyone with it can delete the list.</p>
+            </>}
+            {confirmAction ? (
               <p className="saved__confirm">
-                Stop sharing on this device? Your saved homes stay; the list stays available to anyone who has the link.{" "}
+                {confirmAction === "delete"
+                  ? "Delete this shared list for everyone? This cannot be undone. Your private saves stay on this device."
+                  : "Leave this list? Your name and saves will be removed from it. Your private saves stay on this device."}{" "}
                 <button
                   className="app__link-btn"
-                  onClick={() => {
-                    onLeave();
-                    onClose();
+                  disabled={busy}
+                  onClick={async () => {
+                    setBusy(true);
+                    setError(null);
+                    try {
+                      if (confirmAction === "delete") await onDelete();
+                      else await onLeave();
+                      onClose();
+                    } catch (reason) {
+                      setError(reason instanceof Error ? reason.message : "Couldn't update the list. Try again.");
+                    } finally { setBusy(false); }
                   }}
                 >
-                  Yes, stop sharing
+                  {busy ? "Working…" : confirmAction === "delete" ? "Yes, delete for everyone" : "Yes, leave list"}
                 </button>
+                {" "}<button className="app__link-btn" disabled={busy} onClick={() => setConfirmAction(null)}>Cancel</button>
               </p>
             ) : (
-              <button className="saved__stop" onClick={() => setConfirmStop(true)}>
-                Stop sharing
-              </button>
+              <>
+                <button className="saved__stop" onClick={() => setConfirmAction("leave")}>Leave list</button>
+                {isOwner && <button className="saved__stop" onClick={() => setConfirmAction("delete")}>Delete list for everyone</button>}
+              </>
             )}
+            {error && <p className="app__error" role="alert">{error}</p>}
           </div>
         )}
       </div>
@@ -194,6 +235,7 @@ export function SavedView(p: Props) {
       {inBoard && p.status === "error" && (
         <p className="app__error">{p.boardDesign ? <><strong>Can't reach the shared list.</strong> Showing what's saved on this device. {p.onRetry && <button onClick={p.onRetry}>Retry</button>}</> : "Couldn't reach the shared list just now. Your saved homes are safe on this device."}</p>
       )}
+      {inBoard && p.status === "deleted" && <p className="app__error" role="status">This shared list has been deleted. Your private saved homes are still here. <button className="app__link-btn" onClick={() => { void p.onLeave(); }}>Dismiss</button></p>}
 
       {p.saved.length === 0 && !inBoard && (p.boardDesign ?
         <div className="saved__empty"><h3>Nothing saved <em>yet</em></h3><p>Tap Save on any home. Share the list to shortlist together.</p><button onClick={p.onBrowse}>Browse homes</button></div> :
@@ -254,10 +296,11 @@ export function SavedView(p: Props) {
         <ShareSheet
           boardId={p.boardId}
           me={p.me}
-          onCreate={(name) => {
-            p.onStartBoard(name);
-          }}
+          isOwner={p.isOwner}
+          ownerToken={p.ownerToken}
+          onCreate={p.onStartBoard}
           onLeave={p.onLeave}
+          onDelete={p.onDelete}
           onClose={() => setSheetOpen(false)}
         />
       )}

@@ -2,10 +2,12 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import type { Listing } from "../types";
 import { trackMilestone } from "./stats";
 import { fetchConfig, loadBackend, type BoardBackend } from "./boardBackend";
+import * as boardApi from "./boardApi";
 import { listingKey } from "./listingKey";
 import {
   BOARD_KEY,
   ME_KEY,
+  OWNER_KEYS,
   SAVED_KEY,
   boardIdFromSearch,
   cleanName,
@@ -18,7 +20,7 @@ import {
   type Snap,
 } from "./shortlist";
 
-export type BoardStatus = "off" | "connecting" | "live" | "error";
+export type BoardStatus = "off" | "connecting" | "live" | "error" | "deleted";
 
 function snapOf(listing: Listing): Snap {
   const s = listing.summary;
@@ -39,6 +41,17 @@ export function useShortlist(listingsByKey: Record<string, Listing>) {
   const [saved, setSaved] = useState<string[]>(() => readJson<string[]>(SAVED_KEY, []));
   const [me, setMe] = useState<Me>(() => readJson<Me>(ME_KEY, { id: randomId(8), name: null }));
   const [boardId, setBoardId] = useState<string | null>(() => readJson<string | null>(BOARD_KEY, null));
+  const [ownerKeys, setOwnerKeys] = useState<Record<string, string>>(() => {
+    const keys = readJson<Record<string, string>>(OWNER_KEYS, {});
+    const linkedBoard = boardIdFromSearch(window.location.search);
+    const token = new URLSearchParams(window.location.hash.slice(1)).get("manage");
+    if (linkedBoard?.startsWith("v2_") && token && /^[A-Za-z0-9_-]{43}$/.test(token)) {
+      keys[linkedBoard] = token;
+      writeJson(OWNER_KEYS, keys);
+      window.history.replaceState(null, "", window.location.pathname + window.location.search);
+    }
+    return keys;
+  });
   // a board link someone opened but hasn't joined yet
   const [invite, setInvite] = useState<string | null>(() => {
     const id = boardIdFromSearch(window.location.search);
@@ -55,6 +68,7 @@ export function useShortlist(listingsByKey: Record<string, Listing>) {
   useEffect(() => writeJson(SAVED_KEY, saved), [saved]);
   useEffect(() => writeJson(ME_KEY, me), [me]);
   useEffect(() => writeJson(BOARD_KEY, boardId), [boardId]);
+  useEffect(() => writeJson(OWNER_KEYS, ownerKeys), [ownerKeys]);
 
   // load the sharing service only when it's needed
   const needBackend = boardId !== null || invite !== null;
@@ -81,7 +95,11 @@ export function useShortlist(listingsByKey: Record<string, Listing>) {
         setItems(next);
         setStatus("live");
       },
-      () => setStatus("error"),
+      () => {
+        if (boardId.startsWith("v2_")) {
+          void boardApi.boardActive(boardId).then((active) => setStatus(active ? "error" : "deleted")).catch(() => setStatus("error"));
+        } else setStatus("error");
+      },
     );
   }, [boardId, backend, retry]);
 
@@ -123,9 +141,14 @@ export function useShortlist(listingsByKey: Record<string, Listing>) {
   const setName = useCallback((raw: string) => setMe((cur) => ({ ...cur, name: cleanName(raw) || null })), []);
 
   const startBoard = useCallback(
-    (name: string): string => {
-      const id = randomId(20);
+    async (name: string): Promise<string> => {
+      const { boardId: id, ownerToken } = await boardApi.createBoard();
       const next = { ...me, name: cleanName(name) || null };
+      setOwnerKeys((keys) => {
+        const updated = { ...keys, [id]: ownerToken };
+        writeJson(OWNER_KEYS, updated);
+        return updated;
+      });
       setMe(next);
       setBoardId(id);
       pushAll(id, next);
@@ -136,8 +159,9 @@ export function useShortlist(listingsByKey: Record<string, Listing>) {
   );
 
   const joinInvite = useCallback(
-    (name: string) => {
+    async (name: string) => {
       if (!invite) return;
+      if (invite.startsWith("v2_") && !(await boardApi.boardActive(invite))) throw new Error("This shared list has been deleted.");
       const next = { ...me, name: cleanName(name) || null };
       setMe(next);
       setBoardId(invite);
@@ -149,14 +173,37 @@ export function useShortlist(listingsByKey: Record<string, Listing>) {
     [invite, me, pushAll],
   );
 
-  const leaveBoard = useCallback(() => {
+  const disconnect = useCallback(() => {
     setBoardId(null);
     setItems([]);
     setInvite(null);
     window.history.replaceState(null, "", window.location.pathname);
   }, []);
 
+  const leaveBoard = useCallback(async () => {
+    if (!boardId) return;
+    if (status === "deleted") {
+      disconnect();
+      return;
+    }
+    const service = backend ?? await loadBackend();
+    if (!service) throw new Error("Shared lists are unavailable. Try again later.");
+    await service.removeMember(boardId, me.id);
+    disconnect();
+  }, [boardId, backend, me.id, status, disconnect]);
+
+  const deleteBoard = useCallback(async () => {
+    if (!boardId || !ownerKeys[boardId]) throw new Error("Only the list creator can delete it.");
+    await boardApi.deleteBoard(boardId, ownerKeys[boardId]);
+    setOwnerKeys((keys) => {
+      const updated = { ...keys };
+      delete updated[boardId];
+      return updated;
+    });
+    disconnect();
+  }, [boardId, ownerKeys, disconnect]);
+
   const board = useMemo(() => sortBoard(items), [items]);
 
-  return { saved, me, boardId, invite, status, board, sharingAvailable, toggleSave, setName, startBoard, joinInvite, leaveBoard, retryBoard };
+  return { saved, me, boardId, invite, status, board, sharingAvailable, isOwner: Boolean(boardId && ownerKeys[boardId]), ownerToken: boardId ? ownerKeys[boardId] ?? null : null, toggleSave, setName, startBoard, joinInvite, leaveBoard, deleteBoard, retryBoard };
 }

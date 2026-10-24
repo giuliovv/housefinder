@@ -13,6 +13,7 @@ describe("board links", () => {
     expect(id).toHaveLength(40);
     const url = shareUrl("https://example.com", id);
     expect(boardIdFromSearch(new URL(url).search)).toBe(id);
+    expect(boardIdFromSearch(new URL(shareUrl("https://example.com", `v2_${id}`)).search)).toBe(`v2_${id}`);
   });
   it("ignores malformed board ids", () => {
     expect(boardIdFromSearch("?board=short")).toBeNull();

@@ -5,6 +5,7 @@ import { docId, type BoardItem, type Me, type Snap } from "./shortlist";
 export interface BoardBackend {
   subscribe(boardId: string, onItems: (items: BoardItem[]) => void, onError: (e: Error) => void): () => void;
   setSaved(boardId: string, key: string, snap: Snap, me: Me, saved: boolean): Promise<void>;
+  removeMember(boardId: string, memberId: string): Promise<void>;
 }
 
 /** the public web config, or null when sharing isn't set up (a missing file may come back as the
@@ -54,6 +55,23 @@ async function createBackend(): Promise<BoardBackend | null> {
         // an item nobody has saved any more is simply hidden by the reader
         await fs.updateDoc(ref, { [`savers.${me.id}`]: fs.deleteField() }).catch(() => undefined);
       }
+    },
+    async removeMember(boardId, memberId) {
+      const snapshot = await fs.getDocs(items(boardId));
+      let writes = fs.writeBatch(db);
+      let count = 0;
+      for (const item of snapshot.docs) {
+        const savers = (item.data() as BoardItem).savers ?? {};
+        if (!(memberId in savers)) continue;
+        if (Object.keys(savers).length === 1) writes.delete(item.ref);
+        else writes.update(item.ref, { [`savers.${memberId}`]: fs.deleteField() });
+        if (++count === 400) {
+          await writes.commit();
+          writes = fs.writeBatch(db);
+          count = 0;
+        }
+      }
+      if (count) await writes.commit();
     },
   };
 }

@@ -41,7 +41,7 @@ export default function PrivacyPage() {
         <section>
           <h2>Shared shortlists</h2>
           <p>If you create or join a shared shortlist, we store its saved-home IDs, listing snapshots (address, price, image and agency link), and the first names and random participant IDs of people who saved them in Google Firebase Firestore. Anyone with the long, unguessable share link can see and change that list. Do not put sensitive information in a first name.</p>
-          <p>Shared lists have <strong>no automatic expiry</strong> today. Leaving a list or unsaving a home does not necessarily delete the underlying Firestore data. To ask us to delete a shared list, email us with its share link. You can use the app without creating a list.</p>
+          <p>Shared lists have <strong>no automatic expiry</strong> today. Leaving removes your saved entries and first name from the shared list, but keeps your private saves in this browser. The creator of a new list can delete it for everyone using a private management key; losing that key means we may need to help. Older lists have no owner key, so email us with the share link to request deletion. You can use the app without creating a list.</p>
         </section>
 
         <section>
@@ -71,7 +71,7 @@ export default function PrivacyPage() {
 
         <section>
           <h2>Retention and your choices</h2>
-          <p>Local data remains until you clear this site's browser storage. The app's Reset control clears taste feedback only, not every saved preference. Shared lists remain until deleted on request; there is currently no automatic expiry. Daily statistics are stored as aggregate totals. Our hosting and service providers may retain operational logs under their own retention policies.</p>
+          <p>Local data remains until you clear this site's browser storage. The app's Reset control clears taste feedback only, not every saved preference. Shared lists remain until their creator deletes them or deletion is requested; there is currently no automatic expiry. A deleted list's contents are removed, while a minimal deletion marker is retained to prevent reuse of its link. Daily statistics are stored as aggregate totals. Our hosting and service providers may retain operational logs under their own retention policies.</p>
           <p>You can ask to access, correct or delete personal data we hold, or object to its processing, by emailing us. You can also complain to the <a href="https://ico.org.uk/make-a-complaint/">UK Information Commissioner's Office</a>. Our providers may process data outside the UK; email us if you want details of where your data goes and the safeguards used. We will update this notice if the service changes materially.</p>
         </section>
       </div>

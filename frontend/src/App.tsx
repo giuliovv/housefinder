@@ -700,6 +700,9 @@ function App({ labVariant }: { labVariant?: "board" | "board-v4" | "board-v5" } 
           onStartBoard={shortlist.startBoard}
           onJoin={shortlist.joinInvite}
           onLeave={shortlist.leaveBoard}
+          onDelete={shortlist.deleteBoard}
+          isOwner={shortlist.isOwner}
+          ownerToken={shortlist.ownerToken}
           onRetry={shortlist.retryBoard}
           onBrowse={() => setTab("browse")}
         />

@@ -3,6 +3,7 @@
 export const SAVED_KEY = "housefinder:saved:v1";
 export const ME_KEY = "housefinder:me:v1";
 export const BOARD_KEY = "housefinder:board:v1";
+export const OWNER_KEYS = "housefinder:board-owner:v1";
 
 export interface Me {
   id: string;
@@ -31,7 +32,7 @@ export function randomId(bytes = 20): string {
 
 export function boardIdFromSearch(search: string): string | null {
   const id = new URLSearchParams(search).get("board");
-  return id && /^[a-z0-9]{30,64}$/.test(id) ? id : null;
+  return id && (/^[a-f0-9]{40}$/.test(id) || /^v2_[a-f0-9]{40}$/.test(id)) ? id : null;
 }
 
 export function shareUrl(origin: string, boardId: string): string {

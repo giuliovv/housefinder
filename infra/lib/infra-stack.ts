@@ -6,6 +6,10 @@ import * as s3deploy from 'aws-cdk-lib/aws-s3-deployment';
 import * as acm from 'aws-cdk-lib/aws-certificatemanager';
 import * as route53 from 'aws-cdk-lib/aws-route53';
 import * as targets from 'aws-cdk-lib/aws-route53-targets';
+import * as lambda from 'aws-cdk-lib/aws-lambda';
+import * as iam from 'aws-cdk-lib/aws-iam';
+import * as apigw from 'aws-cdk-lib/aws-apigatewayv2';
+import * as integrations from 'aws-cdk-lib/aws-apigatewayv2-integrations';
 import { Construct } from 'constructs';
 import * as path from 'path';
 
@@ -85,6 +89,27 @@ function handler(event) {
         })
       : undefined;
 
+    const boardApi = new lambda.Function(this, 'BoardApi', {
+      runtime: lambda.Runtime.NODEJS_22_X,
+      handler: 'index.handler',
+      code: lambda.Code.fromAsset(path.join(__dirname, '../board-api')),
+      timeout: cdk.Duration.seconds(30),
+      memorySize: 256,
+      environment: { FIREBASE_ADMIN_PARAMETER: '/housefinder/firebase-admin' },
+    });
+    boardApi.addToRolePolicy(new iam.PolicyStatement({
+      actions: ['ssm:GetParameter'],
+      resources: [`arn:aws:ssm:${this.region}:${this.account}:parameter/housefinder/firebase-admin`],
+    }));
+    const boardHttpApi = new apigw.HttpApi(this, 'BoardHttpApi', { createDefaultStage: true });
+    const boardIntegration = new integrations.HttpLambdaIntegration('BoardIntegration', boardApi);
+    boardHttpApi.addRoutes({ path: '/api/boards', methods: [apigw.HttpMethod.POST], integration: boardIntegration });
+    boardHttpApi.addRoutes({ path: '/api/boards/{id}', methods: [apigw.HttpMethod.GET, apigw.HttpMethod.DELETE], integration: boardIntegration });
+    // The public create route is intentionally small, but still throttle it to limit abuse.
+    const stage = boardHttpApi.defaultStage?.node.defaultChild as apigw.CfnStage;
+    stage.defaultRouteSettings = { throttlingBurstLimit: 20, throttlingRateLimit: 5 };
+    const apiHost = cdk.Fn.select(2, cdk.Fn.split('/', boardHttpApi.apiEndpoint));
+
     const distribution = new cloudfront.Distribution(this, 'Distribution', {
       comment: 'House Swipe frontend',
       domainNames: domainNames.length > 0 ? domainNames : undefined,
@@ -98,6 +123,15 @@ function handler(event) {
           : undefined,
       },
       defaultRootObject: 'index.html',
+      additionalBehaviors: {
+        'api/*': {
+          origin: new origins.HttpOrigin(apiHost),
+          viewerProtocolPolicy: cloudfront.ViewerProtocolPolicy.HTTPS_ONLY,
+          allowedMethods: cloudfront.AllowedMethods.ALLOW_ALL,
+          cachePolicy: cloudfront.CachePolicy.CACHING_DISABLED,
+          originRequestPolicy: cloudfront.OriginRequestPolicy.ALL_VIEWER_EXCEPT_HOST_HEADER,
+        },
+      },
       // No client-side routing yet (single page) — these just make it safe to
       // add later without another infra change.
       errorResponses: [
