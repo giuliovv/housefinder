@@ -40,7 +40,7 @@ export default function PrivacyPage() {
 
         <section>
           <h2>Shared shortlists</h2>
-          <p>If you create or join a shared shortlist, we store its saved-home IDs, listing snapshots (address, price, image and agency link), and the first names and random participant IDs of people who saved them in Google Firebase Firestore. Anyone with the long, unguessable share link can see and change that list. Do not put sensitive information in a first name.</p>
+          <p>If you create or join a shared shortlist, we store its saved-home IDs, listing snapshots (address, price, a link to one photo and the agency link), and the first names and random participant IDs of people who saved them in Google Firebase Firestore. Anyone with the long, unguessable share link can see and change that list. Do not put sensitive information in a first name.</p>
           <p>Shared lists have <strong>no automatic expiry</strong> today. Leaving removes your saved entries and first name from the shared list, but keeps your private saves in this browser. The creator of a new list can delete it for everyone using a private management key; losing that key means we may need to help. Older lists have no owner key, so email us with the share link to request deletion. You can use the app without creating a list.</p>
         </section>
 
@@ -61,7 +61,8 @@ export default function PrivacyPage() {
 
         <section>
           <h2>Other services and links</h2>
-          <p>Amazon Web Services serves the site and its data. Google supplies Firebase, web fonts and the optional shared-list service. Listing images may load from the relevant agency or its image host; opening an agency listing takes you to that agency's own website. The optional map loads tiles from OpenStreetMap. These providers receive normal web requests, which can include your IP address and browser details. Their own privacy notices apply when you visit their sites.</p>
+          <p>Amazon Web Services serves the site and its data. Google supplies Firebase, web fonts and the optional shared-list service. The optional map loads tiles from OpenStreetMap. Opening an agency listing takes you to that agency's own website. These providers receive normal web requests, which can include your IP address and browser details. Their own privacy notices apply when you visit their sites.</p>
+          <p><strong>Photos of homes come straight from the agencies.</strong> The photos you see are shown from the estate agent that advertises the home, or from the image service it uses, not from our servers, and we do not keep copies of them. Your browser asks for each photo directly, so that agency or image service can see your IP address and browser details, as with any website you visit. Photos are the agencies' own, and each home links back to its agency's listing.</p>
         </section>
 
         <section>
