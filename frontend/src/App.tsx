@@ -1,9 +1,8 @@
-import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import type { Listing, StyleLabel } from "./types";
 import { loadEmbeddingStore, photoId, type EmbeddingStore } from "./lib/embeddingStore";
 import { ListingCard } from "./components/ListingCard";
 import { BoardListingCard } from "./components/BoardListingCard";
-import { BoardMatchCard } from "./components/BoardMatchCard";
 import { catalogueAge } from "./lib/catalogueFreshness";
 import { removalSuggestions } from "./lib/boardZero";
 import { SwipeDeck } from "./components/SwipeDeck";
@@ -453,11 +452,10 @@ function App({ labVariant }: { labVariant?: "board" | "board-v4" | "board-v5" } 
   const [matchCard, setMatchCard] = useState<{ id: string; listingKey: string; url: string } | null>(null);
   const [celebration, setCelebration] = useState<{ listingKey: string; url: string } | null>(null);
   const [pinnedKey, setPinnedKey] = useState<string | null>(null);
-  const [boardMatchToast, setBoardMatchToast] = useState<{ id: string; key: string } | null>(null);
   const [matchState, setMatchState] = useState(loadMatchState);
   function swipeInDeck(id: string, choice: "like" | "dislike") {
     swipe(id, choice); // always an ordinary swipe: it trains the taste model like any other
-    if (board) return; // Board v3 offers a quiet, inline match in Browse instead.
+    if (board) return; // Board ranks Browse directly; it does not interrupt browsing with match moments.
     if (matchCard && id === matchCard.id) {
       if (choice === "like") {
         trackEvent("ev_match_hit");
@@ -488,42 +486,6 @@ function App({ labVariant }: { labVariant?: "board" | "board-v4" | "board-v5" } 
   }
   const celebrated = celebration ? listingsByKey[celebration.listingKey] : undefined;
   const pinned = pinnedKey ? listingsByKey[pinnedKey] : undefined;
-  const pinnedPhoto = pinned && store && rankingPreference ? store.bestPhoto(listingKey(pinned), rankingPreference) : null;
-  const pinnedPhotoId = pinned && pinnedPhoto ? photoId(listingKey(pinned), pinnedPhoto) : null;
-  // A layout effect, so the inline match is already in the first paint of Browse: as a normal effect it popped in a moment
-  // after the list had appeared and pushed everything down.
-  useLayoutEffect(() => {
-    if (!board || tab !== "browse" || !listings || !matchScores || (tasteRead?.level ?? 0) < 2) return;
-    const key = "housefinder:board-inline-match:v1";
-    try { if (sessionStorage.getItem(key)) return; } catch { /* still show if storage is unavailable */ }
-    const candidate = pickMatch(
-      visible.map((l) => ({ key: listingKey(l), score: matchScores[listingKey(l)] ?? -Infinity, price: l.summary.price_pcm })),
-      Object.values(matchScores), new Set(shortlist.saved),
-    );
-    if (!candidate || !store || !rankingPreference || !store.bestPhoto(candidate, rankingPreference)) return;
-    setPinnedKey(candidate);
-    try { sessionStorage.setItem(key, "1"); } catch { /* session-only best effort */ }
-  }, [board, tab, listings, matchScores, tasteRead?.level, visible, shortlist.saved, store, rankingPreference]);
-  useEffect(() => {
-    if (!board || tab !== "browse" || !pinnedKey) return;
-    const start = window.scrollY;
-    const dismiss = () => { if (window.scrollY > start + 120) setPinnedKey(null); };
-    window.addEventListener("scroll", dismiss, { passive: true });
-    return () => window.removeEventListener("scroll", dismiss);
-  }, [board, tab, pinnedKey]);
-  useEffect(() => {
-    if (!boardMatchToast) return;
-    const timeout = window.setTimeout(() => setBoardMatchToast(null), 4000);
-    return () => window.clearTimeout(timeout);
-  }, [boardMatchToast]);
-  function rateBoardMatch(id: string, choice: "like" | "dislike") {
-    toggleSwipe(id, choice);
-    if (choice === "like" && pinned) {
-      shortlist.toggleSave(pinned);
-      setBoardMatchToast({ id, key: listingKey(pinned) });
-    }
-    setPinnedKey(null);
-  }
 
   // The big files are fetched only when needed, so a first-time visitor reaches their first photo after ~1 MB instead of ~30 MB:
   // the listings (browse.json, falling back to the full listings.json) and the ranking matrix load once someone opens Browse or
@@ -691,7 +653,6 @@ function App({ labVariant }: { labVariant?: "board" | "board-v4" | "board-v5" } 
           onKeep={() => setCelebration(null)}
         />
       )}
-      {board && boardMatchToast && <div className="board__match-toast" role="status">Saved to your shortlist. <button onClick={() => { toggleSwipe(boardMatchToast.id, "like"); const listing = listingsByKey[boardMatchToast.key]; if (listing && shortlist.saved.includes(boardMatchToast.key)) shortlist.toggleSave(listing); setBoardMatchToast(null); }}>Undo</button> <button onClick={() => { setTab("saved"); setBoardMatchToast(null); }}>View</button></div>}
       {skipTip && (
         <div className="sheet__overlay sheet__overlay--center" onClick={() => setSkipTip(false)}>
           <div className="tip" role="dialog" aria-label="Filters tip" onClick={(e) => e.stopPropagation()}>
@@ -810,8 +771,8 @@ function App({ labVariant }: { labVariant?: "board" | "board-v4" | "board-v5" } 
           {newInView.length > 0 && (
             <div className="app__new">
               <button className={`app__new-chip ${newOnly ? "app__new-chip--on" : ""}`} onClick={() => setNewOnly((v) => !v)}>
-                {`★ ${newInView.length >= 300 ? "300+" : newInView.length} new since your last visit`}
-                {closeNew > 0 ? ` · ${closeNew} nearer your taste` : ""}
+                {`${board ? "" : "★ "}${newInView.length >= 300 ? "300+" : newInView.length} new since your last visit`}
+                {!board && closeNew > 0 ? ` · ${closeNew} nearer your taste` : ""}
               </button>
               {newOnly && (
                 <button className="app__clear-btn" onClick={() => setNewOnly(false)}>
@@ -844,8 +805,7 @@ function App({ labVariant }: { labVariant?: "board" | "board-v4" | "board-v5" } 
                 <button onClick={() => setPinnedKey(null)}>Dismiss</button>
               </p>
               <div className={board ? undefined : "listing-grid"}>
-                {board && pinnedPhoto && pinnedPhotoId ? <BoardMatchCard listing={pinned} photoUrl={pinnedPhoto} onLike={() => rateBoardMatch(pinnedPhotoId, "like")} onPass={() => rateBoardMatch(pinnedPhotoId, "dislike")} />
-                  : <ListingCard listing={pinned} matchScore={cardMatchScore(pinned)} matchLabel={boardV4 ? "Nearer your taste" : undefined} hideFreshness={boardV4} hideDescription={boardV4} store={store} deadPhotos={deadPhotos} swipes={swipes} onRate={toggleSwipe} saved={shortlist.saved.includes(listingKey(pinned))} onToggleSave={() => shortlist.toggleSave(pinned)} />}
+                <ListingCard listing={pinned} matchScore={cardMatchScore(pinned)} store={store} deadPhotos={deadPhotos} swipes={swipes} onRate={toggleSwipe} saved={shortlist.saved.includes(listingKey(pinned))} onToggleSave={() => shortlist.toggleSave(pinned)} />
               </div>
             </div>
           )}
