@@ -1,7 +1,7 @@
 import { useEffect, type ImgHTMLAttributes } from "react";
 import { normalizeImageUrl } from "../lib/url";
 
-/** loads a Google font for one design only (the real app's fonts stay as they are) */
+/** Loads a design's Google font while its view is mounted. */
 export function useFont(family: string) {
   useEffect(() => {
     const link = document.createElement("link");

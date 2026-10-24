@@ -1,7 +1,7 @@
 import { StrictMode, Suspense, lazy } from 'react'
 import { createRoot } from 'react-dom/client'
 import './index.css'
-import App from './App.tsx'
+import BoardApp from './BoardApp.tsx'
 import { runHandoff } from './lib/handoff'
 
 // Design experiments are lazy-loaded so they add nothing to the real app.
@@ -18,7 +18,7 @@ if (!runHandoff()) {
           <Lab path={labPath} />
         </Suspense>
       ) : (
-        <App />
+        <BoardApp />
       )}
     </StrictMode>,
   )

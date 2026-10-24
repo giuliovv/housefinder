@@ -4,5 +4,5 @@ import { createContext } from "react";
 export type DeckVariant = "classic" | "bleed" | "fan" | "ritual" | "dig" | "stamp" | "board";
 export const DeckVariantContext = createContext<DeckVariant>("classic");
 
-/** photos most like a given one, for the "more like this" gesture; the real site leaves this empty */
+/** Photos most like a given one, for the "more like this" gesture. */
 export const DeckNeighboursContext = createContext<((photoId: string, n: number) => { id: string; url: string }[]) | null>(null);
