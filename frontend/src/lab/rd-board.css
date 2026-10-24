@@ -96,8 +96,6 @@ html.rd-board {
 .rd-board .board-listing__footer { display: flex; justify-content: space-between; align-items: center; gap: 8px; min-height: 54px; padding: 10px 16px; background: var(--ink); color: var(--cream); text-decoration: none; font: 500 10px/1.35 var(--mono); }
 .rd-board .board-listing__footer span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .rd-board .board-listing__footer strong { flex: none; text-decoration: underline; text-underline-offset: 3px; font-weight: 500; }
-.rd-board .board__browse-loading { display: grid; gap: 17px; padding: 24px 16px; }
-.rd-board .board__browse-loading > div { height: 285px; border: 2px solid #aaa69e; border-radius: 24px; background: repeating-linear-gradient(135deg,#d1cec7 0 1px,#e8e5dd 1px 8px); }
 .rd-board .board__browse-error, .rd-board .board__zero { margin: 24px 16px; padding: 25px 20px; border: 2px solid var(--ink); border-radius: 24px; background: #ffc9d6; box-shadow: 4px 4px 0 var(--ink); }
 .rd-board .board__zero { margin: 12px 0 24px; background: #ffd84a; }
 .rd-board .board__browse-error span, .rd-board .board__zero span { font: 500 10.5px/1.2 var(--mono); letter-spacing: .06em; }
@@ -380,3 +378,9 @@ html.rd-board {
 .rd-board:not(.rd-board-v4) .board-swipe__photo .swipe__stamp--like { border-color: #ff6f8f; color: #ff6f8f; }
 .rd-board:not(.rd-board-v4) .board-swipe__photo .swipe__stamp--pass { border-color: #f2eee4; color: #f2eee4; }
 .rd-board:not(.rd-board-v4) .board-listing__rate button[aria-pressed="true"]:nth-child(2) { background: #ff6f8f; color: var(--ink); }
+
+/* The loading skeleton only appears if loading takes a moment: on a fast load it never shows, so there is no flash before the list.
+   (The old rule that stretched the title and subtitle placeholders into big striped boxes is gone.) */
+.rd-board .board__browse-loading { opacity: 0; animation: board-skeleton-in .2s ease .45s forwards; }
+@keyframes board-skeleton-in { to { opacity: 1; } }
+@media (prefers-reduced-motion: reduce) { .rd-board .board__browse-loading { animation-duration: .01s; } }
