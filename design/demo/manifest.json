@@ -348,6 +348,66 @@
     "h16-kitchen.jpg",
     "h16-bathroom.jpg"
    ]
+  },
+  {
+   "id": "h17",
+   "street": "Bramble Court",
+   "area": "Dalston",
+   "postcode": "E8",
+   "agency": "Tern Estates",
+   "bedrooms": 1,
+   "bathrooms": 1,
+   "price_pcm": 1750,
+   "style": "Dated practical",
+   "look": "cramped living room with worn brown carpet, mismatched sofa and television stand, flat daylight",
+   "price_history": null,
+   "is_new": false,
+   "photos": ["h17-living.jpg"]
+  },
+  {
+   "id": "h18",
+   "street": "Mallow Walk",
+   "area": "Bethnal Green",
+   "postcode": "E2",
+   "agency": "Larkspur Lettings",
+   "bedrooms": 1,
+   "bathrooms": 1,
+   "price_pcm": 1695,
+   "style": "Dated practical",
+   "look": "small beige kitchen with laminate cupboards, old lino and exposed appliances",
+   "price_history": null,
+   "is_new": false,
+   "photos": ["h18-kitchen.jpg"]
+  },
+  {
+   "id": "h19",
+   "street": "Wren House",
+   "area": "Camberwell",
+   "postcode": "SE5",
+   "agency": "Haven Estates",
+   "bedrooms": 2,
+   "bathrooms": 1,
+   "price_pcm": 2050,
+   "style": "Dated practical",
+   "look": "plain bedroom with bulky wardrobe, tired patterned carpet and grey daylight",
+   "price_history": null,
+   "is_new": false,
+   "photos": ["h19-bedroom.jpg"]
+  },
+  {
+   "id": "h20",
+   "street": "Celandine Grove",
+   "area": "Leyton",
+   "postcode": "E10",
+   "agency": "Quill & Co",
+   "bedrooms": 2,
+   "bathrooms": 1,
+   "price_pcm": 1950,
+   "style": "Dated practical",
+   "look": "dated living room with clashing floral furniture, green carpet and tight layout",
+   "price_history": null,
+   "is_new": false,
+   "photos": ["h20-living.jpg"]
   }
  ]
 }
