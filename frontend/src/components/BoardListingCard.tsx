@@ -37,6 +37,7 @@ export function BoardListingCard({ listing, store, deadPhotos, swipes, onRate, s
   const [index, setIndex] = useState(0);
   const strip = useRef<HTMLDivElement>(null);
   const frame = useRef<number | null>(null);
+  const photoPointer = useRef({ x: 0, y: 0, moved: false, startedAt: 0 });
   const current = photos[index];
   const currentId = current ? `${listingKey(listing)}::${current}` : null;
   const canRate = Boolean(currentId && onRate && store?.hasPhoto(listingKey(listing), current));
@@ -72,7 +73,25 @@ export function BoardListingCard({ listing, store, deadPhotos, swipes, onRate, s
           <div className="listing-card__strip" ref={strip} onScroll={onScroll} aria-label={`Photos of ${summary.address}`}>
             {photos.map((url, i) => (
               <div className="listing-card__slide" key={url}>
-                {Math.abs(i - index) <= 2 && <img className="listing-card__photo" src={normalizeImageUrl(url) ?? undefined} alt={i === 0 ? summary.address : ""} referrerPolicy="no-referrer" loading="lazy" draggable={false} />}
+                <a
+                  className="board-listing__photo-link"
+                  href={agencyUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  aria-label={`View ${summary.address} on ${listing.agency_name}`}
+                  onPointerDown={(e) => { photoPointer.current = { x: e.clientX, y: e.clientY, moved: false, startedAt: Date.now() }; }}
+                  onPointerMove={(e) => {
+                    const pointer = photoPointer.current;
+                    if (Math.hypot(e.clientX - pointer.x, e.clientY - pointer.y) > 8) pointer.moved = true;
+                  }}
+                  onClick={(e) => {
+                    if (photoPointer.current.moved && Date.now() - photoPointer.current.startedAt < 1000) e.preventDefault();
+                    else agencyClick();
+                  }}
+                  onDragStart={(e) => e.preventDefault()}
+                >
+                  {Math.abs(i - index) <= 2 && <img className="listing-card__photo" src={normalizeImageUrl(url) ?? undefined} alt="" referrerPolicy="no-referrer" loading="lazy" draggable={false} />}
+                </a>
               </div>
             ))}
           </div>

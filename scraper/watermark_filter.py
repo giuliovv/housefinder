@@ -4,6 +4,8 @@ The AJR/Anthony James mark has a fixed position and shape. Its high-pass
 template was averaged from marked deck photos so room details cancel. A failed
 download is not classified: retaining a questionable photo is preferable to
 silently discarding a clean one. Results are cached by URL across refreshes.
+Benham & Reeves uses inconsistent watermarks, so only visually audited clean
+URLs are admitted; unknown Benham photos are excluded until checked.
 """
 from __future__ import annotations
 
@@ -19,6 +21,7 @@ from PIL import Image, ImageFilter
 from .http import USER_AGENT
 
 TEMPLATE_PATH = pathlib.Path(__file__).parent / "data" / "watermark_ajr.npz"
+BENHAM_CLEAN_PATH = pathlib.Path(__file__).parent / "data" / "benham_clean_urls.txt"
 AJR_PREFIX = "estatetrack:ajrproperty:"
 LONDONWIDE_PREFIX = "estatesit:PC_LONWI_"
 LONDON_ESTATES_PREFIX = "estatesit:PC_LONDO_"
@@ -42,6 +45,9 @@ class WatermarkFilter:
         self.path = path
         self.data: dict[str, bool] = json.loads(path.read_text()) if path.exists() else {}
         self.template = np.load(TEMPLATE_PATH)["template"]
+        self.benham_clean = {
+            line for line in BENHAM_CLEAN_PATH.read_text().splitlines() if line and not line.startswith("#")
+        }
         self.downloader = downloader or self._download
 
     @staticmethod
@@ -69,7 +75,7 @@ class WatermarkFilter:
                     self.data[url] = marked
 
     def is_marked(self, key: str, url: str) -> bool:
-        return url.startswith(BENHAM_PHOTO_HOST) or key.startswith((LONDONWIDE_PREFIX, LONDON_ESTATES_PREFIX)) or (
+        return (url.startswith(BENHAM_PHOTO_HOST) and url not in self.benham_clean) or key.startswith((LONDONWIDE_PREFIX, LONDON_ESTATES_PREFIX)) or (
             key.startswith(AJR_PREFIX) and self.data.get(url, False)
         )
 

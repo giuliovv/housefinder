@@ -214,6 +214,8 @@ html.rd-board {
 /* browse cards: photo on top with a few small tags and quiet icons; price, history, address and Save below */
 .rd-board .board-listing { position: relative; }
 .rd-board .board-listing__gallery { height: 260px; }
+.rd-board .board-listing__photo-link { display: block; width: 100%; height: 100%; cursor: pointer; }
+.rd-board .board-listing__photo-link:focus-visible { outline: 3px solid #2b3bff; outline-offset: -4px; }
 .rd-board .board-listing__tags { position: absolute; z-index: 3; top: 12px; left: 12px; right: 70px; display: flex; flex-wrap: wrap; gap: 6px; pointer-events: none; }
 .rd-board .board-listing__tags .listing-card__agency, .rd-board .board-listing__tags .listing-card__new, .rd-board .board-listing__tags .listing-card__match { position: static; padding: 7px 10px; }
 .rd-board .board-listing__gallery .listing-card__photo-count { z-index: 3; top: 12px; bottom: auto; right: 12px; }
