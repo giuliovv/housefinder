@@ -6,7 +6,7 @@ const BOX = { x0: 14, x1: W - 14, yTop: 26, yBottom: 52 };
 
 /**
  * One home's rent over time: a step line (the price holds until it changes), the first and latest price labelled
- * directly, nothing else. One series, one axis, so no legend; the figures are also in the text caption and the
+ * directly, nothing else. One series, no axis or legend; the figures are also in the text caption and the
  * accessible description.
  */
 export function PriceChart({ series, today }: { series: PricePoint[]; today: string }) {
@@ -28,7 +28,6 @@ export function PriceChart({ series, today }: { series: PricePoint[]; today: str
   return (
     <figure className="price-chart">
       <svg viewBox={`0 0 ${W} ${H}`} role="img" aria-label={description}>
-        <line x1={BOX.x0} x2={BOX.x1} y1={BOX.yBottom + 14} y2={BOX.yBottom + 14} className="price-chart__axis" />
         <path d={d} className="price-chart__line" />
         {pts.map((p, i) => (
           <circle key={p.day} cx={p.x} cy={p.y} r={i === 0 || i === pts.length - 1 ? 4.5 : 3.5} className="price-chart__dot">
