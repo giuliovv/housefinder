@@ -889,6 +889,7 @@ function App({ labVariant }: { labVariant?: "board" | "board-v4" | "board-v5" } 
         onClear={clearFilters}
         canClear={activeFilterCount > 0}
       />
+      <footer className="app__footer"><a href="/privacy">Privacy &amp; data choices</a></footer>
     </div>
   );
 }

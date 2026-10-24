@@ -364,3 +364,47 @@ html.rd-board {
 .rd-board .board__browse-loading { opacity: 0; animation: board-skeleton-in .2s ease .45s forwards; }
 @keyframes board-skeleton-in { to { opacity: 1; } }
 @media (prefers-reduced-motion: reduce) { .rd-board .board__browse-loading { animation-duration: .01s; } }
+
+/* Keep Browse playful, but let the homes and photos lead instead of hard ink outlines. */
+.rd-board-live .app__browse { --browse-line: #d8d0c3; background: linear-gradient(180deg, #f2eee4, #f7f3ea 260px); }
+.rd-board-live .app__browse .app__filter-row { border-bottom: 1px solid var(--browse-line); }
+.rd-board-live .app__browse .app__filter-btn,
+.rd-board-live .app__browse .app__draw-btn,
+.rd-board-live .app__browse .app__clear-btn,
+.rd-board-live .app__browse .board__sort,
+.rd-board-live .app__browse .board__chips button,
+.rd-board-live .app__browse .app__new-chip {
+  border: 1px solid var(--browse-line);
+  box-shadow: none;
+}
+.rd-board-live .app__browse .app__filter-btn--on,
+.rd-board-live .app__browse .app__draw-btn--on { background: #e8efce; }
+.rd-board-live .app__browse .board__chips button { background: #fff5dc; }
+.rd-board-live .app__browse .app__new-chip--on { border-color: #c7c5b3; background: #e7e8dc; }
+.rd-board-live .app__browse .listing-card {
+  border: 1px solid var(--browse-line);
+  background: #fffdf8;
+  box-shadow: 0 8px 28px rgba(62, 45, 25, .09);
+}
+.rd-board-live .app__browse .listing-card:hover { box-shadow: 0 12px 32px rgba(62, 45, 25, .13); }
+.rd-board-live .app__browse .listing-card__photo-wrap { border-bottom: 1px solid var(--browse-line); }
+.rd-board-live .app__browse .board-listing__arrow { border-width: 1px; border-color: rgba(21, 18, 15, .2); background: rgba(255, 253, 248, .9); }
+.rd-board-live .app__browse .listing-card__status,
+.rd-board-live .app__browse .listing-card__new,
+.rd-board-live .app__browse .listing-card__drop,
+.rd-board-live .app__browse .listing-card__match,
+.rd-board-live .app__browse .listing-card__agency,
+.rd-board-live .app__browse .listing-card__photo-count,
+.rd-board-live .app__browse .board-listing__unranked {
+  border: 1px solid rgba(21, 18, 15, .18);
+  box-shadow: none;
+}
+.rd-board-live .app__browse .listing-card__new { background: #ffd4bf; }
+.rd-board-live .app__browse .listing-card__match,
+.rd-board-live .app__browse .listing-card__drop { background: #e1efba; }
+.rd-board-live .app__browse .board-listing__save { border: 1px solid var(--browse-line); box-shadow: none; }
+.rd-board-live .app__browse .board-listing__save--on { background: #ffd4bf; }
+.rd-board-live .app__browse .board-listing__history,
+.rd-board-live .app__browse .listing-card__price-flag,
+.rd-board-live .app__browse .board-listing__history-head span { border: 1px solid var(--browse-line); }
+.rd-board-live .app__browse .app__show-more { border: 1px solid var(--browse-line); background: #ffd4bf; box-shadow: none; }

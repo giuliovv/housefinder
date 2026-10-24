@@ -15,6 +15,18 @@
   padding: 22px 22px 0;
 }
 
+.app__footer {
+  margin-top: auto;
+  padding: 24px 22px calc(24px + env(safe-area-inset-bottom));
+  text-align: center;
+  font-size: 12px;
+}
+
+.app__footer a {
+  color: var(--muted-dark);
+  text-underline-offset: 3px;
+}
+
 .app__header-row {
   display: flex;
   align-items: baseline;

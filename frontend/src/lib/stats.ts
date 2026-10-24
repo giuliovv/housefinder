@@ -1,12 +1,12 @@
 /**
- * Anonymous, first-party usage counters, kept in our own Firestore (no analytics service, no cookies).
+ * Aggregate usage counters, kept in Firestore (no analytics SDK or cookies).
  *
  * What is stored: one document per UTC day (`stats/YYYY-MM-DD`) holding plain counters, e.g. `visitors: 41`,
  * `m_first_swipe: 17`. A "milestone" counter goes up once per browser, the first time that browser reaches it, so
- * the m_* numbers read as a funnel ("new browsers that got this far"). Nothing identifies a person: no ids, no IP
- * address, no content (never which photos were liked, the taste profile, or which homes were saved).
+ * the m_* numbers read as a funnel ("new browsers that got this far"). The payload has no id or content
+ * (never which photos were liked, the taste profile, or which homes were saved). Google handles the request.
  *
- * Skipped entirely for: Do Not Track, localhost, and any browser that opened the site once with `?notrack`.
+ * Skipped entirely for: Do Not Track, localhost, and browsers opted out via /privacy or `?notrack`.
  * Written with Firestore's REST API (atomic increment), so it costs no SDK download.
  */
 import { readJson, writeJson } from "./shortlist";
@@ -44,6 +44,26 @@ export type Counter = (typeof COUNTERS)[number];
 const KEY = "housefinder:stats:v1";
 const NOTRACK_KEY = "housefinder:notrack";
 
+export function usageStatsEnabled(): boolean {
+  try {
+    return localStorage.getItem(NOTRACK_KEY) !== "1" && navigator.doNotTrack !== "1";
+  } catch {
+    return false;
+  }
+}
+
+export function setUsageStatsEnabled(enabled: boolean): void {
+  try {
+    if (enabled) localStorage.removeItem(NOTRACK_KEY);
+    else {
+      localStorage.setItem(NOTRACK_KEY, "1");
+      localStorage.removeItem(KEY);
+    }
+  } catch {
+    /* Storage unavailable: analytics remain disabled. */
+  }
+}
+
 interface StatsState {
   seen: Partial<Record<Counter, true>>;
   lastVisitDay: string;
@@ -54,12 +74,11 @@ let config: { projectId: string; apiKey: string } | null | undefined; // undefin
 
 function disabled(): boolean {
   try {
-    if (new URLSearchParams(window.location.search).has("notrack")) localStorage.setItem(NOTRACK_KEY, "1");
-    if (localStorage.getItem(NOTRACK_KEY) === "1") return true;
+    if (new URLSearchParams(window.location.search).has("notrack")) setUsageStatsEnabled(false);
   } catch {
-    /* storage blocked: carry on, nothing is stored anyway */
+    return true;
   }
-  return navigator.doNotTrack === "1" || ["localhost", "127.0.0.1"].includes(window.location.hostname);
+  return !usageStatsEnabled() || navigator.doNotTrack === "1" || ["localhost", "127.0.0.1"].includes(window.location.hostname);
 }
 
 async function loadConfig() {
@@ -82,7 +101,7 @@ export function today(): string {
 export async function bump(counters: Counter[], day = today()): Promise<void> {
   if (counters.length === 0 || disabled()) return;
   const c = await loadConfig();
-  if (!c) return;
+  if (!c || disabled()) return;
   const doc = `projects/${c.projectId}/databases/(default)/documents/stats/${day}`;
   try {
     await fetch(`https://firestore.googleapis.com/v1/${doc.split("/documents/")[0]}/documents:commit?key=${c.apiKey}`, {
@@ -107,6 +126,7 @@ export async function bump(counters: Counter[], day = today()): Promise<void> {
 
 /** count this browser once per day (and once ever as new) */
 export function trackVisit(): void {
+  if (disabled()) return;
   const state = readJson<StatsState>(KEY, { seen: {}, lastVisitDay: "", returning: false });
   const day = today();
   if (state.lastVisitDay === day) return;
@@ -119,6 +139,7 @@ export function trackVisit(): void {
 
 /** count a milestone the first time this browser reaches it */
 export function trackMilestone(name: Counter): void {
+  if (disabled()) return;
   const state = readJson<StatsState>(KEY, { seen: {}, lastVisitDay: "", returning: false });
   if (state.seen[name]) return;
   writeJson(KEY, { ...state, seen: { ...state.seen, [name]: true } });

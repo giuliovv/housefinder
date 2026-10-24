@@ -9,8 +9,8 @@ const BOARD_FONT = "family=Bricolage+Grotesque:opsz,wght@12..96,400;12..96,600;1
 export default function BoardApp() {
   useFont(BOARD_FONT);
   useLayoutEffect(() => {
-    document.documentElement.classList.add("rd-board");
-    return () => document.documentElement.classList.remove("rd-board");
+    document.documentElement.classList.add("rd-board", "rd-board-live");
+    return () => document.documentElement.classList.remove("rd-board", "rd-board-live");
   }, []);
 
   return (
