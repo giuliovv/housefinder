@@ -1,5 +1,7 @@
 # Demo image prompt
 
+The live `/demo` uses four generated 2×2 contact sheets in `frontend/public/demo/img/`: one independently framed living-room photo per fictional home. CSS crops each quadrant, so 16 distinct Style/Browse photos cost only four generations and 1.3 MB of WebP assets. The 64-photo prompt below is an optional future gallery expansion, not a requirement for the current demo. All listings, agencies and prices in `manifest.json` are invented; the demo never accesses production listings or shared-list data.
+
 Paste the block below into an image-capable AI (ChatGPT, Gemini, etc.). Put the 64 results in `frontend/public/demo/img/`. Catalogue data lives in `manifest.json` (names, prices and agencies are fictional).
 
 ```
