@@ -810,7 +810,7 @@ function App({ labVariant }: { labVariant?: "board" | "board-v4" | "board-v5" } 
           {newInView.length > 0 && (
             <div className="app__new">
               <button className={`app__new-chip ${newOnly ? "app__new-chip--on" : ""}`} onClick={() => setNewOnly((v) => !v)}>
-                {board ? `New since ${since ?? "last visit"} · ${newInView.length}` : `★ ${newInView.length >= 300 ? "300+" : newInView.length} new since your last visit`}
+                {`★ ${newInView.length >= 300 ? "300+" : newInView.length} new since your last visit`}
                 {closeNew > 0 ? ` · ${closeNew} nearer your taste` : ""}
               </button>
               {newOnly && (
