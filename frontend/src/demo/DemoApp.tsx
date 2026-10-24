@@ -71,7 +71,7 @@ export default function DemoApp() {
     const celebrate = matchOffer && home.id === DEMO_MATCH_ID && choice === "like";
     if (tab !== "style" || current?.id !== home.id || window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
       setDecisions((before) => ({ ...before, [home.id]: choice }));
-      if (celebrate) { setSaved((before) => before.includes(home.id) ? before : [home.id, ...before]); setCelebration(true); }
+      if (celebrate) setCelebration(true);
       setDrag(0);
       return;
     }
@@ -81,7 +81,7 @@ export default function DemoApp() {
     setExiting({ id: home.id, choice, distance });
     exitTimer.current = window.setTimeout(() => {
       setDecisions((before) => ({ ...before, [home.id]: choice }));
-      if (celebrate) { setSaved((before) => before.includes(home.id) ? before : [home.id, ...before]); setCelebration(true); }
+      if (celebrate) setCelebration(true);
       setExiting(null);
       setDrag(0);
       exitPending.current = false;
@@ -229,7 +229,7 @@ export default function DemoApp() {
           <strong>{demoPrice(matchHome.price_pcm)} pcm</strong>
           <p className="demo-celebration__drop"><s>{demoPrice(Number(matchHome.price_history![0][1]))}</s> Price dropped {demoPrice(demoPriceDrop(matchHome))}</p>
           <p>{matchHome.street}, {matchHome.area}</p>
-          <small>One of the places nearer your taste. Saved to your shortlist for sharing.</small>
+          <small>One of the places nearer your taste. Tap Save in Browse to share it with friends.</small>
           <button className="demo-celebration__open" onClick={() => { setCelebration(false); setSort("taste"); setTab("browse"); window.scrollTo(0, 0); }}>See it and more like it →</button>
           <button className="demo-celebration__keep" onClick={() => setCelebration(false)}>Keep swiping</button>
         </div>
