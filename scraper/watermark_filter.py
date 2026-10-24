@@ -21,6 +21,7 @@ from .http import USER_AGENT
 TEMPLATE_PATH = pathlib.Path(__file__).parent / "data" / "watermark_ajr.npz"
 AJR_PREFIX = "estatetrack:ajrproperty:"
 LONDONWIDE_PREFIX = "estatesit:PC_LONWI_"
+LONDON_ESTATES_PREFIX = "estatesit:PC_LONDO_"
 AJR_THRESHOLD = 0.25
 REGION = (190, 233, 610, 310)
 
@@ -67,7 +68,9 @@ class WatermarkFilter:
                     self.data[url] = marked
 
     def is_marked(self, key: str, url: str) -> bool:
-        return key.startswith(LONDONWIDE_PREFIX) or (key.startswith(AJR_PREFIX) and self.data.get(url, False))
+        return key.startswith((LONDONWIDE_PREFIX, LONDON_ESTATES_PREFIX)) or (
+            key.startswith(AJR_PREFIX) and self.data.get(url, False)
+        )
 
     def save(self) -> None:
         self.path.parent.mkdir(parents=True, exist_ok=True)

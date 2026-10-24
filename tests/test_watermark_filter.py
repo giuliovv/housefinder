@@ -24,7 +24,7 @@ def test_ajr_detector_distinguishes_fixed_mark_from_clean_room():
     assert ajr_score(Image.open(io.BytesIO(_png(False))), template) < 0.25
 
 
-def test_cache_and_londonwide_exception(tmp_path):
+def test_cache_and_branded_agency_exceptions(tmp_path):
     calls = []
 
     def download(url):
@@ -38,6 +38,7 @@ def test_cache_and_londonwide_exception(tmp_path):
     assert filter_.is_marked("estatetrack:ajrproperty:1", "marked")
     assert not filter_.is_marked("estatetrack:ajrproperty:2", "clean")
     assert filter_.is_marked("estatesit:PC_LONWI_001699", "anything")
+    assert filter_.is_marked("estatesit:PC_LONDO_003642", "anything")
     assert not filter_.is_marked("estatesit:PC_LYONS_000188", "anything")
     filter_.save()
     reloaded = WatermarkFilter(path, downloader=download)
