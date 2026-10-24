@@ -1,0 +1,353 @@
+{
+ "currency": "GBP",
+ "agencyNote": "all names, addresses and agencies are fictional",
+ "homes": [
+  {
+   "id": "h01",
+   "street": "Linden Row",
+   "area": "Clapton",
+   "postcode": "E5",
+   "agency": "Larkspur Lettings",
+   "bedrooms": 1,
+   "bathrooms": 1,
+   "price_pcm": 1850,
+   "style": "Scandinavian",
+   "look": "bright airy flat: whitewashed walls, light oak floor, linen sofa, pale wood furniture, a few green plants, big sash windows, soft morning light",
+   "price_history": null,
+   "is_new": true,
+   "photos": [
+    "h01-living.jpg",
+    "h01-bedroom.jpg",
+    "h01-kitchen.jpg",
+    "h01-bathroom.jpg"
+   ]
+  },
+  {
+   "id": "h02",
+   "street": "Sorrel Court",
+   "area": "Stoke Newington",
+   "postcode": "N16",
+   "agency": "Tern Estates",
+   "bedrooms": 2,
+   "bathrooms": 1,
+   "price_pcm": 2450,
+   "style": "Scandinavian",
+   "look": "bright Scandinavian flat: white walls, pale ash floor, grey-blue accents, sheepskin throws, tulips, a small balcony visible through glass doors",
+   "price_history": null,
+   "is_new": false,
+   "photos": [
+    "h02-living.jpg",
+    "h02-bedroom.jpg",
+    "h02-kitchen.jpg",
+    "h02-bathroom.jpg"
+   ]
+  },
+  {
+   "id": "h03",
+   "street": "The Candle Works",
+   "area": "Hackney Wick",
+   "postcode": "E9",
+   "agency": "Quill & Co",
+   "bedrooms": 1,
+   "bathrooms": 1,
+   "price_pcm": 2300,
+   "style": "Industrial",
+   "look": "converted-factory loft: exposed red brick, black steel-framed windows, polished concrete floor, iron pipes, leather sofa, filament bulbs",
+   "price_history": [
+    [
+     "2026-10-08",
+     2500
+    ],
+    [
+     "2026-10-20",
+     2300
+    ]
+   ],
+   "is_new": false,
+   "photos": [
+    "h03-living.jpg",
+    "h03-bedroom.jpg",
+    "h03-kitchen.jpg",
+    "h03-bathroom.jpg"
+   ]
+  },
+  {
+   "id": "h04",
+   "street": "Foundry Yard",
+   "area": "Shoreditch",
+   "postcode": "E2",
+   "agency": "Ashgrove Homes",
+   "bedrooms": 2,
+   "bathrooms": 2,
+   "price_pcm": 3400,
+   "style": "Industrial",
+   "look": "warehouse conversion: very tall black steel windows, exposed brick and concrete beams, dark timber floor, metal shelving, big pendant lamps",
+   "price_history": null,
+   "is_new": false,
+   "photos": [
+    "h04-living.jpg",
+    "h04-bedroom.jpg",
+    "h04-kitchen.jpg",
+    "h04-bathroom.jpg"
+   ]
+  },
+  {
+   "id": "h05",
+   "street": "Albion Terrace",
+   "area": "Peckham",
+   "postcode": "SE15",
+   "agency": "Haven Estates",
+   "bedrooms": 2,
+   "bathrooms": 1,
+   "price_pcm": 2600,
+   "style": "Victorian period",
+   "look": "Victorian period flat: tall sash windows, ornate cornicing and ceiling rose, original fireplace, sanded floorboards, painted skirting, muted heritage colours",
+   "price_history": [
+    [
+     "2026-10-09",
+     2750
+    ],
+    [
+     "2026-10-21",
+     2600
+    ]
+   ],
+   "is_new": false,
+   "photos": [
+    "h05-living.jpg",
+    "h05-bedroom.jpg",
+    "h05-kitchen.jpg",
+    "h05-bathroom.jpg"
+   ]
+  },
+  {
+   "id": "h06",
+   "street": "Hartley Gardens",
+   "area": "Highbury",
+   "postcode": "N5",
+   "agency": "Larkspur Lettings",
+   "bedrooms": 1,
+   "bathrooms": 1,
+   "price_pcm": 2150,
+   "style": "Victorian period",
+   "look": "Victorian conversion with a curved bay window, picture rails, tall ceilings, a marble fireplace, a vintage rug, warm lamplight",
+   "price_history": null,
+   "is_new": true,
+   "photos": [
+    "h06-living.jpg",
+    "h06-bedroom.jpg",
+    "h06-kitchen.jpg",
+    "h06-bathroom.jpg"
+   ]
+  },
+  {
+   "id": "h07",
+   "street": "Meridian Quay",
+   "area": "Canary Wharf",
+   "postcode": "E14",
+   "agency": "Tern Estates",
+   "bedrooms": 1,
+   "bathrooms": 1,
+   "price_pcm": 2750,
+   "style": "Modern new-build",
+   "look": "new-build tower apartment: floor-to-ceiling glazing, neutral grey and white palette, engineered oak floor, sleek handleless kitchen, city view",
+   "price_history": null,
+   "is_new": true,
+   "photos": [
+    "h07-living.jpg",
+    "h07-bedroom.jpg",
+    "h07-kitchen.jpg",
+    "h07-bathroom.jpg"
+   ]
+  },
+  {
+   "id": "h08",
+   "street": "Vantage Point",
+   "area": "Stratford",
+   "postcode": "E20",
+   "agency": "Quill & Co",
+   "bedrooms": 2,
+   "bathrooms": 2,
+   "price_pcm": 2900,
+   "style": "Modern new-build",
+   "look": "contemporary new-build: open-plan living, glossy white kitchen with quartz island, recessed spotlights, light grey carpet and oak, large windows",
+   "price_history": null,
+   "is_new": false,
+   "photos": [
+    "h08-living.jpg",
+    "h08-bedroom.jpg",
+    "h08-kitchen.jpg",
+    "h08-bathroom.jpg"
+   ]
+  },
+  {
+   "id": "h09",
+   "street": "Fig Tree Lane",
+   "area": "Walthamstow",
+   "postcode": "E17",
+   "agency": "Haven Estates",
+   "bedrooms": 1,
+   "bathrooms": 1,
+   "price_pcm": 1700,
+   "style": "Cosy boho",
+   "look": "cosy bohemian flat: rattan furniture, many trailing plants, layered textiles and macram\u00e9, warm terracotta and mustard tones, string lights",
+   "price_history": null,
+   "is_new": true,
+   "photos": [
+    "h09-living.jpg",
+    "h09-bedroom.jpg",
+    "h09-kitchen.jpg",
+    "h09-bathroom.jpg"
+   ]
+  },
+  {
+   "id": "h10",
+   "street": "Wren Street",
+   "area": "Camberwell",
+   "postcode": "SE5",
+   "agency": "Ashgrove Homes",
+   "bedrooms": 2,
+   "bathrooms": 1,
+   "price_pcm": 2350,
+   "style": "Cosy eclectic",
+   "look": "cosy cottage-style flat: patterned wallpaper, mismatched vintage furniture, bookshelves, warm lamps, a wood-burner, quilts and cushions",
+   "price_history": [
+    [
+     "2026-10-10",
+     2450
+    ],
+    [
+     "2026-10-22",
+     2350
+    ]
+   ],
+   "is_new": false,
+   "photos": [
+    "h10-living.jpg",
+    "h10-bedroom.jpg",
+    "h10-kitchen.jpg",
+    "h10-bathroom.jpg"
+   ]
+  },
+  {
+   "id": "h11",
+   "street": "Kori House",
+   "area": "Islington",
+   "postcode": "N1",
+   "agency": "Tern Estates",
+   "bedrooms": 1,
+   "bathrooms": 1,
+   "price_pcm": 2600,
+   "style": "Japandi minimalist",
+   "look": "Japandi minimalist flat: pale wood, low furniture, neutral stone and oatmeal tones, paper lantern, almost no clutter, calm diffuse light",
+   "price_history": null,
+   "is_new": false,
+   "photos": [
+    "h11-living.jpg",
+    "h11-bedroom.jpg",
+    "h11-kitchen.jpg",
+    "h11-bathroom.jpg"
+   ]
+  },
+  {
+   "id": "h12",
+   "street": "Plain Mews",
+   "area": "Notting Hill",
+   "postcode": "W11",
+   "agency": "Larkspur Lettings",
+   "bedrooms": 1,
+   "bathrooms": 1,
+   "price_pcm": 3100,
+   "style": "All-white minimalist",
+   "look": "all-white minimalist mews house: white walls and floors, very few objects, clean lines, a single sculptural chair, bright even light",
+   "price_history": null,
+   "is_new": false,
+   "photos": [
+    "h12-living.jpg",
+    "h12-bedroom.jpg",
+    "h12-kitchen.jpg",
+    "h12-bathroom.jpg"
+   ]
+  },
+  {
+   "id": "h13",
+   "street": "Inkwell Place",
+   "area": "Bermondsey",
+   "postcode": "SE1",
+   "agency": "Quill & Co",
+   "bedrooms": 1,
+   "bathrooms": 1,
+   "price_pcm": 2500,
+   "style": "Dark and moody",
+   "look": "dark moody flat: deep navy walls, brass fittings, velvet sofa, dark wood, low warm lighting, framed art",
+   "price_history": null,
+   "is_new": false,
+   "photos": [
+    "h13-living.jpg",
+    "h13-bedroom.jpg",
+    "h13-kitchen.jpg",
+    "h13-bathroom.jpg"
+   ]
+  },
+  {
+   "id": "h14",
+   "street": "Corvid Lane",
+   "area": "Dalston",
+   "postcode": "E8",
+   "agency": "Ashgrove Homes",
+   "bedrooms": 2,
+   "bathrooms": 1,
+   "price_pcm": 2900,
+   "style": "Dark and moody",
+   "look": "dark moody flat: forest-green panelled walls, black woodwork, rich leather, candles, dramatic contrast, warm lamplight",
+   "price_history": null,
+   "is_new": true,
+   "photos": [
+    "h14-living.jpg",
+    "h14-bedroom.jpg",
+    "h14-kitchen.jpg",
+    "h14-bathroom.jpg"
+   ]
+  },
+  {
+   "id": "h15",
+   "street": "Marigold Mews",
+   "area": "Brixton",
+   "postcode": "SW9",
+   "agency": "Haven Estates",
+   "bedrooms": 2,
+   "bathrooms": 1,
+   "price_pcm": 2450,
+   "style": "Colourful eclectic",
+   "look": "colourful eclectic flat: bold coral and teal walls, patterned tiles, mixed prints, big framed art, lots of plants, playful furniture",
+   "price_history": null,
+   "is_new": false,
+   "photos": [
+    "h15-living.jpg",
+    "h15-bedroom.jpg",
+    "h15-kitchen.jpg",
+    "h15-bathroom.jpg"
+   ]
+  },
+  {
+   "id": "h16",
+   "street": "Pavo Studios",
+   "area": "Camden",
+   "postcode": "NW1",
+   "agency": "Tern Estates",
+   "bedrooms": 0,
+   "bathrooms": 1,
+   "price_pcm": 1650,
+   "style": "Colourful maximalist",
+   "look": "colourful maximalist studio: pink and turquoise walls, velvet furniture, gold accents, gallery wall, patterned rug, a statement lamp",
+   "price_history": null,
+   "is_new": false,
+   "photos": [
+    "h16-living.jpg",
+    "h16-bedroom.jpg",
+    "h16-kitchen.jpg",
+    "h16-bathroom.jpg"
+   ]
+  }
+ ]
+}
