@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useFont, useNoIndex } from "../lab/common";
-import { DEMO_MATCH_ID, demoHomes, demoMatchScore, demoPrice, type DemoHome } from "./data";
+import { DEMO_MATCH_ID, demoHomes, demoMatchScore, demoPrice, demoStyleHomes, type DemoHome } from "./data";
 import "./demo.css";
 
 type Tab = "style" | "browse" | "saved";
@@ -42,14 +42,14 @@ export default function DemoApp() {
     };
   }, []);
 
-  const current = demoHomes.find((home) => !decisions[home.id]);
+  const current = demoStyleHomes.find((home) => !decisions[home.id]);
   const liked = demoHomes.filter((home) => decisions[home.id] === "like");
   const passed = demoHomes.filter((home) => decisions[home.id] === "pass");
-  const hasTaste = liked.length >= 3 && passed.length >= 2;
+  const hasTaste = liked.length >= 2;
   const strongRead = liked.length >= 5 && passed.length >= 4;
   const showMatch = Object.keys(decisions).length >= 3;
   const tasteLabel = strongRead ? "A strong read on your taste" : hasTaste ? "Getting a feel for your taste" : "Learning your taste";
-  const tasteStyle = liked.length ? [...liked].sort((a, b) => liked.filter((x) => x.style === b.style).length - liked.filter((x) => x.style === a.style).length)[0].style : null;
+  const tasteStyle = hasTaste ? "Light-filled character" : null;
 
   const browse = [...demoHomes].sort((a, b) => {
     if (a.sheet === 5 || b.sheet === 5) return Number(a.sheet === 5) - Number(b.sheet === 5);
