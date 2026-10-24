@@ -41,6 +41,27 @@ export function demoPrice(price: number): string {
   return `£${price.toLocaleString("en-GB")}`;
 }
 
+export function demoPriceDrop(home: DemoHome): number {
+  if (!home.price_history || home.price_history.length < 2) return 0;
+  return Math.max(0, Number(home.price_history[0][1]) - Number(home.price_history.at(-1)![1]));
+}
+
+export function demoShareUrl(origin: string, ids: string[], firstName: string): string {
+  const url = new URL("/demo", origin);
+  url.searchParams.set("shared", ids.filter((id) => demoHomes.some((home) => home.id === id)).join(","));
+  if (firstName.trim()) url.searchParams.set("from", firstName.trim().slice(0, 30));
+  return url.toString();
+}
+
+export function readDemoShare(search: string): { ids: string[]; from: string } | null {
+  const params = new URLSearchParams(search);
+  const shared = params.get("shared");
+  if (shared === null) return null;
+  const allowed = new Set(demoHomes.map((home) => home.id));
+  const ids = [...new Set(shared.split(",").filter((id) => allowed.has(id)))];
+  return ids.length ? { ids, from: (params.get("from") ?? "").slice(0, 30) } : null;
+}
+
 export function demoMatchScore(home: DemoHome, liked: DemoHome[]): number {
   if (liked.length === 0) return 0;
   const sameStyle = liked.filter((other) => other.style === home.style).length;

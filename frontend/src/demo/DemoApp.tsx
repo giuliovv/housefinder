@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useFont, useNoIndex } from "../lab/common";
-import { DEMO_MATCH_ID, demoGallery, demoHomes, demoPrice, demoStyleHomes, orderDemoBrowse, shouldOfferDemoMatch, type DemoHome, type DemoPhotoRef } from "./data";
+import { DEMO_MATCH_ID, demoGallery, demoHomes, demoPrice, demoPriceDrop, demoShareUrl, demoStyleHomes, orderDemoBrowse, readDemoShare, shouldOfferDemoMatch, type DemoHome, type DemoPhotoRef } from "./data";
 import "./demo.css";
 
 type Tab = "style" | "browse" | "saved";
@@ -9,6 +9,7 @@ type Decision = "like" | "pass" | "skip";
 const FONT = "family=Bricolage+Grotesque:opsz,wght@12..96,400;12..96,600;12..96,800&family=Instrument+Serif:ital@1&family=DM+Mono:wght@500";
 const SWIPE_DELAY_MS = 480;
 const matchHome = demoHomes.find((home) => home.id === DEMO_MATCH_ID)!;
+const incomingShare = typeof window === "undefined" ? null : readDemoShare(window.location.search);
 
 function DemoPhoto({ home, photo = demoGallery(home)[0], className = "" }: { home: DemoHome; photo?: DemoPhotoRef; className?: string }) {
   return (
@@ -24,9 +25,13 @@ function DemoPhoto({ home, photo = demoGallery(home)[0], className = "" }: { hom
 export default function DemoApp() {
   useFont(FONT);
   useNoIndex();
-  const [tab, setTab] = useState<Tab>("style");
+  const [tab, setTab] = useState<Tab>(incomingShare ? "saved" : "style");
   const [decisions, setDecisions] = useState<Record<string, Decision>>({});
-  const [saved, setSaved] = useState<string[]>([]);
+  const [saved, setSaved] = useState<string[]>(incomingShare?.ids ?? []);
+  const [shareOpen, setShareOpen] = useState(false);
+  const [shareName, setShareName] = useState("Alex");
+  const [shareCopied, setShareCopied] = useState(false);
+  const [shareError, setShareError] = useState<string | null>(null);
   const [browseRatings, setBrowseRatings] = useState<Record<string, Decision>>({});
   const [photoIndices, setPhotoIndices] = useState<Record<string, number>>({});
   const [selected, setSelected] = useState<DemoHome | null>(null);
@@ -60,12 +65,13 @@ export default function DemoApp() {
   const tasteStyle = hasTaste ? "Light-filled character" : null;
 
   const browse = orderDemoBrowse(liked, sort, hasFeaturedMatch);
+  const shareUrl = typeof window === "undefined" ? "" : demoShareUrl(window.location.origin, saved, shareName);
 
   const decide = useCallback((home: DemoHome, choice: Decision) => {
     const celebrate = matchOffer && home.id === DEMO_MATCH_ID && choice === "like";
     if (tab !== "style" || current?.id !== home.id || window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
       setDecisions((before) => ({ ...before, [home.id]: choice }));
-      if (celebrate) setCelebration(true);
+      if (celebrate) { setSaved((before) => before.includes(home.id) ? before : [home.id, ...before]); setCelebration(true); }
       setDrag(0);
       return;
     }
@@ -75,7 +81,7 @@ export default function DemoApp() {
     setExiting({ id: home.id, choice, distance });
     exitTimer.current = window.setTimeout(() => {
       setDecisions((before) => ({ ...before, [home.id]: choice }));
-      if (celebrate) setCelebration(true);
+      if (celebrate) { setSaved((before) => before.includes(home.id) ? before : [home.id, ...before]); setCelebration(true); }
       setExiting(null);
       setDrag(0);
       exitPending.current = false;
@@ -93,14 +99,14 @@ export default function DemoApp() {
 
   useEffect(() => {
     function onKey(event: KeyboardEvent) {
-      if (event.key === "Escape") { setSelected(null); setCelebration(false); return; }
-      if (selected || celebration || tab !== "style" || !current) return;
+      if (event.key === "Escape") { setSelected(null); setCelebration(false); setShareOpen(false); return; }
+      if (selected || celebration || shareOpen || tab !== "style" || !current) return;
       if (event.key === "ArrowLeft") decide(current, "pass");
       if (event.key === "ArrowRight") decide(current, "like");
     }
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
-  }, [current, selected, celebration, tab, decide]);
+  }, [current, selected, celebration, shareOpen, tab, decide]);
 
   function endDrag() {
     pointer.current.active = false;
@@ -124,7 +130,7 @@ export default function DemoApp() {
   }
 
   function homeCard(home: DemoHome) {
-    const priceDrop = home.price_history ? Number(home.price_history[0][1]) - Number(home.price_history[home.price_history.length - 1][1]) : 0;
+    const priceDrop = demoPriceDrop(home);
     const photos = demoGallery(home);
     const photoIndex = photoIndices[home.id] ?? 0;
     const choice = browseRatings[`${home.id}:${photoIndex}`];
@@ -148,7 +154,7 @@ export default function DemoApp() {
             <strong>{demoPrice(home.price_pcm)} <small>pcm</small></strong>
             <button className={`demo-save${saved.includes(home.id) ? " demo-save--on" : ""}`} onClick={() => toggleSave(home.id)} aria-pressed={saved.includes(home.id)}>{saved.includes(home.id) ? "★ Saved" : "☆ Save"}</button>
           </div>
-          {priceDrop > 0 && <p className="demo-listing__drop">Price dropped {demoPrice(priceDrop)}</p>}
+          {priceDrop > 0 && <p className="demo-listing__drop"><s>{demoPrice(Number(home.price_history![0][1]))}</s> Price dropped {demoPrice(priceDrop)}</p>}
           <button className="demo-listing__detail" onClick={() => setSelected(home)}>
             <span>{home.street}, {home.area} {home.postcode}</span>
             <small>{home.bedrooms === 0 ? "Studio" : `${home.bedrooms} bed`} · {home.bathrooms} bath · Preview home ↗</small>
@@ -207,7 +213,11 @@ export default function DemoApp() {
         <div className="demo-browse__list">{browse.map(homeCard)}</div>
       </section>}
 
-      {tab === "saved" && <section className="demo-browse demo-saved"><div className="demo-browse__top"><div><p className="demo-kicker">YOUR SHORTLIST</p><h1>Short<em>list</em></h1></div><span>{saved.length} saved</span></div>{saved.length ? <div className="demo-browse__list">{demoHomes.filter((home) => saved.includes(home.id)).map(homeCard)}</div> : <div className="demo-empty"><h2>Nothing saved <em>yet.</em></h2><p>Save a home from Browse to see it here.</p><button onClick={() => setTab("browse")}>Browse homes</button></div>}</section>}
+      {tab === "saved" && <section className="demo-browse demo-saved">
+        <div className="demo-browse__top"><div><p className="demo-kicker">{incomingShare?.from ? `${incomingShare.from.toUpperCase()}'S SHORTLIST` : "YOUR SHORTLIST"}</p><h1>Short<em>list</em></h1></div><span>{saved.length} saved</span></div>
+        {saved.length > 0 && <div className="demo-saved__share-row"><p>Homes worth a second look. Your photo swipes stay private.</p><button onClick={() => { setShareCopied(false); setShareError(null); setShareOpen(true); }}>Share list ↗</button></div>}
+        {saved.length ? <div className="demo-browse__list">{demoHomes.filter((home) => saved.includes(home.id)).map(homeCard)}</div> : <div className="demo-empty"><h2>Nothing saved <em>yet.</em></h2><p>Save a home from Browse to see it here.</p><button onClick={() => setTab("browse")}>Browse homes</button></div>}
+      </section>}
 
       {selected && <div className="demo-modal" role="presentation" onClick={() => setSelected(null)}><section className="demo-modal__card" role="dialog" aria-modal="true" aria-label={`Preview ${selected.street}`} onClick={(event) => event.stopPropagation()}><button className="demo-modal__close" onClick={() => setSelected(null)} aria-label="Close preview">×</button><DemoPhoto home={selected} photo={demoGallery(selected)[photoIndices[selected.id] ?? 0]} /><div><p className="demo-kicker">{selected.agency}</p><h2>{selected.street}</h2><p>{selected.area} {selected.postcode} · {selected.bedrooms === 0 ? "Studio" : `${selected.bedrooms} bed`} · {demoPrice(selected.price_pcm)} pcm</p></div></section></div>}
       {celebration && <div className="demo-celebration" role="dialog" aria-modal="true" aria-label="It's a match">
@@ -217,11 +227,23 @@ export default function DemoApp() {
           <h2>It's a <em>match!</em></h2>
           <div className="demo-celebration__photo"><DemoPhoto home={matchHome} /></div>
           <strong>{demoPrice(matchHome.price_pcm)} pcm</strong>
+          <p className="demo-celebration__drop"><s>{demoPrice(Number(matchHome.price_history![0][1]))}</s> Price dropped {demoPrice(demoPriceDrop(matchHome))}</p>
           <p>{matchHome.street}, {matchHome.area}</p>
-          <small>One of the places nearer your taste. See the whole home in Browse.</small>
+          <small>One of the places nearer your taste. Saved to your shortlist for sharing.</small>
           <button className="demo-celebration__open" onClick={() => { setCelebration(false); setSort("taste"); setTab("browse"); window.scrollTo(0, 0); }}>See it and more like it →</button>
           <button className="demo-celebration__keep" onClick={() => setCelebration(false)}>Keep swiping</button>
         </div>
+      </div>}
+      {shareOpen && <div className="demo-share" role="presentation" onClick={() => setShareOpen(false)}>
+        <section className="demo-share__panel" role="dialog" aria-modal="true" aria-label="Share this list" onClick={(event) => event.stopPropagation()}>
+          <div className="demo-share__header"><h2>Share this <em>list</em></h2><button onClick={() => setShareOpen(false)} aria-label="Close share sheet">×</button></div>
+          <p>Send your shortlist to a friend. Only home IDs and your first name travel with the link; your swipes stay here.</p>
+          <label htmlFor="demo-share-name">Your first name</label>
+          <input id="demo-share-name" maxLength={30} value={shareName} onChange={(event) => { setShareName(event.target.value); setShareCopied(false); }} />
+          <a className="demo-share__whatsapp" href={`https://wa.me/?text=${encodeURIComponent(`Look at these homes with me: ${shareUrl}`)}`} target="_blank" rel="noopener noreferrer">Send on WhatsApp ↗</a>
+          <button className="demo-share__copy" onClick={async () => { try { await navigator.clipboard.writeText(shareUrl); setShareCopied(true); setShareError(null); } catch { setShareError("Couldn't copy the link. Check browser permissions."); } }}>{shareCopied ? "Link copied ✓" : "Copy link"}</button>
+          {shareError && <p className="demo-share__error" role="alert">{shareError}</p>}
+        </section>
       </div>}
       <p className="demo-visually-hidden">This is a simulated demo. All homes, prices and agency names shown here are fictional.</p>
     </main>

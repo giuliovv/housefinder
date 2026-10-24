@@ -1,5 +1,5 @@
 import { expect, it } from "vitest";
-import { DEMO_MATCH_ID, demoGallery, demoHomes, demoMatchScore, demoStyleHomes, orderDemoBrowse, shouldOfferDemoMatch } from "./data";
+import { DEMO_MATCH_ID, demoGallery, demoHomes, demoMatchScore, demoPriceDrop, demoShareUrl, demoStyleHomes, orderDemoBrowse, readDemoShare, shouldOfferDemoMatch } from "./data";
 
 it("maps 20 fictional homes onto five generated sheets", () => {
   expect(demoHomes).toHaveLength(20);
@@ -36,4 +36,15 @@ it("puts the two complete homes first in filmed Browse and dated rooms last", ()
   expect(ordered.slice(0, 2).map((home) => home.id)).toEqual([DEMO_MATCH_ID, "h01"]);
   expect(ordered.slice(0, 2).every((home) => demoGallery(home).length >= 4)).toBe(true);
   expect(ordered.slice(-4).every((home) => home.sheet === 5)).toBe(true);
+});
+
+it("shows an exact £100 drop on the matched home", () => {
+  const match = demoHomes.find((home) => home.id === DEMO_MATCH_ID)!;
+  expect(demoPriceDrop(match)).toBe(100);
+});
+
+it("shares only known fictional home IDs and a first name", () => {
+  const url = demoShareUrl("https://houseswipe.uk", [DEMO_MATCH_ID, "h01", "unknown"], "Alex");
+  expect(readDemoShare(new URL(url).search)).toEqual({ ids: [DEMO_MATCH_ID, "h01"], from: "Alex" });
+  expect(readDemoShare("?shared=unknown")).toBeNull();
 });
