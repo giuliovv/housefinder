@@ -74,7 +74,13 @@ export class InfraStack extends cdk.Stack {
 function handler(event) {
   var request = event.request;
   var host = request.headers.host ? request.headers.host.value : '';
-  if (host === '${canonicalDomain}' || ${JSON.stringify(handoffHosts)}.indexOf(host) >= 0) return request;
+  if (host === '${canonicalDomain}' || ${JSON.stringify(handoffHosts)}.indexOf(host) >= 0) {
+    // the app's own pages are one HTML file; anything else that isn't a real file falls through to a real 404 (see errorResponses)
+    var uri = request.uri;
+    if (/^\\/(privacy|demo)\\/?$/.test(uri) || /^\\/ui(\\d*|\\/codex(\\/[a-z0-9-]+)?)\\/?$/.test(uri)) request.uri = '/index.html';
+    else if (/^\\/ui\\/original\\/?$/.test(uri)) request.uri = '/ui/original/index.html';
+    return request;
+  }
   var parts = [];
   var q = request.querystring || {};
   for (var key in q) {
@@ -132,11 +138,11 @@ function handler(event) {
           originRequestPolicy: cloudfront.OriginRequestPolicy.ALL_VIEWER_EXCEPT_HOST_HEADER,
         },
       },
-      // No client-side routing yet (single page) — these just make it safe to
-      // add later without another infra change.
+      // A path that is neither a file nor one of the app's pages (the function above rewrites those) is a real 404, so search engines
+      // don't index made-up addresses. The body is still the app, which shows its own "page not found" screen.
       errorResponses: [
-        { httpStatus: 403, responseHttpStatus: 200, responsePagePath: '/index.html' },
-        { httpStatus: 404, responseHttpStatus: 200, responsePagePath: '/index.html' },
+        { httpStatus: 403, responseHttpStatus: 404, responsePagePath: '/index.html' },
+        { httpStatus: 404, responseHttpStatus: 404, responsePagePath: '/index.html' },
       ],
     });
 

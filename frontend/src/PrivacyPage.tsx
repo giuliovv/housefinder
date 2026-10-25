@@ -1,6 +1,7 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useFont } from "./lab/common";
 import { setUsageStatsEnabled, usageStatsEnabled } from "./lib/stats";
+import { setPageMeta } from "./lib/seo";
 import "./privacy.css";
 
 const BOARD_FONT = "family=Bricolage+Grotesque:opsz,wght@12..96,400;12..96,600;12..96,800&family=Instrument+Serif:ital@1&family=DM+Mono:wght@500";
@@ -8,6 +9,9 @@ const BOARD_FONT = "family=Bricolage+Grotesque:opsz,wght@12..96,400;12..96,600;1
 export default function PrivacyPage() {
   useFont(BOARD_FONT);
   const [statsEnabled, setStatsEnabled] = useState(usageStatsEnabled);
+  useEffect(() => {
+    setPageMeta({ title: "Privacy: House Swipe", description: "How House Swipe handles your data: your taste stays in your browser, sharing a shortlist is optional, and we only count broad usage.", canonical: "https://houseswipe.uk/privacy" });
+  }, []);
 
   function updateStats(enabled: boolean) {
     setUsageStatsEnabled(enabled);
