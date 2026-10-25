@@ -187,8 +187,8 @@ function handler(event) {
       ephemeralStorageSize: cdk.Size.gibibytes(2),
       // inbox/ holds pre-scraped results uploaded by the dev host's cron
       // (see scraper/refresh.py --dump); cache/ holds a CI run's checkpoint
-      // analytics/ the permanent listing history and work/ the full embeddings working store, alerts/ the pending/handled health alerts (see the workflow), killswitch.json the agency kill switch (scraper/killswitch.py). Without this, prune would delete them on deploy.
-      exclude: ['inbox/*', 'cache/*', 'analytics/*', 'work/*', 'alerts/*', 'killswitch.json'],
+      // analytics/ the permanent listing history and work/ the full embeddings working store, alerts/ the pending/handled health alerts (see the workflow), temp/demo-recordings/ the shareable demo clips, killswitch.json the agency kill switch (scraper/killswitch.py). Without this, prune would delete them on deploy.
+      exclude: ['inbox/*', 'cache/*', 'analytics/*', 'work/*', 'alerts/*', 'temp/demo-recordings/*', 'killswitch.json'],
     });
 
     new cdk.CfnOutput(this, 'CloudFrontDomain', { value: distribution.distributionDomainName });

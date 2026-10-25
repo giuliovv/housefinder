@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useFont, useNoIndex } from "../lab/common";
-import { DEMO_MATCH_ID, demoGallery, demoHomes, demoPrice, demoPriceDrop, demoShareUrl, demoStyleHomes, orderDemoBrowse, readDemoShare, shouldOfferDemoMatch, type DemoHome, type DemoPhotoRef } from "./data";
+import { DEMO_MATCH_ID, demoGallery, demoHomes, demoPrice, demoPriceDrop, demoShareUrl, demoStyleHomes, nextDemoStyleHome, orderDemoBrowse, readDemoShare, shouldOfferDemoMatch, type DemoHome, type DemoPhotoRef } from "./data";
 import "./demo.css";
 
 type Tab = "style" | "browse" | "saved";
@@ -56,6 +56,7 @@ export default function DemoApp() {
   const showMatch = Object.keys(decisions).length >= 3;
   const matchOffer = shouldOfferDemoMatch(decisions);
   const current = matchOffer ? matchHome : demoStyleHomes.find((home) => !decisions[home.id]);
+  const next = current ? nextDemoStyleHome(decisions, current) : undefined;
   const liked = demoHomes.filter((home) => decisions[home.id] === "like");
   const passed = demoHomes.filter((home) => decisions[home.id] === "pass");
   const hasTaste = liked.length >= 2;
@@ -186,11 +187,12 @@ export default function DemoApp() {
             onPointerCancel={() => { pointer.current.active = false; setDrag(0); }}
             style={{ touchAction: "pan-y" }}
           >
+            {next && <div className="demo-style__underlay" aria-hidden="true"><DemoPhoto home={next} /><div className="demo-style__photo-note">Photo {Object.keys(decisions).length + 2} / {demoHomes.length}</div></div>}
             <div className={`demo-style__moving${exiting ? " demo-style__moving--exiting" : pointer.current.active ? " demo-style__moving--dragging" : ""}`} style={{ transform: `translateX(${exiting?.distance ?? drag}px) rotate(${(exiting?.distance ?? drag) / 25}deg)`, opacity: exiting?.choice === "skip" ? 0 : 1 }}>
               <DemoPhoto home={current} />
+              <div className="demo-style__photo-note">Photo {Object.keys(decisions).length + 1} / {demoHomes.length}</div>
               {(Math.abs(drag) > 25 || (exiting && exiting.choice !== "skip")) && <span className={`demo-style__stamp ${(exiting?.choice === "like" || (!exiting && drag > 0)) ? "demo-style__stamp--like" : "demo-style__stamp--pass"}`}>{exiting?.choice === "like" || (!exiting && drag > 0) ? "LIKE" : "PASS"}</span>}
             </div>
-            <div className="demo-style__photo-note">Photo {Object.keys(decisions).length + 1} / {demoHomes.length}</div>
           </div>
           <div className="demo-style__card">
             <p className="demo-kicker">YOU LEAN TOWARD</p>

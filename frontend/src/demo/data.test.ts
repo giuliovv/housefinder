@@ -1,5 +1,5 @@
 import { expect, it } from "vitest";
-import { DEMO_MATCH_ID, demoGallery, demoHomes, demoMatchScore, demoPriceDrop, demoShareUrl, demoStyleHomes, orderDemoBrowse, readDemoShare, shouldOfferDemoMatch } from "./data";
+import { DEMO_MATCH_ID, demoGallery, demoHomes, demoMatchScore, demoPriceDrop, demoShareUrl, demoStyleHomes, nextDemoStyleHome, orderDemoBrowse, readDemoShare, shouldOfferDemoMatch } from "./data";
 
 it("maps 20 fictional homes onto five generated sheets", () => {
   expect(demoHomes).toHaveLength(20);
@@ -29,6 +29,13 @@ it("offers the scripted match once after three Style swipes", () => {
   expect(shouldOfferDemoMatch({ h01: "like", h17: "pass" })).toBe(false);
   expect(shouldOfferDemoMatch({ h01: "like", h17: "pass", h02: "like" })).toBe(true);
   expect(shouldOfferDemoMatch({ h01: "like", h17: "pass", h02: "like", [DEMO_MATCH_ID]: "like" })).toBe(false);
+});
+
+it("keeps the upcoming photo beneath each Style swipe, including the match", () => {
+  expect(nextDemoStyleHome({}, demoStyleHomes[0])?.id).toBe(demoStyleHomes[1].id);
+  expect(nextDemoStyleHome({ h01: "like", h17: "pass" }, demoStyleHomes[2])?.id).toBe(DEMO_MATCH_ID);
+  expect(nextDemoStyleHome({ h01: "like", h17: "pass", h02: "like" }, demoHomes.find((home) => home.id === DEMO_MATCH_ID)!)?.id).toBe(demoStyleHomes[3].id);
+  expect(nextDemoStyleHome(Object.fromEntries(demoHomes.filter((home) => home.id !== "h20").map((home) => [home.id, "skip"])), demoHomes.find((home) => home.id === "h20")!)).toBeUndefined();
 });
 
 it("puts the two complete homes first in filmed Browse and dated rooms last", () => {

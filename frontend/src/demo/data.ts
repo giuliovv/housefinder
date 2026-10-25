@@ -21,6 +21,13 @@ export const demoStyleHomes: DemoHome[] = [
   ...demoHomes.filter((_, index) => !earlyStyleOrder.includes(index)),
 ];
 
+export function nextDemoStyleHome(decisions: Record<string, string>, current: DemoHome): DemoHome | undefined {
+  if (Object.keys(decisions).length + 1 >= 3 && current.id !== DEMO_MATCH_ID && !decisions[DEMO_MATCH_ID]) {
+    return demoHomes.find((home) => home.id === DEMO_MATCH_ID);
+  }
+  return demoStyleHomes.find((home) => home.id !== current.id && !decisions[home.id]);
+}
+
 export interface DemoPhotoRef {
   src: string;
   tile: number;
