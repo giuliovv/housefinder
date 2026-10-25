@@ -144,5 +144,7 @@ html.demo-page {
 .demo-visually-hidden { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0, 0, 0, 0); white-space: nowrap; border: 0; }
 
 @media (min-width: 550px) { .demo-shell { margin-block: 30px; min-height: calc(100svh - 60px); border: 1px solid #cec9bc; border-radius: 28px; overflow: clip; } }
+/* on a laptop the whole Style screen (photo and the card under it) fits the window, so nothing needs scrolling while filming */
+@media (min-width: 550px) { .demo-style__stage { height: clamp(300px, calc(100svh - 414px), 600px); } }
 @media (max-width: 370px) { .demo-style__actions button { padding-inline: 8px; } .demo-style__foot { font-size: 8px; } .demo-header { padding-inline: 12px; } }
 @media (prefers-reduced-motion: reduce) { .demo-style__moving, .demo-listing__photo-button .demo-photo { transition: none; } .demo-celebration, .demo-celebration__card, .demo-celebration__confetti span { animation: none; } }

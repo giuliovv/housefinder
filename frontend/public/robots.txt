@@ -3,5 +3,6 @@ User-agent: *
 Allow: /
 Disallow: /data/
 Disallow: /ui
+Disallow: /demo
 
 Sitemap: https://houseswipe.uk/sitemap.xml
