@@ -40,8 +40,8 @@ html.demo-page {
 .demo-page em { font-family: 'Instrument Serif', Georgia, serif; font-weight: 400; }
 
 .demo-style__stage { position: relative; height: clamp(350px, 56svh, 600px); overflow: hidden; border-radius: 0 0 34px 34px; background: #d4cdbf; user-select: none; }
-.demo-style__underlay { position: absolute; inset: 0; pointer-events: none; }
-.demo-style__moving { position: absolute; inset: 0; transition: transform .38s cubic-bezier(.2,.8,.2,1), opacity .38s ease; will-change: transform, opacity; }
+.demo-style__underlay { position: absolute; z-index: 0; inset: 0; pointer-events: none; }
+.demo-style__moving { position: absolute; z-index: 1; inset: 0; transition: transform .38s cubic-bezier(.2,.8,.2,1), opacity .38s ease; will-change: transform, opacity; }
 .demo-style__moving--dragging { transition: none; }
 .demo-style__photo-note { position: absolute; top: 14px; right: 14px; z-index: 1; padding: 6px 9px; border-radius: 99px; background: #fffdf7e8; font: 500 10px 'DM Mono', monospace; }
 .demo-style__stamp { position: absolute; top: 39%; padding: 8px 15px; border: 3px solid currentColor; border-radius: 10px; font-size: 29px; font-weight: 800; letter-spacing: -.04em; transform: rotate(-12deg); }

@@ -188,7 +188,7 @@ export default function DemoApp() {
             style={{ touchAction: "pan-y" }}
           >
             {next && <div className="demo-style__underlay" aria-hidden="true"><DemoPhoto home={next} /><div className="demo-style__photo-note">Photo {Object.keys(decisions).length + 2} / {demoHomes.length}</div></div>}
-            <div className={`demo-style__moving${exiting ? " demo-style__moving--exiting" : pointer.current.active ? " demo-style__moving--dragging" : ""}`} style={{ transform: `translateX(${exiting?.distance ?? drag}px) rotate(${(exiting?.distance ?? drag) / 25}deg)`, opacity: exiting?.choice === "skip" ? 0 : 1 }}>
+            <div key={current.id} className={`demo-style__moving${exiting ? " demo-style__moving--exiting" : pointer.current.active ? " demo-style__moving--dragging" : ""}`} style={{ transform: `translateX(${exiting?.distance ?? drag}px) rotate(${(exiting?.distance ?? drag) / 25}deg)`, opacity: exiting?.choice === "skip" ? 0 : 1 }}>
               <DemoPhoto home={current} />
               <div className="demo-style__photo-note">Photo {Object.keys(decisions).length + 1} / {demoHomes.length}</div>
               {(Math.abs(drag) > 25 || (exiting && exiting.choice !== "skip")) && <span className={`demo-style__stamp ${(exiting?.choice === "like" || (!exiting && drag > 0)) ? "demo-style__stamp--like" : "demo-style__stamp--pass"}`}>{exiting?.choice === "like" || (!exiting && drag > 0) ? "LIKE" : "PASS"}</span>}
