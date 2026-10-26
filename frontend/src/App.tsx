@@ -34,6 +34,7 @@ import {
 } from "./lib/questions";
 import { FilterSheet } from "./components/FilterSheet";
 import { LoadingMessage } from "./components/LoadingMessage";
+import { TastePromptCard } from "./components/TastePromptCard";
 import { useStylePreferences } from "./lib/preferences";
 import { listingKey } from "./lib/listingKey";
 import { topStyleLabels } from "./lib/similarity";
@@ -816,6 +817,7 @@ function App({ labVariant }: { labVariant?: "board" | "board-v4" | "board-v5" } 
           )}
           {board && visible.length === 0 && <div className="board__zero"><span>NO HOMES IN THIS SEARCH</span><h2>Nothing fits <em>all</em> of that</h2><p>{zeroSuggestions.length > 0 ? `Drop ${zeroSuggestions[0].label} to see ${zeroSuggestions[0].count} ${zeroSuggestions[0].count === 1 ? "home" : "homes"}.` : "Try widening your search. Your saved homes and style are still here."}</p>{zeroSuggestions.map((s) => <button key={s.key} onClick={() => removeOneFilter(s.key)}>Remove {s.label} · +{s.count}</button>)}{activeFilterCount > 0 && <button onClick={clearFilters}>Clear all filters</button>}</div>}
           <main className="listing-grid app__results" ref={resultsRef}>
+            {board && listings && !hasPreference && <TastePromptCard rated={swipeTotal} photos={undecided.slice(0, 3).map((p) => p.url)} onSwipe={() => setTab("style")} />}
             {visible.filter((l) => listingKey(l) !== pinnedKey).slice(0, shownCount).map((listing) => (
               board && !boardV4 ? <BoardListingCard
                 key={listingKey(listing)}
