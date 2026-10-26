@@ -68,24 +68,25 @@ describe("never the first thing on the deck", () => {
 });
 
 describe("the ready-for-Browse nudge", () => {
-  it("waits for a strong read and is announced only once", () => {
+  it("is announced once, when the read first becomes good", () => {
     expect(readyToAnnounce(null, 0)).toBeNull();
     expect(readyToAnnounce(1, 0)).toBeNull();
-    expect(readyToAnnounce(2, 0)).toBeNull();
-    expect(readyToAnnounce(2, 2)).toBeNull();
-    expect(readyToAnnounce(3, 2)).toBeNull(); // people who saw the old early card are not prompted again
+    expect(readyToAnnounce(2, 0)).toBe(2);
+    expect(readyToAnnounce(2, 2)).toBeNull(); // already shown
+    expect(readyToAnnounce(3, 2)).toBeNull();
     expect(readyToAnnounce(3, 3)).toBeNull();
     expect(readyToAnnounce(3, 0)).toBe(3);
   });
-  it("is not shown to someone who returns already at strong", () => {
-    expect(readyToAnnounce(3, 0, 3)).toBeNull(); // old swipes, card never shown: still no card
-    expect(readyToAnnounce(2, 0, 2)).toBeNull();
-    expect(readyToAnnounce(3, 0, 2)).toBe(3); // crossed strong during this visit
+  it("is not shown to someone who returns already at good", () => {
+    expect(readyToAnnounce(2, 0, 2)).toBeNull(); // old swipes, card never shown: still no card
+    expect(readyToAnnounce(3, 0, 3)).toBeNull();
+    expect(readyToAnnounce(2, 0, 1)).toBe(2); // crossed good during this visit
   });
   it("leaves five photos between a practical question and the suggestion", () => {
-    expect(readyToAnnounce(3, 0, 0, 20, 17)).toBeNull();
-    expect(readyToAnnounce(3, 0, 0, 21, 17)).toBeNull();
-    expect(readyToAnnounce(3, 0, 0, 22, 17)).toBe(3);
-    expect(readyToAnnounce(3, 0, 0, 8, 40)).toBe(3); // reset taste with an old question marker
+    expect(readyToAnnounce(2, 0, 0, 20, 17)).toBeNull();
+    expect(readyToAnnounce(2, 0, 0, 21, 17)).toBeNull();
+    expect(readyToAnnounce(2, 0, 0, 22, 17)).toBe(2);
+    expect(readyToAnnounce(2, 0, 0, 8, 40)).toBe(2); // reset taste with an old question marker
   });
 });
+

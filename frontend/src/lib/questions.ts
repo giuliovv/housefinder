@@ -122,7 +122,7 @@ export interface ReadyState {
 }
 
 const READY_KEY = "housefinder:ready:v1";
-const READY_FROM_LEVEL = 3; // "a strong read"
+const READY_FROM_LEVEL = 2; // "a good read" (about 20 swipes; "strong" took about 40, which most people never reach)
 const READY_GAP_AFTER_QUESTION = 5;
 
 export function loadReady(): ReadyState {
@@ -134,8 +134,8 @@ export function saveReady(state: ReadyState): void {
 }
 
 /**
- * The level to announce, or null. Announced exactly once, and only when the read *crosses* "strong" during this visit
- * (it started below "strong" and is now at least "strong"). Someone who comes back already past that point (swipes from
+ * The level to announce, or null. Announced exactly once, and only when the read *crosses* "good" during this visit
+ * (it started below "good" and is now at least "good"). Someone who comes back already past that point (swipes from
  * an earlier visit, or from before this card existed) is never told "you're ready": they know the way to Browse.
  */
 export function readyToAnnounce(

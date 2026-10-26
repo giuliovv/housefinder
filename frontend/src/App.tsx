@@ -313,6 +313,15 @@ function App({ labVariant }: { labVariant?: "board" | "board-v4" | "board-v5" } 
   const newSet = useMemo(() => (listings && since ? newKeys(listings, since, listingKey) : new Set<string>()), [listings, since]);
   const [newOnly, setNewOnly] = useState(false);
   const [browseSeen, setBrowseSeen] = useState(false);
+  // "It's a match!" moments only come once the person has been told about Browse (the ready card) or has opened it themselves
+  const [browseVisited, setBrowseVisited] = useState(() => {
+    try { return localStorage.getItem("housefinder:browse-visited:v1") === "1"; } catch { return false; }
+  });
+  useEffect(() => {
+    if (tab !== "browse" || browseVisited) return;
+    setBrowseVisited(true);
+    try { localStorage.setItem("housefinder:browse-visited:v1", "1"); } catch { /* storage may be unavailable */ }
+  }, [tab, browseVisited]);
   useEffect(() => {
     if (tab === "browse") setBrowseSeen(true);
   }, [tab]);
@@ -458,7 +467,6 @@ function App({ labVariant }: { labVariant?: "board" | "board-v4" | "board-v5" } 
   const [matchState, setMatchState] = useState(loadMatchState);
   function swipeInDeck(id: string, choice: "like" | "dislike") {
     swipe(id, choice); // always an ordinary swipe: it trains the taste model like any other
-    if (board) return; // Board ranks Browse directly; it does not interrupt browsing with match moments.
     if (matchCard && id === matchCard.id) {
       if (choice === "like") {
         trackEvent("ev_match_hit");
@@ -472,7 +480,7 @@ function App({ labVariant }: { labVariant?: "board" | "board-v4" | "board-v5" } 
     }
     const total = swipeTotal + 1;
     const dislikes = dislikedCount + (choice === "dislike" ? 1 : 0);
-    if (!store || !matchScores || !rankingPreference || !shouldOffer(matchState, total, dislikes, tasteRead?.level ?? 0, ready.shownLevel >= 2 || visitStartLevel >= 2)) return;
+    if (!store || !matchScores || !rankingPreference || !shouldOffer(matchState, total, dislikes, tasteRead?.level ?? 0, ready.shownLevel >= 2 || browseVisited || visitStartLevel >= 2)) return;
     const excluded = new Set([...matchState.shown, ...shortlist.saved]);
     const key = pickMatch(
       visible.map((l) => ({ key: listingKey(l), score: matchScores[listingKey(l)] ?? -Infinity, price: l.summary.price_pcm })),
@@ -646,7 +654,7 @@ function App({ labVariant }: { labVariant?: "board" | "board-v4" | "board-v5" } 
           price={celebrated.summary.price_text}
           address={celebrated.summary.address}
           matchPercent={!board && matchScores ? Math.round((matchScores[celebration.listingKey] ?? 0) * 100) : null}
-          relative={board}
+          relative={false}
           onOpen={() => {
             trackEvent("ev_match_opened");
             setCelebration(null);
