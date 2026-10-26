@@ -256,9 +256,8 @@ export function SwipeDeck({
             {BOARD_WELCOME_PHOTOS.map((url) => <div key={url} className="board-welcome__room"><img src={url} alt="" referrerPolicy="no-referrer" onError={(event) => { event.currentTarget.style.display = "none"; }} /></div>)}
           </div>
           <div className="board-welcome__choices">
-            <p>Your choices stay on this device. Browse works without swiping.</p>
+            <p>Your choices stay on this device.</p>
             <button className="board-welcome__start" onClick={onDismissBoardWelcome}>Find my style →</button>
-            <button className="board-welcome__browse" onClick={onGoBrowse}>Just browse{browseCount == null ? " homes" : ` ${browseCount} homes`}</button>
           </div>
         </div>
       </section>
