@@ -99,3 +99,28 @@ def test_acquaint_address_loses_a_price_the_theme_puts_in_the_title():
     assert _clean_address("Brixton, Tulse Hill Price £2,300 pcm") == "Brixton, Tulse Hill"
     assert _clean_address("Addison Road, Holland Park") == "Addison Road, Holland Park"
     assert _clean_address("Some Road Price POA") == "Some Road"
+
+
+# Pollard Machin moved to EstatesIT in October 2026: a newer theme with bare-number icons on the cards and lazy-loaded photos.
+def test_estatesit_newer_theme_cards_and_lazy_photos(monkeypatch):
+    import pathlib
+
+    from scraper import http
+    from scraper.estatesit import EstatesItScraper
+
+    fixtures = pathlib.Path(__file__).parent / "fixtures"
+    search = (fixtures / "estatesit_pollard_search.html").read_text()
+    detail = (fixtures / "estatesit_pollard_detail.html").read_text()
+    pages = iter([search, "<html></html>"])
+    monkeypatch.setattr(http, "get", lambda url, **kw: next(pages))
+    scraper = EstatesItScraper()
+    rows = list(scraper.search("pollardmachin", "https://www.pollardmachin.co.uk/results?querytype=8&market=1&displayperpage=12", max_pages=2))
+    assert len(rows) == 3
+    assert rows[0].status == "Let Agreed" and rows[0].price_pcm == 3500
+    assert (rows[0].bedrooms, rows[0].bathrooms, rows[0].receptions) == (5, 2, 2)
+
+    monkeypatch.setattr(http, "get", lambda url, **kw: detail)
+    photos = scraper.detail("pollardmachin", rows[1]).photo_urls
+    assert len(photos) >= 3
+    assert all(u.startswith("https://images.estatesit.uk/B60403B/PHOTOS/") and u.count("http") == 1 for u in photos)
+    assert not any("-f-o-" in u for u in photos)  # the floor plan is not a photo

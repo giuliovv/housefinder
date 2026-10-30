@@ -210,9 +210,10 @@ AGENCIES: dict[str, AgencyConfig] = {
         key="mileestates", name="Mile Estates", platform="expertagent",
         search_url="https://www.mileestates.co.uk/properties-to-let", london_only=True,
     ),
+    # Pollard Machin moved to the EstatesIT platform in late October 2026 (the Expert Agent parser found 0 homes).
     "pollardmachin": AgencyConfig(
-        key="pollardmachin", name="Pollard Machin", platform="expertagent",
-        search_url="https://www.pollardmachin.co.uk/properties-to-let", london_only=True,
+        key="pollardmachin", name="Pollard Machin", platform="estatesit",
+        search_url="https://www.pollardmachin.co.uk/results?querytype=8&market=1&displayperpage=12", london_only=True,
     ),
     "eliteandco": AgencyConfig(
         key="eliteandco", name="Elite & Co", platform="expertagent",

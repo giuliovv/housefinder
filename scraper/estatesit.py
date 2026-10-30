@@ -63,6 +63,15 @@ class EstatesItScraper(PlatformScraper):
         fees = card.select_one("a.pop-up-link[title]")
         beds_from_title = re.search(r"(\d+) Bedroom", fees["title"]) if fees else None
 
+        # newer theme: bare numbers each followed by an icon (`<span>5</span><i class="fa-bed-alt">`, bath, couch)
+        icon_counts: dict[str, int] = {}
+        for icon in card.select(".property-attributes i[class]"):
+            kind = "bed" if "bed" in " ".join(icon["class"]) else "bath" if "bath" in " ".join(icon["class"]) else "couch" if "couch" in " ".join(icon["class"]) else None
+            prev = icon.find_previous_sibling("span")
+            m = re.search(r"\d+", _text(prev) or "") if prev else None
+            if kind and m:
+                icon_counts[kind] = int(m.group())
+
         status_el = card.select_one('[class*="results_propstat"]')
         status = _text(status_el)
         if status and status.lower() in ("to rent", "to let", "for rent"):
@@ -77,9 +86,9 @@ class EstatesItScraper(PlatformScraper):
             address=_text(card.select_one("h2")) or "",
             price_text=price_text,
             price_pcm=parse_price_pcm(price_text),
-            bedrooms=count(".bedroom") if count(".bedroom") is not None else (int(beds_from_title.group(1)) if beds_from_title else None),
-            bathrooms=count(".bathroom"),
-            receptions=count(".receptions"),
+            bedrooms=count(".bedroom") if count(".bedroom") is not None else (int(beds_from_title.group(1)) if beds_from_title else icon_counts.get("bed")),
+            bathrooms=count(".bathroom") if count(".bathroom") is not None else icon_counts.get("bath"),
+            receptions=count(".receptions") if count(".receptions") is not None else icon_counts.get("couch"),
             thumbnail_url=thumb,
             status=status,
         )
@@ -94,12 +103,16 @@ class EstatesItScraper(PlatformScraper):
         # large version of every distinct photo instead of picking whichever
         # variant happened to be in the page.
         bases: list[str] = []
-        for img in soup.select("img[src]"):
-            src = img["src"]
-            if "/PHOTOS/" in src:
-                base = src.split("?")[0]
-                if base not in bases:
-                    bases.append(base)
+        for img in soup.select("img"):
+            # some sites lazy-load: `src` is a blank gif and the real address is in data-large / data-src
+            src = next((v for v in (img.get("data-large"), img.get("data-src"), img.get("src")) if v and "/PHOTOS/" in v), "")
+            base = src.split("?")[0]
+            if not base.startswith("http") or base.count("http") != 1:
+                continue
+            if re.search(r"floor\s*plan|epc|energy", img.get("alt", ""), re.IGNORECASE) or re.search(r"-f-o-", base):
+                continue  # floorplans and certificates are not photos of the home
+            if base not in bases:
+                bases.append(base)
         return ListingDetail(
             summary=summary,
             description=description,
