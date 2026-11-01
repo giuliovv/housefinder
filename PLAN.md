@@ -486,3 +486,21 @@ and `block_log[agency]` (requests that run and over 7 days at the time of each b
 `scrape_every_days`, `max_details_per_run` (default 150 new pages per agency per run: a big new agency is onboarded over days, not in one burst); Stirling Ackroyd:
 5 s between requests, every 2 days, 60 pages per run; (3) a blocked agency's homes stay in Browse for 7 days (`BLOCK_GRACE_DAYS`) with "Last checked N days ago"
 on the card instead of vanishing after 3; (4) the agency can be asked to allowlist us once the domain email exists.
+
+## Future features (parked ideas, not scheduled)
+Add to this list; move an item into its own dated section when work starts.
+
+- **"Room to negotiate" signal (parked 2026-11-01, waiting for data).** Estimate whether a home can be negotiated down from how long it has been on the market,
+  whether its rent has already dropped, and other signals, by comparing homes whose price dropped with comparable ones whose price did not.
+  Why parked: we only have ~3.5 weeks of history (from 2026-10-08). Only 989 of 5,572 homes were first seen after we started watching their agency
+  (`first_seen_exact`), so everyone else's age is a lower bound (median exact age 11 days); most homes haven't had time to drop; we never see the price a
+  home actually let for (closest: the last advertised price before it left); and some "drops" are artefacts (weekly/monthly price mix-ups, agencies
+  correcting a price in the first few days). Revisit with ~2-3 months of history.
+  Plan when revisited: (1) clean the price history of artefacts; (2) descriptive stats: chance of a cut by age band, by price vs area median, by agency,
+  after a previous cut, and time-to-let with vs without a cut, re-run weekly; (3) a plain Low/Medium/High signal with reasons ("5 weeks on the market,
+  already cut once, 12% above similar 2-beds nearby"), no invented pound figure, shown only once the data supports it; (4) later, a model for the chance of a
+  cut in the next two weeks.
+- **Price-rise badge** next to the price-drop one (needs the weekly/monthly price clean-up first, or a wrong "up" badge looks bad).
+- **Area pages built from our own aggregates** (median rent by area and size, new and dropped counts) for SEO: no agency photos or listings copied.
+- **Click-through measurement:** total clicks per day and which result position was clicked (top 3, 4-10, 11+, by sort), to check the ranking puts good homes first.
+- **Permission/feed requests to blocked agencies** (Homeflow four, Chase Apartments, Stirling Ackroyd, others) once `hello@houseswipe.uk` is in use.
