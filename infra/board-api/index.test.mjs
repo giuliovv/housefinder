@@ -63,3 +63,14 @@ test('legacy lists remain readable but cannot be owner-deleted', async () => {
   assert.deepEqual(JSON.parse((await handler(event('GET', id))).body), { active: true, legacy: true });
   assert.equal((await handler(event('DELETE', id, 'b'.repeat(43)))).statusCode, 410);
 });
+
+import { createHash } from 'node:crypto';
+import { passwordMatches } from './index.mjs';
+
+test('stats password check accepts only the exact password', () => {
+  const digest = createHash('sha256').update('correct horse battery staple').digest();
+  assert.equal(passwordMatches('correct horse battery staple', digest), true);
+  assert.equal(passwordMatches('correct horse battery stapl', digest), false);
+  assert.equal(passwordMatches('', digest), false);
+  assert.equal(passwordMatches(undefined, digest), false);
+});

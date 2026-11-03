@@ -77,7 +77,7 @@ function handler(event) {
   if (host === '${canonicalDomain}' || ${JSON.stringify(handoffHosts)}.indexOf(host) >= 0) {
     // the app's own pages are one HTML file; anything else that isn't a real file falls through to a real 404 (see errorResponses)
     var uri = request.uri;
-    if (/^\\/(privacy|demo)\\/?$/.test(uri) || /^\\/ui(\\d*|\\/codex(\\/[a-z0-9-]+)?)\\/?$/.test(uri)) request.uri = '/index.html';
+    if (/^\\/(privacy|demo|stats)\\/?$/.test(uri) || /^\\/ui(\\d*|\\/codex(\\/[a-z0-9-]+)?)\\/?$/.test(uri)) request.uri = '/index.html';
     else if (/^\\/ui\\/original\\/?$/.test(uri)) request.uri = '/ui/original/index.html';
     return request;
   }
@@ -101,19 +101,25 @@ function handler(event) {
       code: lambda.Code.fromAsset(path.join(__dirname, '../board-api')),
       timeout: cdk.Duration.seconds(30),
       memorySize: 256,
-      environment: { FIREBASE_ADMIN_PARAMETER: '/housefinder/firebase-admin' },
+      environment: { FIREBASE_ADMIN_PARAMETER: '/housefinder/firebase-admin', STATS_PASSWORD_PARAMETER: '/housefinder/stats-password' },
     });
     boardApi.addToRolePolicy(new iam.PolicyStatement({
       actions: ['ssm:GetParameter'],
-      resources: [`arn:aws:ssm:${this.region}:${this.account}:parameter/housefinder/firebase-admin`],
+      resources: [
+        `arn:aws:ssm:${this.region}:${this.account}:parameter/housefinder/firebase-admin`,
+        `arn:aws:ssm:${this.region}:${this.account}:parameter/housefinder/stats-password`,
+      ],
     }));
     const boardHttpApi = new apigw.HttpApi(this, 'BoardHttpApi', { createDefaultStage: true });
     const boardIntegration = new integrations.HttpLambdaIntegration('BoardIntegration', boardApi);
     boardHttpApi.addRoutes({ path: '/api/boards', methods: [apigw.HttpMethod.POST], integration: boardIntegration });
     boardHttpApi.addRoutes({ path: '/api/boards/{id}', methods: [apigw.HttpMethod.GET, apigw.HttpMethod.DELETE], integration: boardIntegration });
+    // Private usage statistics for the /stats page: password-protected inside the function, with a low request limit of its own.
+    boardHttpApi.addRoutes({ path: '/api/stats', methods: [apigw.HttpMethod.GET], integration: boardIntegration });
     // The public create route is intentionally small, but still throttle it to limit abuse.
     const stage = boardHttpApi.defaultStage?.node.defaultChild as apigw.CfnStage;
     stage.defaultRouteSettings = { throttlingBurstLimit: 20, throttlingRateLimit: 5 };
+    stage.routeSettings = { 'GET /api/stats': { throttlingBurstLimit: 3, throttlingRateLimit: 1 } };
     const apiHost = cdk.Fn.select(2, cdk.Fn.split('/', boardHttpApi.apiEndpoint));
 
     const distribution = new cloudfront.Distribution(this, 'Distribution', {

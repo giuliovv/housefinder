@@ -4,6 +4,7 @@ import { SSMClient, GetParameterCommand } from '@aws-sdk/client-ssm';
 const ssm = new SSMClient({});
 const project = 'houseswipe-b390e';
 const idPattern = /^v2_[a-f0-9]{40}$/;
+const dayPattern = /^\d{4}-\d{2}-\d{2}$/;
 const legacyPattern = /^[a-f0-9]{40}$/;
 let credentials;
 let accessToken;
@@ -91,10 +92,64 @@ async function deleteBoard(id, authorization) {
   return reply(200, { deleted: true });
 }
 
+// ---- Private usage statistics (/stats page). The Firestore rules forbid clients from reading the counters, so this route reads them
+// with the admin key, behind a password kept in SSM (never in the repo or the page).
+let statsPassword;
+async function expectedPassword() {
+  if (statsPassword === undefined) {
+    const result = await ssm.send(new GetParameterCommand({ Name: process.env.STATS_PASSWORD_PARAMETER, WithDecryption: true }));
+    statsPassword = createHash('sha256').update(result.Parameter.Value.trim()).digest();
+  }
+  return statsPassword;
+}
+
+export function passwordMatches(provided, expectedDigest) {
+  const actual = createHash('sha256').update(String(provided ?? '')).digest();
+  return actual.length === expectedDigest.length && timingSafeEqual(actual, expectedDigest);
+}
+
+function numberFields(doc) {
+  const out = {};
+  for (const [key, value] of Object.entries(doc.fields ?? {})) out[key] = Number(value.integerValue ?? 0);
+  return out;
+}
+
+async function listAll(collection, keep) {
+  const out = [];
+  let pageToken = '';
+  do {
+    const page = await firestore(`${collection}?pageSize=300${pageToken ? `&pageToken=${encodeURIComponent(pageToken)}` : ''}`);
+    for (const doc of page?.documents ?? []) {
+      const id = doc.name.split('/').pop();
+      if (keep(id)) out.push({ id, counters: numberFields(doc) });
+    }
+    pageToken = page?.nextPageToken ?? '';
+  } while (pageToken);
+  return out;
+}
+
+async function statsReport(event) {
+  const provided = event.headers?.['x-stats-password'];
+  if (!passwordMatches(provided, await expectedPassword())) {
+    await new Promise((resolve) => setTimeout(resolve, 1000)); // slow down guessing
+    return reply(401, { error: 'Wrong password' });
+  }
+  const days = Math.min(365, Math.max(1, Number(event.queryStringParameters?.days) || 30));
+  const cutoff = new Date(Date.now() - days * 86_400_000).toISOString().slice(0, 10);
+  const daily = (await listAll('stats', (id) => dayPattern.test(id) && id >= cutoff)).map((d) => ({ day: d.id, ...d.counters }));
+  const sources = (await listAll('src_stats', (id) => id.slice(0, 10) >= cutoff)).map((d) => {
+    const [day, source, campaign] = d.id.split('~');
+    return { day, source, campaign: campaign ?? '', ...d.counters };
+  });
+  daily.sort((a, b) => a.day.localeCompare(b.day));
+  return reply(200, { days, daily, sources });
+}
+
 export async function handler(event) {
   try {
     const method = event.requestContext?.http?.method;
     const id = event.pathParameters?.id;
+    if (method === 'GET' && event.rawPath === '/api/stats') return await statsReport(event);
     if (method === 'POST' && !id) return await createBoard();
     if (method === 'GET' && id) {
       if (legacyPattern.test(id)) return reply(200, { active: true, legacy: true });
