@@ -119,7 +119,7 @@ function handler(event) {
     // The public create route is intentionally small, but still throttle it to limit abuse.
     const stage = boardHttpApi.defaultStage?.node.defaultChild as apigw.CfnStage;
     stage.defaultRouteSettings = { throttlingBurstLimit: 20, throttlingRateLimit: 5 };
-    stage.routeSettings = { 'GET /api/stats': { throttlingBurstLimit: 3, throttlingRateLimit: 1 } };
+    stage.routeSettings = { 'GET /api/stats': { ThrottlingBurstLimit: 3, ThrottlingRateLimit: 1 } }; // raw CloudFormation properties: PascalCase
     const apiHost = cdk.Fn.select(2, cdk.Fn.split('/', boardHttpApi.apiEndpoint));
 
     const distribution = new cloudfront.Distribution(this, 'Distribution', {
