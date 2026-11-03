@@ -1,26 +1,81 @@
-html:has(.stats) body { background: #f6f4ee; }
-.stats { max-width: 980px; margin: 0 auto; padding: 24px 16px 60px; font: 400 15px/1.4 system-ui, sans-serif; color: #1c1b19; }
-.stats h1 { margin: 0; font-size: 28px; }
-.stats h2 { margin: 30px 0 8px; font-size: 18px; }
-.stats--login { max-width: 360px; padding-top: 18vh; }
-.stats--login form { display: grid; gap: 10px; margin-top: 18px; }
-.stats input[type="password"] { padding: 11px 12px; border: 1.5px solid #1c1b19; border-radius: 8px; font-size: 16px; background: #fff; }
-.stats button { padding: 9px 14px; border: 1.5px solid #1c1b19; border-radius: 8px; background: #fff; font: inherit; font-weight: 600; cursor: pointer; }
-.stats button:disabled { opacity: .5; cursor: default; }
-.stats button.on { background: #1c1b19; color: #fff; }
-.stats__head { display: flex; flex-wrap: wrap; gap: 12px; align-items: center; justify-content: space-between; }
-.stats__range { display: flex; gap: 6px; flex-wrap: wrap; }
-.stats__error { color: #b3261e; font-weight: 600; }
-.stats__cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 10px; margin-top: 18px; }
-.stats__cards div { padding: 14px; border: 1.5px solid #1c1b19; border-radius: 12px; background: #fff; }
-.stats__cards b { display: block; font-size: 28px; line-height: 1; }
-.stats__cards span { font-size: 12.5px; color: #55524b; }
-.stats__table { overflow-x: auto; border: 1.5px solid #1c1b19; border-radius: 12px; background: #fff; }
-.stats table { width: 100%; border-collapse: collapse; font-size: 13.5px; }
-.stats th, .stats td { padding: 7px 10px; text-align: left; white-space: nowrap; border-bottom: 1px solid #e6e2d8; }
-.stats th { font-weight: 700; background: #f0ece1; }
-.stats td:not(:first-child), .stats th:not(:first-child) { font-variant-numeric: tabular-nums; }
-.stats__bar { display: block; height: 8px; min-width: 2px; max-width: 160px; border-radius: 4px; background: #2b3bff; }
-.stats td:nth-child(3) { width: 160px; }
-.stats__note { color: #55524b; font-size: 13px; margin: 4px 0 8px; }
-.stats code { font-size: 12.5px; }
+/* /stats: a phone-first page. One column, no boxes: sections are separated by space and a thin rule, and the bars carry the meaning. */
+html:has(.st), html:has(.st) body, html:has(.st) #root { background: #f1f4f3; }
+html:has(.st) #root { display: block; }
+.st {
+  --ink: #10282b; --muted: #54696b; --line: #d3dcdb; --blue: #2b3bff; --gold: #ffb400; --track: #dde5e4;
+  max-width: 640px; margin: 0 auto; padding: 0 18px 64px; color: var(--ink);
+  font: 400 16px/1.45 'Bricolage Grotesque', system-ui, sans-serif; font-variant-numeric: tabular-nums;
+}
+.st h1, .st h2 { font-family: inherit; }
+.st h1 { margin: 0; font-size: 26px; font-weight: 800; letter-spacing: -.03em; }
+.st h2 { margin: 0 0 6px; font-size: 20px; font-weight: 700; letter-spacing: -.02em; }
+.st section { padding: 26px 0; border-top: 1px solid var(--line); }
+.st section.st__hero { border-top: 0; padding-top: 14px; }
+.st p { margin: 0; }
+.st__note { margin: 2px 0 14px; color: var(--muted); font-size: 14px; }
+.st code { font-size: 13px; background: #e4ebea; padding: 1px 5px; border-radius: 4px; word-break: break-all; }
+.st__error { margin-top: 12px; color: #b3261e; font-weight: 700; }
+.st button { font: inherit; color: inherit; cursor: pointer; }
+.st button:focus-visible, .st summary:focus-visible, .st input:focus-visible { outline: 3px solid var(--blue); outline-offset: 2px; }
+
+/* top bar: stays in reach while scrolling */
+.st__bar { position: sticky; top: 0; z-index: 5; display: flex; align-items: center; gap: 10px; margin: 0 -18px; padding: 12px 18px; background: #f1f4f3ee; backdrop-filter: blur(8px); }
+.st__bar h1 { margin-right: auto; }
+.st__range { display: flex; padding: 3px; border-radius: 99px; background: var(--track); }
+.st__range button { min-width: 44px; min-height: 36px; padding: 0 10px; border: 0; border-radius: 99px; background: transparent; font-weight: 600; font-size: 14px; }
+.st__range button[aria-pressed='true'] { background: var(--ink); color: #fff; }
+.st__lock { min-height: 36px; padding: 0 12px; border: 0; border-radius: 99px; background: transparent; font-size: 14px; color: var(--muted); text-decoration: underline; text-underline-offset: 3px; }
+
+/* the answer first: how many new people, and which way it is going */
+.st__big { font-size: 22px; line-height: 1.1; font-weight: 500; }
+.st__big b { font-size: clamp(64px, 22vw, 104px); font-weight: 800; letter-spacing: -.06em; line-height: .95; margin-right: 6px; }
+.st__sub { margin-top: 8px; color: var(--muted); font-size: 15px; max-width: 46ch; }
+.st__strip { display: flex; align-items: flex-end; gap: 3px; height: 104px; margin-top: 20px; }
+.st__col { flex: 1 1 0; min-width: 0; height: 100%; display: flex; align-items: flex-end; }
+.st__col i { display: block; width: 100%; background: var(--blue); border-radius: 3px 3px 0 0; transform-origin: bottom; animation: st-grow .55s cubic-bezier(.2, .8, .2, 1) both; }
+.st__col:last-child i { background: var(--gold); }
+.st__ends { display: flex; justify-content: space-between; margin-top: 6px; color: var(--muted); font-size: 13px; }
+
+.st__rates { display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; }
+.st__rates p { font-size: 13.5px; line-height: 1.25; color: var(--muted); }
+.st__rates b { display: block; margin-bottom: 4px; color: var(--ink); font-size: 32px; font-weight: 800; letter-spacing: -.04em; line-height: 1; }
+
+/* the funnel is the memorable part: each step is a bar as wide as the share of visits that got there */
+.st__funnel, .st__sources { list-style: none; margin: 0; padding: 0; }
+.st__funnel li { display: grid; grid-template-columns: 1fr auto; column-gap: 12px; row-gap: 5px; padding: 9px 0; }
+.st__fl { font-size: 15.5px; }
+.st__fv { text-align: right; color: var(--muted); font-size: 14px; }
+.st__fv b { margin-right: 6px; color: var(--ink); font-size: 17px; font-weight: 700; }
+.st__fbar { grid-column: 1 / -1; display: block; height: 8px; border-radius: 4px; background: var(--track); overflow: hidden; }
+.st__fbar i { display: block; height: 100%; border-radius: 4px; background: var(--blue); transform-origin: left; animation: st-grow-x .6s cubic-bezier(.2, .8, .2, 1) both; }
+.st__funnel li:nth-child(8) .st__fbar i { background: var(--gold); }
+
+.st__sources li { padding: 12px 0; border-bottom: 1px solid var(--line); }
+.st__sources li:last-child { border-bottom: 0; }
+.st__sname { font-size: 17px; }
+.st__snums { margin: 2px 0 8px; color: var(--muted); font-size: 14px; }
+.st__snums b { color: var(--ink); }
+
+.st__days { padding: 22px 0 0; border-top: 1px solid var(--line); }
+.st__days summary { list-style: none; min-height: 44px; display: flex; align-items: center; justify-content: space-between; font-size: 20px; font-weight: 700; letter-spacing: -.02em; cursor: pointer; }
+.st__days table { width: 100%; margin-top: 8px; border-collapse: collapse; font-size: 14.5px; }
+.st__days th, .st__days td { padding: 9px 4px; text-align: right; border-bottom: 1px solid var(--line); font-weight: 400; }
+.st__days th:first-child { text-align: left; font-weight: 500; }
+.st__days thead th { color: var(--muted); font-size: 13px; font-weight: 500; }
+
+/* sign-in */
+.st--login { padding-top: 16vh; max-width: 380px; }
+.st--login form { display: grid; gap: 10px; margin-top: 22px; }
+.st--login label { font-size: 14px; color: var(--muted); }
+.st--login input { min-height: 52px; padding: 0 14px; border: 2px solid var(--ink); border-radius: 12px; background: #fff; font: inherit; font-size: 17px; }
+.st--login button { min-height: 52px; border: 0; border-radius: 12px; background: var(--ink); color: #fff; font-weight: 700; font-size: 17px; }
+.st--login button:disabled { opacity: .45; cursor: default; }
+
+.st__days summary::-webkit-details-marker { display: none; }
+.st__days summary::after { content: '+'; font-size: 26px; font-weight: 400; line-height: 1; }
+.st__days[open] summary::after { content: '\2212'; }
+
+@keyframes st-grow { from { transform: scaleY(0); } }
+@keyframes st-grow-x { from { transform: scaleX(0); } }
+@media (prefers-reduced-motion: reduce) { .st__col i, .st__fbar i { animation: none; } }
+@media (min-width: 700px) { .st { padding-top: 12px; } .st__bar { margin: 0; padding-inline: 0; } }
