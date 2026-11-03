@@ -114,12 +114,12 @@ function handler(event) {
     const boardIntegration = new integrations.HttpLambdaIntegration('BoardIntegration', boardApi);
     boardHttpApi.addRoutes({ path: '/api/boards', methods: [apigw.HttpMethod.POST], integration: boardIntegration });
     boardHttpApi.addRoutes({ path: '/api/boards/{id}', methods: [apigw.HttpMethod.GET, apigw.HttpMethod.DELETE], integration: boardIntegration });
-    // Private usage statistics for the /stats page: password-protected inside the function, with a low request limit of its own.
+    // Private usage statistics for the /stats page: password-protected inside the function (long random password in SSM, constant-time
+    // compare, 1 s delay on a wrong one), under the same request limits as the rest of the API.
     boardHttpApi.addRoutes({ path: '/api/stats', methods: [apigw.HttpMethod.GET], integration: boardIntegration });
     // The public create route is intentionally small, but still throttle it to limit abuse.
     const stage = boardHttpApi.defaultStage?.node.defaultChild as apigw.CfnStage;
     stage.defaultRouteSettings = { throttlingBurstLimit: 20, throttlingRateLimit: 5 };
-    stage.routeSettings = { 'GET /api/stats': { ThrottlingBurstLimit: 3, ThrottlingRateLimit: 1 } }; // raw CloudFormation properties: PascalCase
     const apiHost = cdk.Fn.select(2, cdk.Fn.split('/', boardHttpApi.apiEndpoint));
 
     const distribution = new cloudfront.Distribution(this, 'Distribution', {
