@@ -58,12 +58,19 @@ export function cleanTag(raw: string | null): string {
   return (raw ?? "").toLowerCase().replace(/[^a-z0-9_-]/g, "").slice(0, 24);
 }
 
-/** the source in a query string, or null when it has no (valid) utm_source */
+/** the short names platforms put in their own links ("ig" is what Instagram adds to link-in-bio clicks) */
+const SOURCE_ALIASES: Record<string, string> = { ig: "instagram", insta: "instagram", fb: "facebook", tt: "tiktok", yt: "youtube", tw: "twitter", li: "linkedin", wa: "whatsapp", tg: "telegram" };
+
+/** the source in a query string, or null when it has no (valid) utm_source; the campaign falls back to utm_content (e.g. "link_in_bio") */
 export function parseSource(search: string): Source | null {
   const q = new URLSearchParams(search);
-  const s = cleanTag(q.get("utm_source"));
-  return s ? { s, c: cleanTag(q.get("utm_campaign")) } : null;
+  const raw = cleanTag(q.get("utm_source"));
+  const s = SOURCE_ALIASES[raw] ?? raw;
+  return s ? { s, c: cleanTag(q.get("utm_campaign")) || cleanTag(q.get("utm_content")) } : null;
 }
+
+/** tracking parameters other platforms add; they are removed from the address bar once read */
+const TRACKING_PARAM = /^(utm_|fbclid$|ttclid$|gclid$|igshid$)/;
 
 /**
  * Remember where this browser came from (first touch) and tidy the address bar so a shared link doesn't carry the tags on.
@@ -73,10 +80,10 @@ export function captureSource(): void {
   try {
     const found = parseSource(window.location.search);
     const url = new URL(window.location.href);
-    const tagged = [...url.searchParams.keys()].some((k) => k.startsWith("utm_"));
+    const tagged = [...url.searchParams.keys()].some((k) => TRACKING_PARAM.test(k));
     if (found && usageStatsEnabled() && !readJson<Source | null>(SOURCE_KEY, null)) writeJson(SOURCE_KEY, found);
     if (tagged) {
-      [...url.searchParams.keys()].filter((k) => k.startsWith("utm_")).forEach((k) => url.searchParams.delete(k));
+      [...url.searchParams.keys()].filter((k) => TRACKING_PARAM.test(k)).forEach((k) => url.searchParams.delete(k));
       window.history.replaceState(window.history.state, "", url.pathname + url.search + url.hash);
     }
   } catch {
