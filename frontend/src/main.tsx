@@ -5,6 +5,7 @@ import BoardApp from './BoardApp.tsx'
 import PrivacyPage from './PrivacyPage.tsx'
 import NotFoundPage from './NotFoundPage.tsx'
 import { runHandoff } from './lib/handoff'
+import { captureSource } from './lib/stats'
 
 // Design experiments are lazy-loaded so they add nothing to the real app.
 const Lab = lazy(() => import('./lab/Lab'))
@@ -17,6 +18,7 @@ const notFoundPath = !demoPath && !privacyPath && !labPath && !/^\/(index\.html)
 
 // On the old address this carries the visitor's saved data to houseswipe.uk and leaves; on the new address it takes a
 // handed-over payload in before the app reads its storage (see lib/handoff.ts).
+captureSource()
 if (!runHandoff()) {
   createRoot(document.getElementById('root')!).render(
     <StrictMode>

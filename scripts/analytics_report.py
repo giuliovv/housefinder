@@ -4,6 +4,7 @@ Reads with the admin service account stored in SSM (/housefinder/firebase-admin)
 
     python3 scripts/analytics_report.py            # last 14 days + funnel
     python3 scripts/analytics_report.py --days 30
+    python3 scripts/analytics_report.py --sources   # funnel per campaign link (?utm_source=tiktok&utm_campaign=demo1)
 """
 from __future__ import annotations
 
@@ -78,10 +79,52 @@ def fetch_days(creds, days: int) -> dict[str, dict[str, int]]:
     return {d: v for d, v in sorted(out.items()) if d >= cutoff}
 
 
+def fetch_sources(creds, days: int) -> dict[tuple[str, str], dict[str, int]]:
+    """src_stats/<day>~<source>~<campaign> documents, added up per (source, campaign) over the last `days` days."""
+    base = f"https://firestore.googleapis.com/v1/projects/{PROJECT}/databases/(default)/documents/src_stats"
+    cutoff = (dt.date.today() - dt.timedelta(days=days)).isoformat()
+    out: dict[tuple[str, str], dict[str, int]] = {}
+    token = None
+    while True:
+        r = requests.get(base, headers={"Authorization": f"Bearer {creds.token}"},
+                         params={"pageSize": 300, **({"pageToken": token} if token else {})}, timeout=30)
+        r.raise_for_status()
+        body = r.json()
+        for doc in body.get("documents", []):
+            day, source, campaign = (doc["name"].rsplit("/", 1)[1].split("~") + ["", ""])[:3]
+            if day < cutoff:
+                continue
+            acc = out.setdefault((source, campaign), {})
+            for k, v in doc.get("fields", {}).items():
+                acc[k] = acc.get(k, 0) + int(v["integerValue"])
+        token = body.get("nextPageToken")
+        if not token:
+            break
+    return out
+
+
+def print_sources(creds, days: int) -> None:
+    rows = fetch_sources(creds, days)
+    if not rows:
+        print("no campaign-tagged visits yet (links need ?utm_source=...)")
+        return
+    cols = [("visitors_new", "new"), ("visitors", "visits"), ("m_first_swipe", "swiped"), ("m_swipes_25", "25sw"), ("m_browse_opened", "browse"), ("m_saved", "saved"), ("m_agency_click", "clicks")]
+    print(f"{'source':12} {'campaign':14}" + "".join(f"{label:>8}" for _, label in cols) + f"{'swipe%':>8}{'click%':>8}")
+    for (source, campaign), v in sorted(rows.items(), key=lambda kv: -kv[1].get("visitors_new", 0)):
+        new = v.get("visitors_new", 0) or v.get("visitors", 0) or 1
+        print(f"{source:12} {campaign or '-':14}" + "".join(f"{v.get(k, 0):>8}" for k, _ in cols)
+              + f"{v.get('m_first_swipe', 0) / new:>8.0%}{v.get('m_agency_click', 0) / new:>8.0%}")
+    print("\nFirst-touch attribution: a browser counts for the link it first arrived from, including on later visits. swipe%/click% are relative to new browsers.")
+
+
 def main() -> None:
     ap = argparse.ArgumentParser()
     ap.add_argument("--days", type=int, default=14)
+    ap.add_argument("--sources", action="store_true", help="funnel per campaign link instead of the overall report")
     args = ap.parse_args()
+    if args.sources:
+        print_sources(credentials(), args.days)
+        return
     data = fetch_days(credentials(), args.days)
     if not data:
         print("no data yet")

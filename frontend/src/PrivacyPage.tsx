@@ -50,7 +50,7 @@ export default function PrivacyPage() {
 
         <section>
           <h2>Usage statistics</h2>
-          <p>We add simple daily counters in Firebase Firestore, such as visits, first swipes, saves and clicks to agency listings. We do not send the homes you viewed, your taste profile, your name, or a user ID with these counter updates. This browser stores a small record so the same milestone is counted only once and a visit only once per day. Our aim is to understand which parts of the app work and improve them, not to track individuals. Google receives the network request, which can include technical data such as your IP address.</p>
+          <p>We add simple daily counters in Firebase Firestore, such as visits, first swipes, saves and clicks to agency listings. We do not send the homes you viewed, your taste profile, your name, or a user ID with these counter updates. This browser stores a small record so the same milestone is counted only once and a visit only once per day. If you arrive through a campaign link (for example from a social video), the link's short label, such as the platform and campaign name, is kept in this browser and added to the same counters, so we can see which links bring visitors; it contains no personal information. Our aim is to understand which parts of the app work and improve them, not to track individuals. Google receives the network request, which can include technical data such as your IP address.</p>
           <div className="privacy__choice">
             <div>
               <strong>Usage statistics</strong>

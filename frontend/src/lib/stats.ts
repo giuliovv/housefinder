@@ -6,6 +6,10 @@
  * the m_* numbers read as a funnel ("new browsers that got this far"). The payload has no id or content
  * (never which photos were liked, the taste profile, or which homes were saved). Google handles the request.
  *
+ * Where visitors come from: a link such as `/?utm_source=tiktok&utm_campaign=demo1` is remembered in this browser (first one
+ * wins, then the tags are removed from the address bar) and the same counters are also added to a second document
+ * (`src_stats/<day>~<source>~<campaign>`), so a funnel can be read per source. Only that short label is stored, nothing personal.
+ *
  * Skipped entirely for: Do Not Track, localhost, and browsers opted out via /privacy or `?notrack`.
  * Written with Firestore's REST API (atomic increment), so it costs no SDK download.
  */
@@ -42,6 +46,48 @@ export const COUNTERS = [
 export type Counter = (typeof COUNTERS)[number];
 
 const KEY = "housefinder:stats:v1";
+const SOURCE_KEY = "housefinder:src:v1";
+
+export interface Source {
+  s: string; // utm_source, e.g. "tiktok"
+  c: string; // utm_campaign, e.g. "demo1" (may be empty)
+}
+
+/** keep a tag short and boring: lower case, letters, digits, "_" and "-", at most 24 characters */
+export function cleanTag(raw: string | null): string {
+  return (raw ?? "").toLowerCase().replace(/[^a-z0-9_-]/g, "").slice(0, 24);
+}
+
+/** the source in a query string, or null when it has no (valid) utm_source */
+export function parseSource(search: string): Source | null {
+  const q = new URLSearchParams(search);
+  const s = cleanTag(q.get("utm_source"));
+  return s ? { s, c: cleanTag(q.get("utm_campaign")) } : null;
+}
+
+/**
+ * Remember where this browser came from (first touch) and tidy the address bar so a shared link doesn't carry the tags on.
+ * Does nothing for people who have turned usage statistics off.
+ */
+export function captureSource(): void {
+  try {
+    const found = parseSource(window.location.search);
+    const url = new URL(window.location.href);
+    const tagged = [...url.searchParams.keys()].some((k) => k.startsWith("utm_"));
+    if (found && usageStatsEnabled() && !readJson<Source | null>(SOURCE_KEY, null)) writeJson(SOURCE_KEY, found);
+    if (tagged) {
+      [...url.searchParams.keys()].filter((k) => k.startsWith("utm_")).forEach((k) => url.searchParams.delete(k));
+      window.history.replaceState(window.history.state, "", url.pathname + url.search + url.hash);
+    }
+  } catch {
+    /* never in the way */
+  }
+}
+
+function storedSource(): Source | null {
+  const v = readJson<Partial<Source> | null>(SOURCE_KEY, null);
+  return v && typeof v.s === "string" && v.s ? { s: cleanTag(v.s), c: cleanTag(v.c ?? "") } : null;
+}
 const NOTRACK_KEY = "housefinder:notrack";
 
 export function usageStatsEnabled(): boolean {
@@ -102,26 +148,25 @@ export async function bump(counters: Counter[], day = today()): Promise<void> {
   if (counters.length === 0 || disabled()) return;
   const c = await loadConfig();
   if (!c || disabled()) return;
-  const doc = `projects/${c.projectId}/databases/(default)/documents/stats/${day}`;
-  try {
-    await fetch(`https://firestore.googleapis.com/v1/${doc.split("/documents/")[0]}/documents:commit?key=${c.apiKey}`, {
-      method: "POST",
-      keepalive: true,
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        writes: [
-          {
-            transform: {
-              document: doc,
-              fieldTransforms: counters.map((fieldPath) => ({ fieldPath, increment: { integerValue: "1" } })),
-            },
-          },
-        ],
-      }),
-    });
-  } catch {
-    /* analytics must never get in the way */
-  }
+  const base = `projects/${c.projectId}/databases/(default)/documents`;
+  const commit = async (document: string) => {
+    try {
+      await fetch(`https://firestore.googleapis.com/v1/${base.split("/documents")[0]}/documents:commit?key=${c.apiKey}`, {
+        method: "POST",
+        keepalive: true,
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          writes: [{ transform: { document, fieldTransforms: counters.map((fieldPath) => ({ fieldPath, increment: { integerValue: "1" } })) } }],
+        }),
+      });
+    } catch {
+      /* analytics must never get in the way */
+    }
+  };
+  await commit(`${base}/stats/${day}`);
+  // the same counters again, per source (separate request, so it can never hold up the overall counters)
+  const src = storedSource();
+  if (src) await commit(`${base}/src_stats/${day}~${src.s}~${src.c}`);
 }
 
 /** count this browser once per day (and once ever as new) */
