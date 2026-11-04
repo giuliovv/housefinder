@@ -1,340 +1,45 @@
 # House Swipe
 
-Scrapes London rental listings from letting-agency websites, learns a user's
-interior-design style preference from a swipe-style like/dislike interface
-over listing photos (CLIP embeddings, no training needed), and ranks
-listings by how well they match. Filtering on hard visual attributes (window
-size, kitchen/bathroom size) is a later phase — see `PLAN.md`.
+Swipe on photos of London rentals. House Swipe learns your taste in interiors (CLIP image embeddings, no training) and ranks real homes from 70+ letting
+agencies by how well they match, with price drops, new listings and shared shortlists.
 
-**Live preview:** https://d1kri12g86gqhh.cloudfront.net (refreshed and redeployed daily by
-GitHub Actions — see `PLAN.md`'s Infra section).
+**Live:** https://houseswipe.uk
 
-See [`PLAN.md`](PLAN.md) for the phased roadmap and what's decided vs. open.
+## How it works
 
-Three parts today:
+1. A daily GitHub Actions pipeline scrapes agency sites (`scraper/`), embeds the listing photos, and publishes static data files to S3.
+2. The site (`frontend/`, React + Vite) is static on S3 and CloudFront. Swipes and the taste profile stay in your browser; ranking runs there too.
+3. Infrastructure is an AWS CDK app (`infra/`). Anonymous usage counters and shared shortlists use Firestore.
 
-- **`scraper/`** — Python parsers that pull listings (described below), plus
-  `embeddings.py` which embeds listing photos + descriptions with CLIP
-  (`fastembed`'s ONNX export of OpenAI's ViT-B/32 — no PyTorch dependency,
-  which matters on a memory-constrained host).
-- **`frontend/`** — Vite + React + TypeScript, redesigned 2026-08-22 as a
-  mobile-first single-column app (max-width 480px, centred on a tan
-  background) rather than a desktop grid — warm cream/rust editorial look
-  (Lora serif headings, Work Sans body, palette in `App.css`'s CSS
-  variables). Two tabs, **Find your style** first/default: a draggable
-  Tinder-style stacked swipe deck (`SwipeDeck.tsx` — pointer-drag with a
-  ±90px like/pass threshold, LIKE/PASS stamps that fade in with drag
-  distance, real photos + real addresses as captions) and **Browse** (a
-  Leaflet neighbourhood map + horizontal area chips — both toggle the same
-  selection state — a consolidated bottom filter sheet (`FilterSheet.tsx`:
-  price, bedrooms, bathrooms, agency, sort), and a vertical listing-card
-  feed; see `frontend/src/lib/location.ts` for how postcode areas are
-  extracted from free-text addresses). Cards also have like/dislike buttons
-  on the current photo, rating in place while scrolling — same preference
-  vector as the dedicated swipe deck. All preference math
-  (centroid-of-liked-minus-disliked, cosine similarity ranking) runs
-  client-side against the precomputed embeddings — no backend, swipe
-  choices persist in `localStorage` only.
-- **`infra/`** — CDK app: S3 + CloudFront hosting for the built frontend,
-  deployed to Giulio's personal AWS account (not the ERP client account).
+## Repository
 
-**Style photos:** `/data/deck.json` and their CLIP vectors are generated from
-our scraped listing database, but the photo pixels are hot-linked directly from
-agency/image-host URLs. We do not store copies of the photos. The deck exporter
-filters known broken and visibly agency-marked photos; Browse keeps the
-agency's original listing photos. `scraper/watermark_filter.py` detects the
-fixed AJR watermark per image and caches results in S3 under
-`analytics/watermark-cache.json`; Londonwide's branded subset is omitted from
-Style. Unknown/fetch-failed images are retained rather than guessed at.
+| Folder | What |
+|---|---|
+| `scraper/` | Python parsers per agency platform, embeddings, the daily refresh |
+| `frontend/` | The app, the design lab, the demo, the private stats page |
+| `infra/` | CDK stacks, the board/stats API Lambda, the Stirling worker |
+| `ops/` | Health watcher, kill switch, cost guard |
+| `firebase/` | Firestore security rules |
+| `docs/` | Documentation |
+| `design/` | Designer brief and design template |
+| `tests/` | Python tests (`pytest`) |
 
-`frontend/public/data/*` (the scraped listings, the compact style/ranking files
-built from the embeddings, and area centroids) is **not checked into git** — it's generated output, and it
-already ends up in S3 on every `cdk deploy` anyway (see `infra/`), so
-committing it too was redundant and was how third-party API keys embedded
-in scraped page content kept leaking into git history. After a fresh clone,
-`frontend/public/data/` is empty — populate it one of two ways before
-`npm run dev`/`npm run build` will have anything to serve:
+## Run it locally
 
 ```bash
-# option A: pull the current live data down from S3 (fast, no scraping)
-aws s3 cp s3://housefinder-frontend-854656252703/data/ frontend/public/data/ --recursive
-
-# option B: regenerate the dataset from scratch
 pip install -r requirements.txt
-playwright install chromium
-python -m scraper.export --per-agency 50 --max-pages 8 --out frontend/public/data/listings.json
-python -m scraper.embeddings --incremental --in frontend/public/data/listings.json --out work/embeddings.json
-python -m scraper.export_embeddings --embeddings work/embeddings.json --listings frontend/public/data/listings.json --out-dir frontend/public/data
-python -m scraper.geocode_areas   # only needed if new postcode areas showed up — see below
-
-# then, either way:
+aws s3 cp s3://housefinder-frontend-854656252703/data/ frontend/public/data/ --recursive   # the live data
 cd frontend && npm install && npm run dev
 ```
 
-The current public UI is archived at `/ui/original/index.html` and linked from
-`/ui`. Its checked-in JavaScript and CSS are a frozen build, not regenerated by
-normal frontend builds; it continues to read the live `/data/` files. Keep this
-archive intact when replacing the public UI.
+Tests: `python -m pytest` and `cd frontend && npm test`.
 
-`scraper/geocode_areas.py` looks up a lat/lon centroid for every postcode
-area (outward code, e.g. "SW4") present in `listings.json`, via
-[postcodes.io](https://postcodes.io) (free, no API key) — used to plot the
-Browse tab's neighbourhood map. It's incremental (skips areas already in
-`area-centroids.json`) and separate from the regular export pipeline since
-it calls a third-party API; only re-run it when export finds genuinely new
-areas.
+## Docs
 
----
+Start at [`docs/README.md`](docs/README.md): getting started, frontend, scraper, style matching, operations and more. [`PLAN.md`](PLAN.md) is the decision
+log and roadmap.
 
-## Scraper: agency-platform parsers
+## Principles
 
-Parsers for London letting-agency websites, targeting the underlying
-**software platform** each agency's site runs on, not individual agencies —
-UK lettings-website software is heavily consolidated (a handful of vendors
-power most independent agency sites), so a parser per platform covers many
-agencies at once. See the project plan discussion for the reasoning on why
-this beats scraping Rightmove/Zoopla/SpareRoom directly.
-
-## Platforms supported today
-
-| Platform | Rendering | Example agencies | Notes |
-|---|---|---|---|
-| **Homeflow** | Client-side (needs a real browser) | innercityestates.com, tatesestates.co.uk, aspire.co.uk (standard theme except aspire, which is panel); johndwood.co.uk (panel theme) | Cards aren't in the raw HTML at all — verified via plain `curl`. Pagination is `/page-N` appended to the search path; this isn't documented anywhere, found by diffing property IDs returned per page. |
-| **PropertyHive** (WordPress plugin) | Server-rendered | properly.space (healthypixels theme), parkgate.co.uk (veco theme) | Plain `requests` + BeautifulSoup, no browser needed — this is the cheap platform to scale. Standard WordPress `page/N/` pagination. |
-
-PropertyHive is a WordPress *plugin*, not a hosted platform like Homeflow —
-different agencies' *themes* render completely different markup for the same
-underlying data (e.g. properly.space's `.listing-a`/`.bedroom` vs.
-parkgate.co.uk's `li.property`/`.room-bedrooms .room-count`).
-`scraper/propertyhive.py`'s `PropertyHiveTheme` dataclass parameterises every
-selector rather than assuming one theme covers the whole plugin ecosystem —
-add a new preset if a third theme shows up rather than guessing an existing
-one matches.
-
-Homeflow is fully hosted (unlike PropertyHive), but still offers bespoke
-themes to bigger clients — John D Wood (a substantial multi-branch prime-
-London agency) uses markup structurally different from innercityestates.com's
-stock template, not just different class names: its search cards expose no
-bathroom/reception count at all, and only embed bedrooms in a free-text
-title like "5 bedroom terraced house to rent". `scraper/homeflow.py` handles
-this as a separate code path (`_parse_card_panel`/`_detail_panel`) rather
-than a selector-only config, and `detail()` enriches bed/bath/reception from
-the property page's spec list so those fields aren't permanently `None` for
-every listing on this theme. Their prices also run much higher than the
-other agencies (£30k+ pcm isn't unusual) — worth knowing if that skews what
-you see in Browse.
-
-Tates (W14, West Kensington) and Aspire (SW6/SW19/SW2 etc.) were added
-specifically to counter that skew — both are normal-market-priced
-(tatesestates in particular: ~£2,000-2,700 pcm live-verified), reuse the
-existing standard/panel theme code unchanged, no new parser needed. One
-genuine quirk hit while adding them: both agencies' search pages
-consistently timed out (even after doubling the wait, see `homeflow.py`'s
-retry) when scraped from a freshly-launched EC2 instance's IP, every single
-time across several attempts, while always working fine when run
-interactively from an already-established host — the other four agencies
-never showed this. No Cloudflare challenge or explicit block message was
-ever seen, so this looks like IP-reputation-based throttling of unfamiliar
-cloud IPs rather than an active block worth routing around; the practical
-workaround was simply running those two agencies' scrape from a host with
-existing browsing history rather than a disposable one.
-
-All platforms/themes were verified against real, live sites (2026-07-29
-through 2026-08-22) — not built from guessed selectors. `tests/fixtures/`
-holds saved HTML from that verification; the tests run the actual parsing
-selectors against those fixtures offline.
-
-## What each parser extracts
-
-- **Summary** (from the search/results page — cheap, one page fetch covers ~10-12 listings): address, price (raw text + a best-effort parsed monthly GBP figure — `pw` gets converted to `pcm`, `POA` correctly parses to `None`), bedrooms/bathrooms/receptions, thumbnail, status (e.g. "Let Agreed").
-- **Detail** (one extra fetch per listing — call this only after filtering on summary fields, it's the expensive step at scale): full-text description, key-features bullet list, all gallery photo URLs (full resolution, not thumbnails).
-
-## Try it
-
-```bash
-pip install -r requirements.txt
-playwright install chromium   # only needed for homeflow.py; skip if you already have a chromium build cached
-
-python -m scraper.cli innercityestates --pages 2           # Homeflow, standard theme
-python -m scraper.cli tatesestates --pages 2 --detail      # Homeflow, standard theme
-python -m scraper.cli johndwood --pages 2 --detail         # Homeflow, panel theme
-python -m scraper.cli aspire --pages 2 --detail            # Homeflow, panel theme
-python -m scraper.cli properly --pages 2 --detail          # PropertyHive, healthypixels theme
-python -m scraper.cli parkgate --pages 2 --detail          # PropertyHive, veco theme
-```
-
-Each line printed is one listing as JSON.
-
-## Adding a new agency
-
-If it's on an already-supported platform, this is the entire diff — add an
-entry to `scraper/agencies.py`:
-
-```python
-"some-agency": AgencyConfig(
-    key="some-agency",
-    name="Some Agency",
-    platform="propertyhive",  # or "homeflow"
-    search_url="https://.../lettings-search-url",
-),
-```
-
-If it's on PropertyHive but a new agency's *theme* renders different markup
-(you'll know because none of the existing selectors match anything), add a
-new `PropertyHiveTheme` preset in `scraper/propertyhive.py` rather than
-editing the existing ones — see the healthypixels/veco split for the
-pattern.
-
-If it's on a platform not yet supported, you need a new parser module
-implementing `PlatformScraper` (see `scraper/base.py`) — inspect the site's
-real markup first (`tests/` shows the pattern: capture real HTML, save it as
-a fixture, write selectors against what's actually there, not what you'd
-guess). Reapit Foundations was checked and ruled out for now — its API
-requires OAuth2/registered app credentials, not a simple public scrape
-target like Homeflow/PropertyHive's actual rendered pages are. Alto and
-Vebra haven't been checked yet.
-
-## Being a reasonable citizen about this
-
-- `scraper/http.py` sends an honest, identifying User-Agent (not a spoofed
-  browser string) and rate-limits to one request per 1.5s per host by
-  default.
-- No attempt is made to bypass CORS/bot-challenges (Cloudflare Turnstile
-  etc.) — if a site is actively challenging automated access, that's a
-  signal to not scrape it, not an obstacle to route around. (Concretely:
-  circalondon.com sat behind a live Cloudflare challenge during platform
-  research — it was excluded rather than defeated.)
-- See the project's threat-model discussion for the UK legal context
-  (database right, Computer Misuse Act, ToS/contract risk) — this is research
-  tooling, not a production data-resale product, and that distinction matters
-  for how much legal risk is acceptable here.
-
----
-
-## Style matching: CLIP embeddings + swipe preference
-
-`scraper/embeddings.py` embeds every listing's photos (up to a 30-photo
-safety ceiling, comfortably above the dataset's real max of 24 — an earlier
-3-photo cap saved compute/JSON size but meant the Browse grid's per-card
-like/dislike buttons vanished as soon as someone paged past photo 3 of a
-typical 10+ photo gallery, so it wasn't actually a good tradeoff) plus
-its description + key features, using `Qdrant/clip-ViT-B-32-vision` and
-`Qdrant/clip-ViT-B-32-text` — ONNX exports of OpenAI's actual CLIP model via
-`fastembed`, not a knockoff, chosen specifically over `open_clip`/
-`transformers` + PyTorch because `onnxruntime` is a ~15MB wheel vs.
-PyTorch's hundreds of MB, and this host is genuinely disk/memory
-constrained. Image and text land in the *same* 512-dim space by
-construction, so descriptions are directly comparable to photos — no
-separate "feature extraction" step needed first (a real question that came
-up while planning this: CLIP doesn't need upstream object detection/labels,
-it embeds raw photos and raw text directly).
-
-The actual mechanic (all client-side, `frontend/src/lib/`):
-
-1. Flatten every listing's photos into one shuffled swipe deck
-   (`preferences.ts`).
-2. On each like/dislike — either from the dedicated swipe deck, or from the
-   like/dislike buttons on a card's current photo in the Browse grid, both
-   write to the same `swipes` state via `useStylePreferences` — recompute a
-   preference vector = centroid(liked) − centroid(disliked) (`similarity.ts`
-   — the standard simple baseline here, no training needed since CLIP
-   already did the hard semantic work).
-3. Score each listing by the *max* cosine similarity between the preference
-   vector and its own photo embeddings — max, not average, so one mediocre
-   bathroom photo doesn't tank an otherwise-great flat's score.
-4. Browse view re-sorts by this score once a preference exists.
-
-**Where ratings live:** entirely in the browser's `localStorage`
-(`housefinder:style-swipes:v1`), keyed by `${listingKey}::${photoUrl}` →
-`"like" | "dislike"`. No backend, no account, no server-side database —
-ratings are per-browser/per-device only (clearing site data or switching
-browsers loses them; there's no cross-device sync). Only photos that were
-actually CLIP-embedded (every photo, up to the 30-per-listing ceiling above)
-can be rated — the Browse card hides its like/dislike buttons on photos
-beyond that, since rating an unembedded photo wouldn't do anything; in
-practice this now covers every photo of every listing in the dataset.
-
-Verified end to end against the real dataset: same listing's own photos
-cluster tighter (~0.78-0.83 cosine, varies by sample) than different
-listings (~0.74-0.76) — i.e. the embedding space still discriminates between
-interiors, which is the property the whole mechanic depends on, though this
-margin has narrowed a lot as the dataset grew (an earlier check against a
-smaller, less style-diverse 101-listing/2-agency dataset found ~0.89 vs.
-~0.64, a much wider gap — see "Known gaps" below). Re-checked again after
-growing to 250 listings/6 agencies and the gap held roughly steady
-(~0.03-0.08) rather than narrowing further, for whatever that's worth.
-
-## Known gaps / honest limitations
-
-- Only 2 platforms so far (Homeflow, PropertyHive), from 6 real example
-  agencies (4 Homeflow across 2 themes, 2 PropertyHive across 2 themes).
-  Real coverage across "most London agencies" requires validating more
-  platforms (Alto/Vebra/Dezrez — Reapit ruled out, see above) against real
-  sites, not assuming the docs match reality — that's exactly the gap that
-  bit the price/status field the first time through here (see git history:
-  the "Let" status text turned out to be nested *inside* the price element,
-  not a separate field, and the free-text description turned out to live in
-  a different container than the one that looked right at first glance).
-- `price_pcm` is best-effort text parsing, not authoritative — don't trust
-  it for anything more precise than sorting/filtering.
-- Homeflow's `/page-N` pagination pattern, originally reverse-engineered
-  from one site, held up on three more, structurally-varied Homeflow-powered
-  agencies (johndwood.co.uk, tatesestates.co.uk, aspire.co.uk) — good
-  confidence it's a real platform convention rather than one site's
-  coincidence, though still only confirmed against 4 of 600+ Homeflow-powered
-  agencies.
-- The swipe deck's photos come entirely from the 250 listings being ranked
-  — there's no separate curated seed set (e.g. Unsplash/Pinterest
-  interiors), so the deck is only as visually diverse as these 4 agencies'
-  actual inventory happens to be. Worth revisiting if matches feel
-  repetitive.
-- Match score is a raw cosine similarity shown as a percentage — it's a
-  *relative* ranking signal, not a calibrated confidence (0.31 isn't "31%
-  sure", it's "higher than 0.30"). Hasn't been validated against a real
-  person's actual taste yet, only checked that the embedding space itself
-  discriminates between interiors (see above) — and that discrimination
-  margin narrowed noticeably (from ~0.25 to ~0.05-0.07) once the dataset
-  grew to include John D Wood's very different (much higher-end, more
-  professionally staged) photography style alongside the other three
-  agencies. Not investigated further — could mean match scores are now
-  meaningfully less confident/reliable than when this was first checked, or
-  could just be an artifact of averaging cosine similarity across a more
-  stylistically varied set of "different listings." Worth a real look before
-  trusting match scores much, especially with more agencies added later.
-
-
-## Alerts (ops)
-
-Every workflow run ends with `scraper/health.py`, which writes alerts to
-`s3://…/alerts/pending/` (run failed, an agency collapsed/blocked/went stale, browseable
-listings shrank) plus a heartbeat (`analytics/last-scrape.json`). `ops/housefinder_watch.py`
-runs from cron on the dev host hourly (at :07), also checks the heartbeat (older than
-30h = missed run) and the live site, and delivers new alerts to Claude by resuming the
-Telegram conversation's session (`claude -p --resume`, exactly as the bridge does); Claude
-investigates and messages the user. It waits while a user turn is in flight and wakes at
-most every 2h unless critical. `python ops/housefinder_watch.py --dry-run` shows what it
-would do; `--test` injects a harmless test alert.
-
-## Usage counters (no external analytics)
-
-The site counts anonymous usage in its own Firestore: one `stats/<UTC day>` document of plain counters (visitors, new visitors,
-mobile visitors, and funnel milestones such as first swipe, "ready" card, Browse opened, saved a home, shared a list).
-No ids, IPs, cookies or content are stored (see `frontend/src/lib/stats.ts`). Not counted: Do Not Track, localhost, and any
-browser opened once with `?notrack`. Clients can only add to a fixed list of counters (`firebase/firestore.rules`) and cannot read them.
-
-    python3 scripts/analytics_report.py --days 14   # needs AWS access to SSM /housefinder/firebase-admin
-
-## Shared shortlists
-
-- A normal `?board=...` link lets anyone with it view and edit shortlist items. Taste and private saves stay on-device; no account is required.
-- New lists (`v2_...`) are created by `POST /api/boards` through CloudFront/API Gateway/Lambda. The server stores a SHA-256 hash of a random owner key in a private Firestore board document; the browser stores the key locally. The Share sheet can copy a **private management link** for recovery on another device. Never send it to collaborators.
-- Anyone can **Leave list**. This removes their saved entries and first name from the shared list, but does not clear their private saved homes. The creator can **Delete list for everyone** using the owner key. Deletion marks the list inactive first, then purges its items; Firestore rules prevent clients from recreating them. A minimal tombstone remains. Lost owner keys require manual help via `hello@houseswipe.uk`.
-- Older 40-character list links keep working, but no one can prove ownership of them. They support Leave; whole-list deletion is manual on request.
-- The board API reads `/housefinder/firebase-admin` from SSM. `firebase/firestore.rules` must be deployed to Firebase separately from CDK; publish the rules **before** deploying a frontend that creates v2 lists. Run `cd infra/board-api && npm test`, `cd frontend && npm test && npm run build`, and `cd infra && NODE_OPTIONS=--max-old-space-size=3000 npm run build` when changing this flow.
-
-## CloudFront cost guard
-
-`ops/cost_guard.py` (run by the hourly watcher) reads CloudFront's free CloudWatch metrics for the month so far. Warning at 25 GB or
-300k requests; hard stop at 300 GB, 3M requests, or 60 GB in one day: it disables the distribution (the site goes down on purpose; these
-limits are all inside CloudFront's always-free 1 TB / 10M requests, so a stop happens before any charge). `python3 ops/cost_guard.py
-status|enable|disable`. A CDK deploy re-enables the distribution; the guard re-checks hourly. Typical traffic today: ~0.3 GB and ~100 requests a day.
+Photos are shown straight from the agencies' own sites and are never copied. The scraper identifies itself honestly, rates itself politely, and never
+works around a bot challenge: a site that blocks automated access is left out.

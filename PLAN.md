@@ -18,7 +18,7 @@ the underlying lettings-website software platform** each agency's site runs
 on (Homeflow, PropertyHive, and — UK lettings-software market being
 consolidated around a handful of vendors — likely Reapit/Alto/Vebra next).
 One parser per platform covers many agencies at once, with a much lower
-legal/technical risk profile than the big portals. See `README.md` for the
+legal/technical risk profile than the big portals. See `docs/` (start at `docs/README.md`) for the
 current parser status.
 
 ## Phases
@@ -133,7 +133,7 @@ current parser status.
    built and working end to end against the real 250-listing/3,004-photo
    dataset, fully client-side (no backend, swipes persist in `localStorage`
    only) — and can now be rated directly from the Browse grid too, not just
-   the dedicated swipe deck. See `README.md`'s "Style matching" section for
+   the dedicated swipe deck. See `docs/style-matching.md` for
    the mechanic and what's been verified vs. not. Not yet validated against
    a real person's actual taste — only that the embedding space itself
    discriminates between interiors, and that discrimination margin narrowed
