@@ -1,5 +1,6 @@
 import { StrictMode, Suspense, lazy } from 'react'
 import { createRoot } from 'react-dom/client'
+import './fonts.css'
 import './index.css'
 import BoardApp from './BoardApp.tsx'
 import PrivacyPage from './PrivacyPage.tsx'

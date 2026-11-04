@@ -1,9 +1,17 @@
 import { useEffect, type ImgHTMLAttributes } from "react";
 import { normalizeImageUrl } from "../lib/url";
 
-/** Loads a design's Google font while its view is mounted. */
+/** families served from our own domain (see ../fonts.css): no request to Google is made for these */
+const SELF_HOSTED = new Set(["Bricolage Grotesque", "Instrument Serif", "DM Mono", "Lora", "Work Sans"]);
+
+/** Loads a design's Google font while its view is mounted; families we host ourselves are skipped. */
 export function useFont(family: string) {
   useEffect(() => {
+    const names = family
+      .split("&")
+      .filter((p) => p.startsWith("family="))
+      .map((p) => decodeURIComponent(p.slice(7).split(":")[0]).replace(/\+/g, " "));
+    if (names.length > 0 && names.every((n) => SELF_HOSTED.has(n))) return;
     const link = document.createElement("link");
     link.rel = "stylesheet";
     link.href = `https://fonts.googleapis.com/css2?${family}&display=swap`;

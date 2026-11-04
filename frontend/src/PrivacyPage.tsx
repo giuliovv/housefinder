@@ -65,7 +65,7 @@ export default function PrivacyPage() {
 
         <section>
           <h2>Other services and links</h2>
-          <p>Amazon Web Services serves the site and its data. Google supplies Firebase, web fonts and the optional shared-list service. The optional map loads tiles from OpenStreetMap. Opening an agency listing takes you to that agency's own website. These providers receive normal web requests, which can include your IP address and browser details. Their own privacy notices apply when you visit their sites.</p>
+          <p>Amazon Web Services serves the site, its data and its fonts. Google supplies Firebase (anonymous counters) and the optional shared-list service. The optional map loads tiles from OpenStreetMap. Opening an agency listing takes you to that agency's own website. These providers receive normal web requests, which can include your IP address and browser details. Their own privacy notices apply when you visit their sites.</p>
           <p><strong>Photos of homes come straight from the agencies.</strong> The photos you see are shown from the estate agent that advertises the home, or from the image service it uses, not from our servers, and we do not keep copies of them. Your browser asks for each photo directly, so that agency or image service can see your IP address and browser details, as with any website you visit. Photos are the agencies' own, and each home links back to its agency's listing.</p>
         </section>
 

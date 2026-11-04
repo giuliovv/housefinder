@@ -59,3 +59,7 @@ npm run dev      # local server
 npm test         # vitest
 npm run build    # type-check and production build
 ```
+
+## Fonts
+
+Fonts are self-hosted: `frontend/src/fonts.css` declares Bricolage Grotesque, Instrument Serif, DM Mono, Lora and Work Sans from the `@fontsource` packages, and Vite bundles the files. No request goes to Google to render the live site, `/privacy`, `/stats` or `/demo`. The `useFont` helper in `src/lab/common.tsx` skips these families; lab designs that use other families still load them from Google Fonts (not public, noindex). To add a font, install its `@fontsource` package and import it in `fonts.css`.
