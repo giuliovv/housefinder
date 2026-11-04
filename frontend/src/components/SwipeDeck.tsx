@@ -17,6 +17,22 @@ interface Drag {
   dy: number;
 }
 
+/** how many photos after the current one are fetched ahead of time */
+const PRELOAD_AHEAD = 4;
+const preloaded = new Set<string>();
+
+function preloadPhoto(url: string): void {
+  const src = normalizeImageUrl(url);
+  if (!src || preloaded.has(src)) return;
+  preloaded.add(src);
+  if (preloaded.size > 300) preloaded.delete(preloaded.values().next().value as string); // keep the set small in a very long session
+  const img = new Image();
+  img.referrerPolicy = "no-referrer"; // same as the photos the deck shows
+  img.decoding = "async";
+  img.src = src;
+  void img.decode?.().catch(() => undefined); // decode now, so painting the card later doesn't stall
+}
+
 const DRAG_THRESHOLD = 90;
 const INTRO_SEEN_KEY = "housefinder:swipe-intro-seen:v1";
 const BOARD_WELCOME_PHOTOS = [
@@ -118,6 +134,17 @@ export function SwipeDeck({
 }) {
   const variant = useContext(DeckVariantContext);
   const current = injected ?? undecided[0];
+  // Fetch and decode the next few photos while the current one is on screen, so the next swipe shows its photo at once.
+  // (Skipped when the browser asks to save data.) Kept in a module-level set so a photo is only requested once.
+  const upcoming = undecided.slice(0, PRELOAD_AHEAD + 1).map((p) => p.url).join("\n");
+  useEffect(() => {
+    try {
+      if ((navigator as Navigator & { connection?: { saveData?: boolean } }).connection?.saveData) return;
+    } catch {
+      /* ignore */
+    }
+    for (const url of upcoming.split("\n")) preloadPhoto(url);
+  }, [upcoming]);
   const neighbours = useContext(DeckNeighboursContext);
   // dig: a swipe up likes the photo and offers the photos most like it
   const [dig, setDig] = useState<{ id: string; url: string }[] | null>(null);
