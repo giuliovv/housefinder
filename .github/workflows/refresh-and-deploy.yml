@@ -211,6 +211,12 @@ jobs:
         if: env.DO_SCRAPE == 'true'
         run: python -m scraper.geocode_areas
 
+      # Private /prices map: median rent per m² by postcode district
+      - name: Build area price map data
+        run: python scripts/area_prices.py
+        env:
+          PYTHONPATH: .
+
       # The listing rows only record a day. Keep one truthful, minute-level
       # catalogue timestamp for the UI; code-only deploys reuse the prior one.
       - name: Record catalogue refresh time

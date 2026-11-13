@@ -1,0 +1,15 @@
+.prices { font-family: 'Bricolage Grotesque', system-ui, sans-serif; color: #10282b; display: flex; flex-direction: column; height: 100svh; background: #fbfaf6; }
+.prices__head { padding: 14px 16px 10px; }
+.prices__head h1 { margin: 0 0 4px; font-size: 22px; font-weight: 800; letter-spacing: -0.02em; }
+.prices__head p { margin: 0; font-size: 13px; line-height: 1.4; opacity: 0.7; max-width: 60ch; }
+.prices__map { flex: 1; min-height: 0; }
+.prices__tiles { filter: grayscale(1) contrast(0.85) brightness(1.08); }
+.prices__panel { padding: 10px 16px; font-size: 15px; border-top: 1px solid #10282b1a; }
+.prices__panel span { opacity: 0.6; }
+.prices__legend { display: flex; align-items: center; gap: 8px; padding: 0 16px 12px; font-size: 12px; }
+.prices__legend i { flex: 1; max-width: 260px; height: 8px; border-radius: 4px; }
+.prices__label { width: 0; height: 0; }
+.prices__label b, .prices__label span { display: block; transform: translate(-50%, 0); text-align: center; white-space: nowrap; font-size: 11px; line-height: 1.1; color: #fff; text-shadow: 0 0 3px #10282bcc, 0 0 3px #10282bcc; position: relative; left: 0; top: -12px; }
+.prices__label span { top: -12px; font-weight: 400; }
+.prices__map .prices__label { display: none; }
+.prices__map--labels .prices__label { display: block; }

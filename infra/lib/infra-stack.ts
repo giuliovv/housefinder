@@ -77,7 +77,7 @@ function handler(event) {
   if (host === '${canonicalDomain}' || ${JSON.stringify(handoffHosts)}.indexOf(host) >= 0) {
     // the app's own pages are one HTML file; anything else that isn't a real file falls through to a real 404 (see errorResponses)
     var uri = request.uri;
-    if (/^\\/(privacy|demo|stats)\\/?$/.test(uri) || /^\\/ui(\\d*|\\/codex(\\/[a-z0-9-]+)?)\\/?$/.test(uri)) request.uri = '/index.html';
+    if (/^\\/(privacy|demo|stats|prices)\\/?$/.test(uri) || /^\\/ui(\\d*|\\/codex(\\/[a-z0-9-]+)?)\\/?$/.test(uri)) request.uri = '/index.html';
     else if (/^\\/ui\\/original\\/?$/.test(uri)) request.uri = '/ui/original/index.html';
     return request;
   }
