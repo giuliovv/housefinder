@@ -33,7 +33,7 @@ export default function PrivacyPage() {
 
         <section>
           <h2>Who runs this</h2>
-          <p>House Swipe is the name of this service. For privacy questions or requests, email <a href="mailto:hello@houseswipe.uk">hello@houseswipe.uk</a>.</p>
+          <p>House Swipe is the name of this service. For privacy questions or requests, email <a href="mailto:giulio@houseswipe.uk">giulio@houseswipe.uk</a>.</p>
         </section>
 
         <section>
