@@ -45,3 +45,7 @@ limits are all inside CloudFront's always-free 1 TB / 10M requests, so a stop ha
 status|enable|disable`. A CDK deploy re-enables the distribution; the guard re-checks hourly. Typical traffic today: ~0.3 GB and ~100 requests a day.
 
 See also [`infra/README.md`](../infra/README.md) for the deployment, and the kill switch in [`PLAN.md`](../PLAN.md) (`ops/killswitch.py`).
+
+## A/B test: welcome screen
+
+Started 2026-11-18. New browsers are split 50/50 (`frontend/src/lib/experiments.ts`, stored in `housefinder:exp:welcome:v1`): **with** the welcome screen (current design) or **without** it (first photo straight away with a "Like or pass · we learn your taste" line). Browsers that already knew the site are "legacy" and not counted. Counters `ab_w_on_*` / `ab_w_off_*` (new, start tap, first swipe, 10 swipes, Browse) are shown on `/stats` under "Welcome screen test". Read it only once each arm has a few dozen new browsers. To end the test, make `welcomeArm` return the winner and remove the counters later. Firestore ruleset before this change: `2c585b8a-0259-47ad-9dac-96de170bd0fd` (rollback).

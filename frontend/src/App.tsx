@@ -11,6 +11,8 @@ import { useShortlist } from "./lib/useShortlist";
 import { DrawMap } from "./components/DrawMap";
 import { inAnyShape, type LatLon, type ListingGeo } from "./lib/geo";
 import { trackEvent, trackMilestone, trackVisit } from "./lib/stats";
+import { welcomeArm, type WelcomeArm } from "./lib/experiments";
+import { readJson } from "./lib/shortlist";
 import { MatchCelebration } from "./components/MatchCelebration";
 import { loadMatchState, pickMatch, saveMatchState, shouldOffer } from "./lib/matchmoment";
 import { ReadyCard } from "./components/ReadyCard";
@@ -97,6 +99,12 @@ function App({ labVariant }: { labVariant?: "board" | "board-v4" | "board-v5" } 
   const [tab, setTab] = useState<Tab>(() => (new URLSearchParams(window.location.search).has("board") ? "saved" : "style"));
   const [boardWelcomeSeen, setBoardWelcomeSeen] = useState(() => {
     try { return localStorage.getItem(BOARD_WELCOME_KEY) === "1"; } catch { return false; }
+  });
+  // welcome-screen A/B test: first-time browsers get the welcome screen ("on") or go straight to the first photo ("off")
+  const [welcomeArmValue] = useState<WelcomeArm>(() => {
+    let known = boardWelcomeSeen;
+    try { known = known || readJson<{ returning?: boolean }>("housefinder:stats:v1", {}).returning === true; } catch { /* ignore */ }
+    return labVariant === "board" ? welcomeArm(known) : "legacy";
   });
   function dismissBoardWelcome() {
     setBoardWelcomeSeen(true);
@@ -528,17 +536,24 @@ function App({ labVariant }: { labVariant?: "board" | "board-v4" | "board-v5" } 
 
   // anonymous usage counters (see lib/stats.ts)
   useEffect(() => {
-    const t = window.setTimeout(trackVisit, 1500); // after the first paint, never competing with loading
+    const t = window.setTimeout(() => trackVisit(welcomeArmValue === "on" ? ["ab_w_on_new"] : welcomeArmValue === "off" ? ["ab_w_off_new"] : []), 1500); // after the first paint, never competing with loading
     return () => window.clearTimeout(t);
   }, []);
   useEffect(() => {
     if (swipeTotal >= 1) trackMilestone("m_first_swipe");
     if (swipeTotal >= 10) trackMilestone("m_swipes_10");
+    if (welcomeArmValue !== "legacy") {
+      if (swipeTotal >= 1) trackMilestone(welcomeArmValue === "on" ? "ab_w_on_swipe" : "ab_w_off_swipe");
+      if (swipeTotal >= 10) trackMilestone(welcomeArmValue === "on" ? "ab_w_on_swipe10" : "ab_w_off_swipe10");
+    }
     if (swipeTotal >= 25) trackMilestone("m_swipes_25");
     if (swipeTotal >= 50) trackMilestone("m_swipes_50");
   }, [swipeTotal]);
   useEffect(() => {
-    if (tab === "browse") trackMilestone("m_browse_opened");
+    if (tab === "browse") {
+      trackMilestone("m_browse_opened");
+      if (welcomeArmValue !== "legacy") trackMilestone(welcomeArmValue === "on" ? "ab_w_on_browse" : "ab_w_off_browse");
+    }
   }, [tab]);
   useEffect(() => {
     if (shownCount > PAGE_SIZE) trackMilestone("m_browse_deep");
@@ -603,8 +618,9 @@ function App({ labVariant }: { labVariant?: "board" | "board-v4" | "board-v5" } 
           browseCount={board && listings ? visible.length : undefined}
           compactBoardControls={board}
           minimalBoardControls={boardV5}
-          showBoardWelcome={labVariant === "board" && !boardWelcomeSeen && swipeTotal === 0}
-          onDismissBoardWelcome={dismissBoardWelcome}
+          showBoardWelcome={labVariant === "board" && welcomeArmValue !== "off" && !boardWelcomeSeen && swipeTotal === 0}
+          promptHint={labVariant === "board" && welcomeArmValue === "off"}
+          onDismissBoardWelcome={() => { if (welcomeArmValue === "on") trackMilestone("ab_w_on_start"); dismissBoardWelcome(); }}
           teachSwipe={board && !introWigglePlayed}
           onTeachingEnd={markIntroWigglePlayed}
           injected={matchCard}

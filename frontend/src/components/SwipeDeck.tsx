@@ -92,6 +92,7 @@ export function SwipeDeck({
   compactBoardControls = false,
   minimalBoardControls = false,
   showBoardWelcome = false,
+  promptHint = false,
   onDismissBoardWelcome,
   teachSwipe,
   onTeachingEnd,
@@ -114,6 +115,8 @@ export function SwipeDeck({
   compactBoardControls?: boolean;
   minimalBoardControls?: boolean;
   showBoardWelcome?: boolean;
+  /** A/B arm without a welcome screen: say what to do above the first photo */
+  promptHint?: boolean;
   onDismissBoardWelcome?: () => void;
   teachSwipe?: boolean;
   onTeachingEnd?: () => void;
@@ -333,7 +336,7 @@ export function SwipeDeck({
               </> : <>
                 <div className="board-swipe__lean">
                   <div className="board-swipe__lean-copy">
-                    <p className="board-swipe__kicker">YOU LEAN TOWARD</p>
+                    <p className="board-swipe__kicker">{promptHint && decided === 0 ? "LIKE OR PASS · WE LEARN YOUR TASTE" : "YOU LEAN TOWARD"}</p>
                     <h2>{styleWords?.length ? <>{styleWords.slice(0, -1).join(" ")} <em>{styleWords.at(-1)}</em></> : <><em>Your</em> next place</>}</h2>
                   </div>
                   <div className="board-swipe__meter" role="img" aria-label={`${tasteRead?.label ?? "Just getting started"}. ${decided} photos rated`}>

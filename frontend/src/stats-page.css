@@ -79,3 +79,6 @@ html:has(.st) #root { display: block; }
 @keyframes st-grow-x { from { transform: scaleX(0); } }
 @media (prefers-reduced-motion: reduce) { .st__col i, .st__fbar i { animation: none; } }
 @media (min-width: 700px) { .st { padding-top: 12px; } .st__bar { margin: 0; padding-inline: 0; } }
+.st__ab { width: 100%; border-collapse: collapse; font-size: 13px; }
+.st__ab th, .st__ab td { padding: 6px 4px; text-align: left; border-bottom: 1px solid #10282b1a; }
+.st__ab thead th { color: var(--muted); font-weight: 500; font-size: 12px; }

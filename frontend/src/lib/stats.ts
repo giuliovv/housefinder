@@ -42,6 +42,16 @@ export const COUNTERS = [
   "ev_match_hit",
   "ev_match_miss",
   "ev_match_opened",
+  // welcome-screen A/B (lib/experiments.ts): new browsers per arm, and how far they got; "start" = tapped "Find my style"
+  "ab_w_on_new",
+  "ab_w_on_start",
+  "ab_w_on_swipe",
+  "ab_w_on_swipe10",
+  "ab_w_on_browse",
+  "ab_w_off_new",
+  "ab_w_off_swipe",
+  "ab_w_off_swipe10",
+  "ab_w_off_browse",
 ] as const;
 export type Counter = (typeof COUNTERS)[number];
 
@@ -177,13 +187,13 @@ export async function bump(counters: Counter[], day = today()): Promise<void> {
 }
 
 /** count this browser once per day (and once ever as new) */
-export function trackVisit(): void {
+export function trackVisit(newBrowserExtras: Counter[] = []): void {
   if (disabled()) return;
   const state = readJson<StatsState>(KEY, { seen: {}, lastVisitDay: "", returning: false });
   const day = today();
   if (state.lastVisitDay === day) return;
   const counters: Counter[] = ["visitors"];
-  if (!state.returning) counters.push("visitors_new");
+  if (!state.returning) counters.push("visitors_new", ...newBrowserExtras);
   if (window.matchMedia?.("(max-width: 700px)").matches) counters.push("visitors_mobile");
   writeJson(KEY, { ...state, lastVisitDay: day, returning: true });
   void bump(counters);

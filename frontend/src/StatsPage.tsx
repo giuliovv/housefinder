@@ -196,6 +196,27 @@ export default function StatsPage() {
         <p>{matchShown} offered, {matchHit} liked, {matchMiss} passed{matchHit + matchMiss > 0 ? ` (${pct(matchHit, matchHit + matchMiss)} liked)` : ""}, {sum(cur, "ev_match_opened")} opened the home.</p>
       </section>
 
+      {(sum(cur, "ab_w_on_new") + sum(cur, "ab_w_off_new")) > 0 && (
+        <section>
+          <h2>Welcome screen test</h2>
+          <p className="st__sub">New browsers only. "With" sees the welcome screen first; "without" goes straight to the first photo.</p>
+          <table className="st__ab">
+            <thead><tr><th></th><th>New</th><th>Tapped start</th><th>Swiped</th><th>10 swipes</th><th>Browse</th></tr></thead>
+            <tbody>
+              {(["on", "off"] as const).map((arm) => {
+                const base = sum(cur, `ab_w_${arm}_new`);
+                const cell = (k: string) => `${sum(cur, `ab_w_${arm}_${k}`)} · ${pct(sum(cur, `ab_w_${arm}_${k}`), base)}`;
+                return (
+                  <tr key={arm}>
+                    <th>{arm === "on" ? "With" : "Without"}</th><td>{base}</td><td>{arm === "on" ? cell("start") : "–"}</td><td>{cell("swipe")}</td><td>{cell("swipe10")}</td><td>{cell("browse")}</td>
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
+        </section>
+      )}
+
       <details className="st__days">
         <summary>Day by day</summary>
         <table>
