@@ -539,6 +539,19 @@ function App({ labVariant }: { labVariant?: "board" | "board-v4" | "board-v5" } 
     const t = window.setTimeout(() => trackVisit(welcomeArmValue === "on" ? ["ab_w_on_new"] : welcomeArmValue === "off" ? ["ab_w_off_new"] : []), 1500); // after the first paint, never competing with loading
     return () => window.clearTimeout(t);
   }, []);
+  // engagement: did they stay, did they touch anything (tells "left at once" from "looked and did nothing")
+  useEffect(() => {
+    const t = window.setTimeout(() => { if (document.visibilityState === "visible") trackMilestone("m_stayed_5s"); }, 5000);
+    const touched = () => {
+      trackMilestone("m_touched");
+      if (welcomeArmValue !== "legacy") trackMilestone(welcomeArmValue === "on" ? "ab_w_on_touch" : "ab_w_off_touch");
+      stop();
+    };
+    const events = ["pointerdown", "keydown", "scroll", "touchstart"] as const;
+    const stop = () => events.forEach((e) => window.removeEventListener(e, touched, true));
+    events.forEach((e) => window.addEventListener(e, touched, { capture: true, passive: true }));
+    return () => { window.clearTimeout(t); stop(); };
+  }, []);
   useEffect(() => {
     if (swipeTotal >= 1) trackMilestone("m_first_swipe");
     if (swipeTotal >= 10) trackMilestone("m_swipes_10");

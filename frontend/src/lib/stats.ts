@@ -20,6 +20,8 @@ export const COUNTERS = [
   "visitors", // browsers that opened the site that day
   "visitors_new", // ...for the first time ever
   "visitors_mobile", // ...on a narrow (phone-sized) screen
+  "m_stayed_5s", // kept the page open and visible for 5 seconds
+  "m_touched", // tapped, scrolled or pressed a key at all
   "m_first_swipe",
   "m_swipes_10",
   "m_swipes_25",
@@ -44,6 +46,8 @@ export const COUNTERS = [
   "ev_match_opened",
   // welcome-screen A/B (lib/experiments.ts): new browsers per arm, and how far they got; "start" = tapped "Find my style"
   "ab_w_on_new",
+  "ab_w_on_touch",
+  "ab_w_off_touch",
   "ab_w_on_start",
   "ab_w_on_swipe",
   "ab_w_on_swipe10",

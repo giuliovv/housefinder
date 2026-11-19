@@ -17,6 +17,8 @@ const pct = (a: number, b: number) => (b > 0 ? `${Math.round((a / b) * 100)}%` :
 /** each step of the journey, in order; every one is "new browsers that got this far", so it reads as a funnel */
 const FUNNEL: [string, string][] = [
   ["visitors", "Opened the site"],
+  ["m_stayed_5s", "Stayed 5 seconds"],
+  ["m_touched", "Touched the page"],
   ["m_first_swipe", "Swiped a photo"],
   ["m_swipes_10", "Swiped 10 photos"],
   ["m_swipes_25", "Swiped 25 photos"],
@@ -201,14 +203,14 @@ export default function StatsPage() {
           <h2>Welcome screen test</h2>
           <p className="st__sub">New browsers only. "With" sees the welcome screen first; "without" goes straight to the first photo.</p>
           <table className="st__ab">
-            <thead><tr><th></th><th>New</th><th>Tapped start</th><th>Swiped</th><th>10 swipes</th><th>Browse</th></tr></thead>
+            <thead><tr><th></th><th>New</th><th>Touched</th><th>Tapped start</th><th>Swiped</th><th>10 swipes</th><th>Browse</th></tr></thead>
             <tbody>
               {(["on", "off"] as const).map((arm) => {
                 const base = sum(cur, `ab_w_${arm}_new`);
                 const cell = (k: string) => `${sum(cur, `ab_w_${arm}_${k}`)} · ${pct(sum(cur, `ab_w_${arm}_${k}`), base)}`;
                 return (
                   <tr key={arm}>
-                    <th>{arm === "on" ? "With" : "Without"}</th><td>{base}</td><td>{arm === "on" ? cell("start") : "–"}</td><td>{cell("swipe")}</td><td>{cell("swipe10")}</td><td>{cell("browse")}</td>
+                    <th>{arm === "on" ? "With" : "Without"}</th><td>{base}</td><td>{cell("touch")}</td><td>{arm === "on" ? cell("start") : "–"}</td><td>{cell("swipe")}</td><td>{cell("swipe10")}</td><td>{cell("browse")}</td>
                   </tr>
                 );
               })}
