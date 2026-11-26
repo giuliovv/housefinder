@@ -31,7 +31,7 @@ export class StirlingStack extends cdk.Stack {
     const worker = new cdk.aws_lambda.DockerImageFunction(this, 'Worker', {
       functionName: 'houseswipe-stirling-worker',
       code: cdk.aws_lambda.DockerImageCode.fromEcr(repository, {
-        tagOrDigest: this.node.tryGetContext('stirlingImageDigest') ?? 'sha256:acdb3624f88282403ae0f29304f8678e462278f1f358f4ce290abb882a71611e',
+        tagOrDigest: this.node.tryGetContext('stirlingImageDigest') ?? 'sha256:c2f337f009e9f946b39ac38336114bfbc8cc349e51da6c906b7b00e21ed70c78',
       }),
       architecture: cdk.aws_lambda.Architecture.ARM_64,
       role, memorySize: 512, timeout: cdk.Duration.minutes(15),

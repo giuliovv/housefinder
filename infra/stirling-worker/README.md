@@ -87,3 +87,10 @@ that view explicitly; the parser also fails loudly if a map-only page appears
 again. Image digest `sha256:acdb3624f88282403ae0f29304f8678e462278f1f358f4ce290abb882a71611e`
 contains the fix. The failed attempt's cooldown remains in force; do not reset
 it just to test a deployment.
+
+## 2026-11-26 slow search page
+
+The search page sometimes took longer than the 15 s read timeout (21 and 26 Nov), costing a 48 h cooldown each time.
+The first results page of every Property Hive agency now waits up to 45 s and retries once after a timeout
+(`http.get_first_page`). Image digest `sha256:c2f337f009e9f946b39ac38336114bfbc8cc349e51da6c906b7b00e21ed70c78`
+(tag `retry-20261126`) contains it and is the stack default.

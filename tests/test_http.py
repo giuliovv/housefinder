@@ -41,3 +41,49 @@ def test_get_page_recovers_and_treats_404_as_end(monkeypatch):
 
     monkeypatch.setattr(http, "get", gone)
     assert http.get_page("https://x.example/page-99") is None
+
+
+def test_get_first_page_retries_once_after_a_timeout(monkeypatch) -> None:
+    import requests
+    from scraper import http
+
+    calls = []
+
+    def fake_get(url, *, timeout, user_agent=None, session=None):
+        calls.append(timeout)
+        if len(calls) == 1:
+            raise requests.ReadTimeout("slow")
+        return "<html>ok</html>"
+
+    monkeypatch.setattr(http, "get", fake_get)
+    monkeypatch.setattr(http.time, "sleep", lambda s: None)
+    assert http.get_first_page("https://example.test/") == "<html>ok</html>"
+    assert calls == [45.0, 45.0]
+
+
+def test_get_first_page_gives_up_after_the_retry(monkeypatch) -> None:
+    import pytest
+    import requests
+    from scraper import http
+
+    monkeypatch.setattr(http, "get", lambda *a, **k: (_ for _ in ()).throw(requests.ReadTimeout("slow")))
+    monkeypatch.setattr(http.time, "sleep", lambda s: None)
+    with pytest.raises(requests.ReadTimeout):
+        http.get_first_page("https://example.test/")
+
+
+def test_get_first_page_does_not_retry_http_errors(monkeypatch) -> None:
+    import pytest
+    import requests
+    from scraper import http
+
+    calls = []
+
+    def fake_get(*a, **k):
+        calls.append(1)
+        raise requests.HTTPError("500")
+
+    monkeypatch.setattr(http, "get", fake_get)
+    with pytest.raises(requests.HTTPError):
+        http.get_first_page("https://example.test/")
+    assert len(calls) == 1

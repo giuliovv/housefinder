@@ -178,7 +178,7 @@ class PropertyHiveScraper(PlatformScraper):
         url: str | None = search_url
         pages_fetched = 0
         while url and pages_fetched < max_pages:
-            html = http.get(url, user_agent=self.user_agent)
+            html = http.get_first_page(url, user_agent=self.user_agent) if pages_fetched == 0 else http.get(url, user_agent=self.user_agent)
             soup = BeautifulSoup(html, "html.parser")
             cards = soup.select(self.theme.card_selector)
             if self.theme.name == "stirlingackroyd" and not cards and soup.select_one(".propertyhive-views .map-view.active"):

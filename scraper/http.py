@@ -81,6 +81,20 @@ def get_page(url: str, *, user_agent: str | None = None, attempts: int = 3, paus
     return None  # pragma: no cover
 
 
+def get_first_page(url: str, *, user_agent: str | None = None, timeout: float = 45.0, retries: int = 1, pause: float = 10.0) -> str:
+    """The first results page: some agency search pages are only occasionally slow (16 s one minute, 0.6 s the next),
+    so allow a longer wait and retry once after a timeout or dropped connection. HTTP errors and bot
+    challenges are never retried."""
+    for attempt in range(retries + 1):
+        try:
+            return get(url, timeout=timeout, user_agent=user_agent)
+        except (requests.Timeout, requests.ConnectionError):
+            if attempt == retries:
+                raise
+            time.sleep(pause)
+    raise AssertionError("unreachable")  # pragma: no cover
+
+
 def post(url: str, data: dict, *, timeout: float = 15.0, user_agent: str | None = None, session=None) -> str:
     """Form POST (e.g. ASP.NET postback paging) — same throttle, UA and challenge detection as get()."""
     return _request("POST", url, data=data, timeout=timeout, user_agent=user_agent, session=session)
